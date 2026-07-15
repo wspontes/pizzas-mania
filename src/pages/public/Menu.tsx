@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react'
 import { SearchBar, CategoryCard, ProductCard } from '@/components/shared'
 import { ProductCardSkeleton, CategorySkeleton } from '@/components/shared'
 import { useCategories, useProducts } from '@/hooks'
-import type { Product } from '@/types'
 
 export default function Menu() {
   const [search, setSearch] = useState('')
@@ -24,17 +23,11 @@ export default function Menu() {
     setActiveCategory((prev) => (prev === categoryId ? null : categoryId))
   }
 
-  const handleAddToCart = (product: Product) => {
-    console.log('add to cart', product)
-  }
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-white">Cardápio</h1>
-        <p className="mt-1 text-sm text-muted">
-          Escolha seu sabor favorito
-        </p>
+        <p className="mt-1 text-sm text-muted">Escolha seu sabor favorito</p>
       </div>
 
       <div className="mb-6">
@@ -67,11 +60,7 @@ export default function Menu() {
       ) : filteredProducts.length > 0 ? (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {filteredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onAddToCart={handleAddToCart}
-            />
+            <ProductCard key={product.id} product={product} />
           ))}
         </div>
       ) : (

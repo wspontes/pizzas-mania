@@ -3,7 +3,6 @@ import { ArrowRight, ChefHat, Clock, Bike, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { ProductCard, ProductCardSkeleton } from '@/components/shared'
 import { useFeaturedProducts } from '@/hooks'
-import type { Product } from '@/types'
 
 const benefits = [
   { icon: ChefHat, text: 'Ingredientes selecionados' },
@@ -13,10 +12,6 @@ const benefits = [
 
 export default function Home() {
   const { products: featured, loading } = useFeaturedProducts()
-
-  const handleAddToCart = (product: Product) => {
-    console.log('add to cart', product)
-  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -74,11 +69,7 @@ export default function Home() {
         ) : featured.length > 0 ? (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {featured.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={handleAddToCart}
-              />
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
         ) : (

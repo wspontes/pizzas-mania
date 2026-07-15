@@ -2,3 +2,4 @@ export { Skeleton, ProductCardSkeleton, CategorySkeleton, BannerSkeleton } from 
 export { ProductCard } from './ProductCard'
 export { CategoryCard } from './CategoryCard'
 export { SearchBar } from './SearchBar'
+export { ProtectedRoute } from './ProtectedRoute'

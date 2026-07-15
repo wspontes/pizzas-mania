@@ -1,17 +1,27 @@
 import { Link } from 'react-router-dom'
 import { ShoppingCart, Star } from 'lucide-react'
-import { cn } from '@/utils'
+import { cn, formatCurrency } from '@/utils'
 import { Button } from '@/components/ui'
+import { useCart } from '@/contexts/CartContext'
 import type { Product } from '@/types'
 
 interface ProductCardProps {
   product: Product
-  onAddToCart?: (product: Product) => void
   className?: string
 }
 
-export function ProductCard({ product, onAddToCart, className }: ProductCardProps) {
+export function ProductCard({ product, className }: ProductCardProps) {
+  const { addItem } = useCart()
   const price = product.discountPrice ?? product.price
+
+  const handleAddToCart = () => {
+    addItem({
+      productId: product.id,
+      productName: product.name,
+      quantity: 1,
+      price,
+    })
+  }
 
   return (
     <div
@@ -51,19 +61,15 @@ export function ProductCard({ product, onAddToCart, className }: ProductCardProp
           <div className="flex flex-col">
             {product.discountPrice && (
               <span className="text-xs text-muted line-through">
-                R$ {product.price.toFixed(2)}
+                {formatCurrency(product.price)}
               </span>
             )}
             <span className="text-lg font-bold text-accent">
-              R$ {price.toFixed(2)}
+              {formatCurrency(price)}
             </span>
           </div>
 
-          <Button
-            size="sm"
-            onClick={() => onAddToCart?.(product)}
-            className="shrink-0"
-          >
+          <Button size="sm" onClick={handleAddToCart} className="shrink-0">
             <ShoppingCart size={16} />
           </Button>
         </div>

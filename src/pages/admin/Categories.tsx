@@ -1,9 +1,17 @@
 import { useState } from 'react'
-import { Plus, Pencil, Trash2, GripVertical } from 'lucide-react'
+import { Plus, Pencil, Trash2, Check, X } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 
+interface Category {
+  id: string
+  name: string
+  order: number
+  active: boolean
+  productCount: number
+}
+
 export default function Categories() {
-  const [categories, setCategories] = useState([
+  const [categories, setCategories] = useState<Category[]>([
     { id: '1', name: 'Pizzas', order: 1, active: true, productCount: 8 },
     { id: '2', name: 'Bebidas', order: 2, active: true, productCount: 12 },
     { id: '3', name: 'Sobremesas', order: 3, active: true, productCount: 5 },
@@ -14,22 +22,35 @@ export default function Categories() {
   const [editingName, setEditingName] = useState('')
 
   const handleAdd = () => {
-    if (!newCategory.trim()) return
+    const name = newCategory.trim()
+    if (!name) return
     setCategories((prev) => [
       ...prev,
-      { id: String(Date.now()), name: newCategory, order: prev.length + 1, active: true, productCount: 0 },
+      { id: String(Date.now()), name, order: prev.length + 1, active: true, productCount: 0 },
     ])
     setNewCategory('')
   }
 
-  const handleEdit = (id: string) => {
-    if (!editingName.trim()) return
-    setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, name: editingName } : c)))
+  const startEdit = (cat: Category) => {
+    setEditingId(cat.id)
+    setEditingName(cat.name)
+  }
+
+  const confirmEdit = () => {
+    const name = editingName.trim()
+    if (!name || !editingId) return
+    setCategories((prev) => prev.map((c) => (c.id === editingId ? { ...c, name } : c)))
     setEditingId(null)
   }
 
-  const handleDelete = (id: string) => {
-    setCategories((prev) => prev.filter((c) => c.id !== id))
+  const cancelEdit = () => {
+    setEditingId(null)
+  }
+
+  const handleDelete = (id: string, name: string) => {
+    if (window.confirm(`Tem certeza que deseja excluir "${name}"?`)) {
+      setCategories((prev) => prev.filter((c) => c.id !== id))
+    }
   }
 
   const toggleActive = (id: string) => {
@@ -56,54 +77,74 @@ export default function Categories() {
         </Button>
       </div>
 
-      <div className="rounded-xl border border-border bg-surface">
-        <div className="divide-y divide-border">
-          {categories.map((category) => (
-            <div key={category.id} className="flex items-center gap-3 p-4">
-              <GripVertical size={16} className="text-muted shrink-0" />
-              <div className="flex-1 min-w-0">
+      {categories.length === 0 ? (
+        <div className="rounded-xl border border-border bg-surface p-12 text-center">
+          <p className="text-lg text-muted">Nenhuma categoria cadastrada</p>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border bg-surface">
+          <div className="divide-y divide-border">
+            {categories.map((category) => (
+              <div key={category.id} className="flex items-center gap-3 px-4 py-3">
                 {editingId === category.id ? (
-                  <div className="flex gap-2">
+                  <div className="flex flex-1 items-center gap-2">
                     <Input
                       value={editingName}
                       onChange={(e) => setEditingName(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleEdit(category.id)}
+                      onKeyDown={(e) => e.key === 'Enter' && confirmEdit()}
                       className="h-8"
+                      autoFocus
                     />
-                    <Button size="sm" onClick={() => handleEdit(category.id)}>Salvar</Button>
-                    <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancelar</Button>
+                    <button
+                      onClick={confirmEdit}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-green-400 hover:bg-green-500/10 transition-colors"
+                    >
+                      <Check size={16} />
+                    </button>
+                    <button
+                      onClick={cancelEdit}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors"
+                    >
+                      <X size={16} />
+                    </button>
                   </div>
                 ) : (
                   <>
-                    <p className="text-sm font-medium text-white">{category.name}</p>
-                    <p className="text-xs text-muted">{category.productCount} produtos</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-white">{category.name}</p>
+                      <p className="text-xs text-muted">{category.productCount} produtos</p>
+                    </div>
+                    <button
+                      onClick={() => toggleActive(category.id)}
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${
+                        category.active
+                          ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
+                          : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
+                      }`}
+                    >
+                      {category.active ? 'Ativo' : 'Inativo'}
+                    </button>
+                    <button
+                      onClick={() => startEdit(category)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors"
+                      title="Editar"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(category.id, category.name)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                      title="Excluir"
+                    >
+                      <Trash2 size={15} />
+                    </button>
                   </>
                 )}
               </div>
-              <button
-                onClick={() => toggleActive(category.id)}
-                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                  category.active ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
-                }`}
-              >
-                {category.active ? 'Ativo' : 'Inativo'}
-              </button>
-              <button
-                onClick={() => { setEditingId(category.id); setEditingName(category.name) }}
-                className="rounded-lg p-1.5 text-muted hover:bg-surface-hover hover:text-white transition-colors"
-              >
-                <Pencil size={16} />
-              </button>
-              <button
-                onClick={() => handleDelete(category.id)}
-                className="rounded-lg p-1.5 text-muted hover:bg-red-500/10 hover:text-red-400 transition-colors"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
