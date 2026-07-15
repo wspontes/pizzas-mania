@@ -1,9 +1,15 @@
 import { Outlet } from 'react-router-dom'
+import { Header } from '@/components/layout'
+import { Footer } from '@/components/layout'
 
 export function PublicLayout() {
   return (
-    <div className="min-h-screen bg-brand-black">
-      <Outlet />
+    <div className="flex min-h-screen flex-col bg-brand-black">
+      <Header />
+      <main className="flex-1">
+        <Outlet />
+      </main>
+      <Footer />
     </div>
   )
 }
