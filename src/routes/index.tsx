@@ -16,6 +16,8 @@ const AdminProductForm = lazy(() => import('@/pages/admin/ProductForm'))
 const AdminCategories = lazy(() => import('@/pages/admin/Categories'))
 const AdminOrders = lazy(() => import('@/pages/admin/OrdersAdmin'))
 const AdminSettings = lazy(() => import('@/pages/admin/Settings'))
+const AdminUsers = lazy(() => import('@/pages/admin/UsersAdmin'))
+const AdminCoupons = lazy(() => import('@/pages/admin/CouponsAdmin'))
 const KitchenDashboard = lazy(() => import('@/pages/kitchen/Dashboard'))
 const Seed = lazy(() => import('@/pages/dev/Seed'))
 
@@ -65,6 +67,8 @@ export const router = createBrowserRouter([
       { path: 'produtos/novo', element: <Suspense fallback={<PageLoader />}><AdminProductForm /></Suspense> },
       { path: 'produtos/:id/editar', element: <Suspense fallback={<PageLoader />}><AdminProductForm /></Suspense> },
       { path: 'categorias', element: <Suspense fallback={<PageLoader />}><AdminCategories /></Suspense> },
+      { path: 'cupons', element: <Suspense fallback={<PageLoader />}><AdminCoupons /></Suspense> },
+      { path: 'usuarios', element: <Suspense fallback={<PageLoader />}><AdminUsers /></Suspense> },
       { path: 'configuracoes', element: <Suspense fallback={<PageLoader />}><AdminSettings /></Suspense> },
     ],
   },

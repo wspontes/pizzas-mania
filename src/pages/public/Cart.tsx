@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button, Input } from '@/components/ui'
 import { useCart } from '@/contexts/CartContext'
 import { useSettings } from '@/hooks'
+import { couponsService } from '@/services'
 import { formatCurrency } from '@/utils'
 
 export default function Cart() {
@@ -11,14 +12,27 @@ export default function Cart() {
   const { settings } = useSettings()
   const [couponInput, setCouponInput] = useState('')
   const [couponApplied, setCouponApplied] = useState(false)
+  const [couponError, setCouponError] = useState('')
 
   const minOrder = settings?.minOrder ?? 25
   const belowMin = subtotal > 0 && subtotal < minOrder
 
-  const handleApplyCoupon = () => {
+  const handleApplyCoupon = async () => {
+    setCouponError('')
     if (!couponInput.trim()) return
-    applyCoupon(couponInput, 10)
-    setCouponApplied(true)
+    try {
+      const all = await couponsService.getAll()
+      const coupon = all.find((c) => c.code === couponInput.trim().toUpperCase() && c.active)
+      if (!coupon) { setCouponError('Cupom inválido ou expirado'); return }
+      if (new Date(coupon.expiresAt) < new Date()) { setCouponError('Cupom expirado'); return }
+      if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) { setCouponError('Cupom já atingiu o limite de usos'); return }
+      if (coupon.minOrder && subtotal < coupon.minOrder) { setCouponError(`Valor mínimo de R$ ${coupon.minOrder.toFixed(2)} para este cupom`); return }
+      const discount = coupon.type === 'percentage' ? (subtotal * coupon.value) / 100 : coupon.value
+      applyCoupon(coupon.code, discount)
+      setCouponApplied(true)
+    } catch {
+      setCouponError('Erro ao validar cupom')
+    }
   }
 
   if (state.items.length === 0) {
@@ -87,6 +101,7 @@ export default function Cart() {
               <Button variant="outline" size="md" onClick={handleApplyCoupon}>Aplicar</Button>
             </div>
             {couponApplied && <p className="mt-2 text-xs text-green-400">Cupom aplicado com sucesso!</p>}
+            {couponError && <p className="mt-2 text-xs text-red-400">{couponError}</p>}
           </div>
 
           <div className="rounded-xl border border-border bg-surface p-4">
