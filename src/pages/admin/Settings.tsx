@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Clock, MapPin, DollarSign, CreditCard, Image, Plus } from 'lucide-react'
+import { Clock, MapPin, DollarSign, CreditCard, Image, Plus, QrCode } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { settingsService, type BusinessSettings } from '@/services/settings'
 
@@ -22,6 +22,7 @@ export default function Settings() {
   const [freeDelivery, setFreeDelivery] = useState('80.00')
   const [newNb, setNewNb] = useState({ name: '', fee: '', time: '' })
   const [pixKey, setPixKey] = useState('')
+  const [pixQrCode, setPixQrCode] = useState('')
   const [acceptCredit, setAcceptCredit] = useState(true)
   const [acceptDebit, setAcceptDebit] = useState(true)
   const [acceptCash, setAcceptCash] = useState(true)
@@ -51,7 +52,7 @@ export default function Settings() {
         }
         if (data.paymentMethods) {
           const pm = data.paymentMethods
-          if (pm.pix) setPixKey(pm.pix.key || '')
+          if (pm.pix) { setPixKey(pm.pix.key || ''); setPixQrCode(pm.pix.qrCode || '') }
           if (pm.credit) { setAcceptCredit(pm.credit.enabled); setInstallments(String(pm.credit.installments || 12)) }
           if (pm.debit) setAcceptDebit(pm.debit.enabled)
           if (pm.cash) setAcceptCash(pm.cash.enabled)
@@ -82,7 +83,7 @@ export default function Settings() {
       freeDeliveryFrom: Number(freeDelivery),
       neighborhoods,
       paymentMethods: {
-        pix: { enabled: true, key: pixKey },
+        pix: { enabled: true, key: pixKey, qrCode: pixQrCode },
         credit: { enabled: acceptCredit, installments: Number(installments) },
         debit: { enabled: acceptDebit },
         cash: { enabled: acceptCash },
@@ -178,8 +179,14 @@ export default function Settings() {
             Métodos de Pagamento
           </h2>
           <div className="space-y-4">
-            <div>
-              <Input label="Chave PIX (opcional)" placeholder="CNPJ, CPF, email ou telefone" value={pixKey} onChange={(e) => setPixKey(e.target.value)} />
+            <div className="space-y-3">
+              <Input label="Chave PIX" placeholder="CNPJ, CPF, email ou telefone" value={pixKey} onChange={(e) => setPixKey(e.target.value)} />
+              <Input label="URL do QR Code PIX (opcional)" placeholder="https://..." value={pixQrCode} onChange={(e) => setPixQrCode(e.target.value)} icon={<QrCode size={16} />} />
+              {pixQrCode && (
+                <div className="flex justify-center">
+                  <img src={pixQrCode} alt="QR Code PIX" className="h-32 w-32 rounded-xl border border-border object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                </div>
+              )}
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="flex items-center gap-2 cursor-pointer rounded-lg border border-border bg-surface-hover p-3">

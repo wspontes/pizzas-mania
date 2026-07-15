@@ -43,7 +43,9 @@ export default function OrdersAdmin() {
     const currentIndex = statuses.indexOf(order.status as typeof statuses[number])
     if (currentIndex >= statuses.length - 1) return
     const nextStatus = statuses[currentIndex + 1]
-    await ordersService.update(orderId, { status: nextStatus, paymentStatus: nextStatus === 'received' ? 'paid' : undefined } as Partial<Order>)
+    const updateData: Record<string, unknown> = { status: nextStatus }
+    if (nextStatus === 'received') updateData.paymentStatus = 'paid'
+    await ordersService.update(orderId, updateData as Partial<Order>)
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus, paymentStatus: nextStatus === 'received' ? 'paid' : o.paymentStatus } : o)))
 
     if (nextStatus === 'accepted') {

@@ -17,7 +17,7 @@ export interface BusinessSettings {
     active: boolean
   }[]
   paymentMethods?: {
-    pix?: { enabled: boolean; key?: string }
+    pix?: { enabled: boolean; key?: string; qrCode?: string }
     credit?: { enabled: boolean; installments?: number }
     debit?: { enabled: boolean }
     cash?: { enabled: boolean }
