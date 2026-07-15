@@ -2,13 +2,26 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Permite ler usuários sem estar logado (para login por username)
+    // Public read access for catalog and config
+    match /products/{doc} { allow read: if true; }
+    match /categories/{doc} { allow read: if true; }
+    match /settings/{doc} { allow read: if true; }
+
+    // Orders: anyone can read or create (guest checkout), only admins update
+    match /orders/{orderId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if request.auth != null;
+      allow delete: if false;
+    }
+
+    // Users: readable for username-based login
     match /users/{userId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
 
-    // Demais coleções: só logado
+    // Admin-only: all other collections require authentication
     match /{document=**} {
       allow read, write: if request.auth != null;
     }

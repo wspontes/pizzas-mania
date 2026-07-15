@@ -1,9 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ShoppingCart, Menu, X, UtensilsCrossed } from 'lucide-react'
 import { useState } from 'react'
-import { Button } from '@/components/ui'
 import { useCart } from '@/contexts/CartContext'
-import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/utils'
 
 const navLinks = [
@@ -15,7 +13,6 @@ const navLinks = [
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { state } = useCart()
-  const { user } = useAuth()
 
   const itemCount = state.items.reduce((acc, i) => acc + i.quantity, 0)
 
@@ -51,20 +48,6 @@ export function Header() {
               </span>
             )}
           </Link>
-
-          {user ? (
-            <Link to="/perfil">
-              <Button variant="ghost" size="sm">
-                {user.name}
-              </Button>
-            </Link>
-          ) : (
-            <Link to="/auth/login">
-              <Button variant="primary" size="sm">
-                Entrar
-              </Button>
-            </Link>
-          )}
 
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
