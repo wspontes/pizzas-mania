@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Check, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, Check, X, ChevronUp, ChevronDown } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { categoriesService } from '@/services'
 import type { Category } from '@/types'
@@ -13,7 +13,7 @@ export default function Categories() {
 
   const load = async () => {
     try {
-      const data = await categoriesService.getActiveCategories()
+      const data = await categoriesService.getAllOrdered()
       setCategories(data)
     } catch {
       setCategories([])
@@ -35,6 +35,28 @@ export default function Categories() {
     })
     setCategories((prev) => [...prev, created])
     setNewCategory('')
+  }
+
+  const moveUp = async (index: number) => {
+    if (index === 0) return
+    const updated = [...categories]
+    const temp = updated[index].order
+    updated[index] = { ...updated[index], order: updated[index - 1].order }
+    updated[index - 1] = { ...updated[index - 1], order: temp }
+    const reordered = updated.sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
+    setCategories(reordered)
+    await Promise.all(reordered.map((cat, i) => categoriesService.update(cat.id, { order: i + 1 })))
+  }
+
+  const moveDown = async (index: number) => {
+    if (index === categories.length - 1) return
+    const updated = [...categories]
+    const temp = updated[index].order
+    updated[index] = { ...updated[index], order: updated[index + 1].order }
+    updated[index + 1] = { ...updated[index + 1], order: temp }
+    const reordered = updated.sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
+    setCategories(reordered)
+    await Promise.all(reordered.map((cat, i) => categoriesService.update(cat.id, { order: i + 1 })))
   }
 
   const startEdit = (cat: Category) => {
@@ -78,7 +100,7 @@ export default function Categories() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-white">Categorias</h1>
-        <p className="text-sm text-muted">{categories.length} categorias</p>
+        <p className="text-sm text-muted">{categories.length} categorias — arraste ou use as setas para reordenar</p>
       </div>
 
       <div className="mb-6 flex gap-2">
@@ -101,8 +123,29 @@ export default function Categories() {
       ) : (
         <div className="rounded-xl border border-border bg-surface">
           <div className="divide-y divide-border">
-            {categories.map((category) => (
-              <div key={category.id} className="flex items-center gap-3 px-4 py-3">
+            {categories.map((category, index) => (
+              <div key={category.id} className="flex items-center gap-2 px-4 py-3">
+                <div className="flex flex-col gap-0.5">
+                  <button
+                    onClick={() => moveUp(index)}
+                    disabled={index === 0}
+                    className="flex h-5 w-5 items-center justify-center rounded text-muted hover:text-white hover:bg-surface-hover transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                    title="Mover para cima"
+                  >
+                    <ChevronUp size={14} />
+                  </button>
+                  <button
+                    onClick={() => moveDown(index)}
+                    disabled={index === categories.length - 1}
+                    className="flex h-5 w-5 items-center justify-center rounded text-muted hover:text-white hover:bg-surface-hover transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                    title="Mover para baixo"
+                  >
+                    <ChevronDown size={14} />
+                  </button>
+                </div>
+
+                <span className="w-6 text-center text-xs text-muted">{index + 1}</span>
+
                 {editingId === category.id ? (
                   <div className="flex flex-1 items-center gap-2">
                     <Input

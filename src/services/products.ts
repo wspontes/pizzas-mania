@@ -1,4 +1,4 @@
-import { where, orderBy, limit } from 'firebase/firestore'
+import { where } from 'firebase/firestore'
 import { FirestoreService } from './firestore'
 import type { Product } from '@/types'
 
@@ -8,26 +8,26 @@ class ProductsService extends FirestoreService<Product> {
   }
 
   async getActiveProducts() {
-    return this.getAll([
+    const data = await this.getAll([
       where('active', '==', true),
-      orderBy('name', 'asc'),
     ])
+    return data.sort((a, b) => a.name.localeCompare(b.name))
   }
 
   async getByCategory(categoryId: string) {
-    return this.getAll([
+    const data = await this.getAll([
       where('categoryId', '==', categoryId),
       where('active', '==', true),
-      orderBy('name', 'asc'),
     ])
+    return data.sort((a, b) => a.name.localeCompare(b.name))
   }
 
   async getFeatured() {
-    return this.getAll([
+    const data = await this.getAll([
       where('featured', '==', true),
       where('active', '==', true),
-      limit(8),
     ])
+    return data.slice(0, 8)
   }
 
   async searchByName(term: string) {

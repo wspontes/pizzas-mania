@@ -19,9 +19,9 @@ export function useCategories(): UseCategoriesResult {
     async function fetch() {
       try {
         setLoading(true)
-        const data = await categoriesService.getActiveCategories()
+        const data = await categoriesService.getAllOrdered()
         if (mounted) {
-          setCategories(data)
+          setCategories(data.filter((c) => c.active))
           setError(null)
         }
       } catch (err) {

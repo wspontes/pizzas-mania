@@ -19,11 +19,12 @@ export function useProducts(categoryId?: string): UseProductsResult {
     async function fetch() {
       try {
         setLoading(true)
-        const data = categoryId
-          ? await productsService.getByCategory(categoryId)
-          : await productsService.getActiveProducts()
+        const all = await productsService.getActiveProducts()
+        const filtered = categoryId
+          ? all.filter((p) => p.categoryId === categoryId)
+          : all
         if (mounted) {
-          setProducts(data)
+          setProducts(filtered)
           setError(null)
         }
       } catch (err) {
@@ -53,9 +54,10 @@ export function useFeaturedProducts(): UseProductsResult {
     async function fetch() {
       try {
         setLoading(true)
-        const data = await productsService.getFeatured()
+        const all = await productsService.getActiveProducts()
+        const featured = all.filter((p) => p.featured).slice(0, 8)
         if (mounted) {
-          setProducts(data)
+          setProducts(featured)
           setError(null)
         }
       } catch (err) {
