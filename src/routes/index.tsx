@@ -10,6 +10,10 @@ const Cart = lazy(() => import('@/pages/public/Cart'))
 const Checkout = lazy(() => import('@/pages/public/Checkout'))
 const OrderConfirmed = lazy(() => import('@/pages/public/OrderConfirmed'))
 const AdminDashboard = lazy(() => import('@/pages/admin/Dashboard'))
+const AdminProducts = lazy(() => import('@/pages/admin/Products'))
+const AdminProductForm = lazy(() => import('@/pages/admin/ProductForm'))
+const AdminCategories = lazy(() => import('@/pages/admin/Categories'))
+const AdminOrders = lazy(() => import('@/pages/admin/OrdersAdmin'))
 
 function PageLoader() {
   return (
@@ -44,6 +48,10 @@ export const router = createBrowserRouter([
     element: <AdminLayout />,
     children: [
       { index: true, element: <Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense> },
+      { path: 'pedidos', element: <Suspense fallback={<PageLoader />}><AdminOrders /></Suspense> },
+      { path: 'produtos', element: <Suspense fallback={<PageLoader />}><AdminProducts /></Suspense> },
+      { path: 'produtos/novo', element: <Suspense fallback={<PageLoader />}><AdminProductForm /></Suspense> },
+      { path: 'categorias', element: <Suspense fallback={<PageLoader />}><AdminCategories /></Suspense> },
     ],
   },
   {
