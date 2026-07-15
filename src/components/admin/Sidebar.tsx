@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Package, ListTree, ClipboardList, Settings, UtensilsCrossed, X, Users, Ticket } from 'lucide-react'
+import { LayoutDashboard, Package, ListTree, ClipboardList, Settings, UtensilsCrossed, X, Ticket } from 'lucide-react'
 import { cn } from '@/utils'
 
 interface SidebarProps {
@@ -13,7 +13,6 @@ const links = [
   { to: '/admin/produtos', label: 'Produtos', icon: Package },
   { to: '/admin/categorias', label: 'Categorias', icon: ListTree },
   { to: '/admin/cupons', label: 'Cupons', icon: Ticket },
-  { to: '/admin/usuarios', label: 'Usuários', icon: Users },
   { to: '/admin/configuracoes', label: 'Configurações', icon: Settings },
 ]
 
