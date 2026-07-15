@@ -103,7 +103,7 @@ export default function Checkout() {
         updatedAt: new Date().toISOString(),
       }
       const firestoreData: Record<string, unknown> = { ...orderData }
-      if (paymentMethod === 'cash') {
+      if (paymentMethod === 'cash' || paymentMethod === 'delivery') {
         firestoreData.changeNeeded = changeNeeded
         if (changeNeeded && changeFor) firestoreData.changeFor = parseFloat(changeFor)
       }
@@ -186,7 +186,7 @@ export default function Checkout() {
                 )}
               </div>
 
-              {paymentMethod === 'cash' && (
+              {(paymentMethod === 'cash' || paymentMethod === 'delivery') && (
                 <div className="mt-4 rounded-xl border border-border bg-surface-hover p-4">
                   <div className="flex items-center gap-3">
                     <Coins size={20} className="text-muted" />

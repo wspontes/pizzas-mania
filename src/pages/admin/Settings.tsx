@@ -219,18 +219,18 @@ export default function Settings() {
           </h2>
           <div className="space-y-2">
             {hours.map((day, index) => (
-              <div key={day.day} className="flex items-center gap-3">
-                <span className="w-36 text-sm text-white">{day.day}</span>
+              <div key={day.day} className="flex flex-wrap items-center gap-2 md:gap-3">
+                <span className="w-20 md:w-28 text-xs md:text-sm text-white shrink-0">{day.day}</span>
                 {day.closed ? (
-                  <span className="text-sm text-red-400 font-medium">Fechado</span>
+                  <span className="text-xs md:text-sm text-red-400 font-medium">Fechado</span>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <input type="time" value={day.open} onChange={(e) => setHours((prev) => prev.map((d, i) => i === index ? { ...d, open: e.target.value } : d))} className="rounded-lg border border-border bg-surface-hover px-3 py-1.5 text-sm text-white" />
-                    <span className="text-muted">às</span>
-                    <input type="time" value={day.close} onChange={(e) => setHours((prev) => prev.map((d, i) => i === index ? { ...d, close: e.target.value } : d))} className="rounded-lg border border-border bg-surface-hover px-3 py-1.5 text-sm text-white" />
+                  <div className="flex items-center gap-1.5 md:gap-2 flex-1 min-w-0">
+                    <input type="time" value={day.open} onChange={(e) => setHours((prev) => prev.map((d, i) => i === index ? { ...d, open: e.target.value } : d))} className="w-24 md:w-auto rounded-lg border border-border bg-surface-hover px-2 md:px-3 py-1.5 text-xs md:text-sm text-white" />
+                    <span className="text-muted text-xs md:text-sm">às</span>
+                    <input type="time" value={day.close} onChange={(e) => setHours((prev) => prev.map((d, i) => i === index ? { ...d, close: e.target.value } : d))} className="w-24 md:w-auto rounded-lg border border-border bg-surface-hover px-2 md:px-3 py-1.5 text-xs md:text-sm text-white" />
                   </div>
                 )}
-                <button onClick={() => toggleDay(index)} className={`ml-auto rounded-full px-3 py-1 text-xs font-medium transition-colors ${day.closed ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'}`}>
+                <button onClick={() => toggleDay(index)} className={`ml-auto shrink-0 rounded-full px-2.5 md:px-3 py-1 text-[10px] md:text-xs font-medium transition-colors ${day.closed ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'}`}>
                   {day.closed ? 'Abrir' : 'Fechar'}
                 </button>
               </div>
@@ -263,20 +263,20 @@ export default function Settings() {
             <MapPin size={18} className="text-accent" />
             Bairros Atendidos
           </h2>
-          <div className="mb-4 grid gap-3 sm:grid-cols-4">
-            <Input placeholder="Bairro" value={newNb.name} onChange={(e) => setNewNb({ ...newNb, name: e.target.value })} />
+          <div className="mb-4 grid gap-3 grid-cols-2 sm:grid-cols-4">
+            <Input placeholder="Bairro" value={newNb.name} onChange={(e) => setNewNb({ ...newNb, name: e.target.value })} className="col-span-2 sm:col-span-1" />
             <Input placeholder="Taxa R$" type="number" value={newNb.fee} onChange={(e) => setNewNb({ ...newNb, fee: e.target.value })} />
             <Input placeholder="Tempo (min)" type="number" value={newNb.time} onChange={(e) => setNewNb({ ...newNb, time: e.target.value })} />
-            <Button onClick={addNeighborhood}><Plus size={16} />Adicionar</Button>
+            <Button onClick={addNeighborhood} className="col-span-2 sm:col-span-1"><Plus size={16} />Adicionar</Button>
           </div>
           <div className="space-y-2">
             {neighborhoods.map((n, index) => (
-              <div key={index} className="flex items-center justify-between rounded-lg bg-surface-hover px-4 py-2.5">
-                <span className="text-sm text-white font-medium">{n.name}</span>
-                <div className="flex items-center gap-4 text-sm text-muted">
+              <div key={index} className="flex items-center justify-between gap-2 rounded-lg bg-surface-hover px-3 md:px-4 py-2.5">
+                <span className="text-sm text-white font-medium truncate min-w-0">{n.name}</span>
+                <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-muted shrink-0">
                   <span>R$ {n.fee.toFixed(2)}</span>
-                  <span>~{n.estimatedTime} min</span>
-                  <button onClick={() => removeNeighborhood(index)} className="text-red-400 hover:text-red-300 transition-colors">Remover</button>
+                  <span>~{n.estimatedTime}min</span>
+                  <button onClick={() => removeNeighborhood(index)} className="text-red-400 hover:text-red-300 transition-colors text-xs">Remover</button>
                 </div>
               </div>
             ))}

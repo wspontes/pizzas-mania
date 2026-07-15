@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ShoppingBag, DollarSign, TrendingUp, Clock, Receipt, Calendar } from 'lucide-react'
+import { ShoppingBag, DollarSign, TrendingUp, Clock } from 'lucide-react'
 import { ordersService } from '@/services'
 import type { Order } from '@/types'
 import { formatCurrency } from '@/utils'
@@ -87,12 +87,12 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-sm text-muted">Visão geral do seu negócio</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white">Dashboard</h1>
+          <p className="text-xs md:text-sm text-muted mt-0.5">Visão geral do seu negócio</p>
         </div>
-        <div className="flex gap-1 rounded-lg border border-border bg-surface p-1">
+        <div className="flex gap-1 self-start rounded-lg border border-border bg-surface p-1">
           {([
             { key: 'today', label: 'Hoje' },
             { key: 'week', label: 'Semana' },
@@ -111,42 +111,42 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-8 grid gap-3 grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon
           return (
-            <div key={stat.label} className="rounded-xl border border-border bg-surface p-4">
+            <div key={stat.label} className="rounded-xl border border-border bg-surface p-3 md:p-4">
               <div className="flex items-center justify-between">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent">
-                  <Icon size={20} />
+                <div className="flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                  <Icon size={18} />
                 </div>
               </div>
-              <p className="mt-3 text-2xl font-bold text-white">{stat.value}</p>
-              <p className="text-sm text-muted">{stat.label}</p>
-              <p className="text-xs text-muted/60">{stat.sub}</p>
+              <p className="mt-2 text-xl md:text-2xl font-bold text-white">{stat.value}</p>
+              <p className="text-xs md:text-sm text-muted">{stat.label}</p>
+              <p className="text-[10px] md:text-xs text-muted/60">{stat.sub}</p>
             </div>
           )
         })}
       </div>
 
       <div className="rounded-xl border border-border bg-surface">
-        <div className="border-b border-border p-4">
-          <h2 className="font-semibold text-white">Pedidos Recentes</h2>
+        <div className="border-b border-border p-3 md:p-4">
+          <h2 className="text-sm md:text-base font-semibold text-white">Pedidos Recentes</h2>
         </div>
         {recentOrders.length === 0 ? (
-          <div className="p-8 text-center text-muted">Nenhum pedido neste período</div>
+          <div className="p-8 text-center text-xs md:text-sm text-muted">Nenhum pedido neste período</div>
         ) : (
           <div className="divide-y divide-border">
             {recentOrders.map((order) => (
-              <div key={order.id} className="flex items-center justify-between p-4 hover:bg-surface-hover transition-colors">
-                <div>
-                  <p className="text-sm font-medium text-white">{order.customerName}</p>
+              <div key={order.id} className="flex items-center justify-between p-3 md:p-4 hover:bg-surface-hover transition-colors">
+                <div className="min-w-0 flex-1 mr-3">
+                  <p className="text-sm font-medium text-white truncate">{order.customerName}</p>
                   <p className="text-xs text-muted">
                     {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                     {' • '}{order.items.reduce((s, i) => s + i.quantity, 0)} itens
                   </p>
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0">
                   <p className="text-sm font-medium text-white">{formatCurrency(order.total)}</p>
                   <p className="text-xs text-muted capitalize">{order.status === 'delivered' ? 'Entregue' : order.status === 'preparing' ? 'Preparando' : order.status === 'received' ? 'Recebido' : order.status === 'outForDelivery' ? 'Saiu' : order.status}</p>
                 </div>
