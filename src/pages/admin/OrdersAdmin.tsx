@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ChefHat, XCircle, ArrowLeft, MessageSquare, CheckCircle, Search } from 'lucide-react'
+import { ChefHat, XCircle, ArrowLeft, MessageSquare, CheckCircle, Search, User as UserIcon, Clock, Banknote } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { ordersService } from '@/services'
 import type { Order } from '@/types'
@@ -138,73 +138,64 @@ export default function OrdersAdmin() {
           {filtered.map((order) => {
             const status = statusConfig[order.status] || statusConfig.waitingPayment
             return (
-              <div key={order.id} className="rounded-xl border border-border bg-surface">
-                <div className="p-3.5 md:p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-white truncate">{order.customerName}</span>
-                        {order.changeNeeded && order.changeFor && (
-                          <span className="shrink-0 rounded bg-green-500/10 px-1.5 py-0.5 text-[10px] text-green-400 font-medium">Troco p/ {formatCurrency(order.changeFor)}</span>
-                        )}
+              <div key={order.id} className="rounded-xl border border-border bg-surface p-3.5 md:p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                    <UserIcon size={18} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-white truncate">{order.customerName}</p>
+                        <p className="text-xs text-muted mt-0.5">#{order.id.slice(0, 8)}</p>
                       </div>
-                      <p className="mt-1 text-xs text-muted">#{order.id.slice(0, 8)}</p>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${status.color}`}>
+                        {status.label}
+                      </span>
                     </div>
-                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] md:text-xs font-medium ${status.color}`}>
-                      {status.label}
-                    </span>
-                  </div>
-
-                  <div className="mt-3 space-y-1">
-                    {order.items.map((item, idx) => (
-                      <p key={idx} className="text-xs text-muted leading-relaxed">
-                        {item.quantity}x {item.productName}
-                      </p>
-                    ))}
-                  </div>
-
-                  <div className="mt-3 flex items-center justify-between gap-2 text-xs text-muted">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <span>{formatTime(new Date(order.createdAt))}</span>
-                      <span>{getPaymentLabel(order.paymentMethod)}</span>
+                    <div className="mt-2 space-y-0.5">
+                      {order.items.map((item, idx) => (
+                        <p key={idx} className="text-xs text-muted">{item.quantity}x {item.productName}</p>
+                      ))}
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+                      <span className="flex items-center gap-1"><Clock size={11} />{formatTime(new Date(order.createdAt))}</span>
+                      <span className="flex items-center gap-1"><Banknote size={11} />{getPaymentLabel(order.paymentMethod)}</span>
                       {order.paymentMethod === 'cash' && order.changeNeeded && order.changeFor && (
                         <span className="text-green-400">Troco: {formatCurrency(order.changeFor - order.total)}</span>
                       )}
+                      <span className="text-white font-semibold ml-auto">{formatCurrency(order.total)}</span>
                     </div>
-                    <span className="shrink-0 font-semibold text-white text-sm">{formatCurrency(order.total)}</span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 border-t border-border px-3.5 py-3 md:px-4 md:flex md:flex-wrap md:gap-1.5">
+                <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
                   {order.status === 'waitingPayment' && (
-                    <Button onClick={() => confirmPayment(order.id)} className="bg-green-600 hover:bg-green-700 text-xs h-10 md:h-8 col-span-2 md:col-span-1">
-                      <CheckCircle size={14} />
+                    <Button size="sm" onClick={() => confirmPayment(order.id)} className="bg-green-600 hover:bg-green-700 text-xs">
+                      <CheckCircle size={13} />
                       Confirmar Pagamento
                     </Button>
                   )}
                   {order.status !== 'waitingPayment' && order.status !== 'delivered' && order.status !== 'cancelled' && (
                     <>
                       {order.status !== 'received' && (
-                        <Button variant="ghost" onClick={() => backStatus(order.id)} className="text-xs h-10 md:h-8 order-2 md:order-none">
-                          <ArrowLeft size={14} />
-                          Voltar
+                        <Button size="sm" variant="ghost" onClick={() => backStatus(order.id)} className="h-8 w-8 md:h-9 md:w-9 p-0">
+                          <ArrowLeft size={15} />
                         </Button>
                       )}
-                      <Button onClick={() => advanceStatus(order.id)} className="text-xs h-10 md:h-8 col-span-2 md:col-span-1 order-1 md:order-none">
-                        <ChefHat size={14} />
+                      <Button size="sm" onClick={() => advanceStatus(order.id)} className="text-xs">
+                        <ChefHat size={13} />
                         Avançar
                       </Button>
                     </>
                   )}
                   {order.status !== 'delivered' && order.status !== 'cancelled' && (
-                    <Button variant="ghost" onClick={() => cancelOrder(order.id)} className="text-xs h-10 md:h-8">
-                      <XCircle size={14} />
-                      Cancelar
+                    <Button size="sm" variant="ghost" onClick={() => cancelOrder(order.id)} className="h-8 w-8 md:h-9 md:w-9 p-0">
+                      <XCircle size={15} />
                     </Button>
                   )}
-                  <Button variant="ghost" onClick={() => setWhatsappModal({ phone: order.customerPhone, name: order.customerName, message: `Olá ${order.customerName}!` })} className="text-xs h-10 md:h-8 text-green-500 hover:text-green-400 hover:bg-green-500/10">
-                    <MessageSquare size={14} />
-                    Falar
+                  <Button size="sm" variant="ghost" onClick={() => setWhatsappModal({ phone: order.customerPhone, name: order.customerName, message: `Olá ${order.customerName}!` })} className="h-8 w-8 md:h-9 md:w-9 p-0 text-green-500 hover:text-green-400 hover:bg-green-500/10 ml-auto">
+                    <MessageSquare size={15} />
                   </Button>
                 </div>
               </div>
