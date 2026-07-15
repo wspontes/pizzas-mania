@@ -7,7 +7,7 @@ import {
   updateProfile,
   type User as FirebaseUser,
 } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, query, where, getDocs, collection } from 'firebase/firestore'
 import { auth, db } from '@/firebase/config'
 import type { User } from '@/types'
 
@@ -15,8 +15,8 @@ interface AuthContextType {
   user: User | null
   firebaseUser: FirebaseUser | null
   loading: boolean
-  login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string, name: string) => Promise<void>
+  login: (identifier: string, password: string) => Promise<void>
+  register: (data: { name: string; username: string; email: string; password: string }) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -47,13 +47,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe
   }, [])
 
-  const login = async (email: string, password: string) => {
+  const login = async (identifier: string, password: string) => {
+    let email = identifier
+
+    if (!identifier.includes('@')) {
+      const q = query(collection(db, 'users'), where('username', '==', identifier))
+      const snapshot = await getDocs(q)
+      if (snapshot.empty) {
+        throw new Error('Usuário não encontrado')
+      }
+      email = snapshot.docs[0].data().email
+    }
+
     await signInWithEmailAndPassword(auth, email, password)
   }
 
-  const register = async (email: string, password: string, name: string) => {
-    const result = await createUserWithEmailAndPassword(auth, email, password)
-    await updateProfile(result.user, { displayName: name })
+  const register = async (data: { name: string; username: string; email: string; password: string }) => {
+    const result = await createUserWithEmailAndPassword(auth, data.email, data.password)
+    await updateProfile(result.user, { displayName: data.name })
+    await setDoc(doc(db, 'users', result.user.uid), {
+      name: data.name,
+      username: data.username,
+      email: data.email,
+      role: 'admin',
+      active: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
   }
 
   const logout = async () => {

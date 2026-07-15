@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { User, Lock, Eye, EyeOff } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { useAuth } from '@/contexts/AuthContext'
 import { loginSchema, type LoginFormData } from '@/utils/validators'
@@ -22,12 +22,12 @@ export default function Login() {
     try {
       setLoading(true)
       setError('')
-      await login(data.email, data.password)
+      await login(data.identifier, data.password)
       navigate('/admin')
     } catch (err) {
       const message = err instanceof Error ? err.message : ''
-      if (message.includes('user-not-found') || message.includes('wrong-password') || message.includes('invalid-credential')) {
-        setError('Email ou senha inválidos')
+      if (message.includes('user-not-found') || message.includes('wrong-password') || message.includes('invalid-credential') || message === 'Usuário não encontrado') {
+        setError('Usuário ou senha inválidos')
       } else if (message.includes('too-many-requests')) {
         setError('Muitas tentativas. Tente novamente mais tarde')
       } else {
@@ -50,12 +50,12 @@ export default function Login() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <Input
-          label="Email"
-          type="email"
-          placeholder="seu@email.com"
-          icon={<Mail size={16} />}
-          error={errors.email?.message}
-          {...register('email')}
+          label="Usuário"
+          type="text"
+          placeholder="Seu usuário ou email"
+          icon={<User size={16} />}
+          error={errors.identifier?.message}
+          {...register('identifier')}
         />
         <div className="relative">
           <Input
