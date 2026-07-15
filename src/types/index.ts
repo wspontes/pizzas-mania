@@ -117,6 +117,8 @@ export interface Order {
   status: OrderStatus
   notes?: string
   couponCode?: string
+  changeNeeded?: boolean
+  changeFor?: number
   preparationTime?: number
   deliveryTime?: number
   createdAt: string

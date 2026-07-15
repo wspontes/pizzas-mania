@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, CreditCard, Banknote, QrCode, Bike, MapPin, User, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, CreditCard, Banknote, QrCode, Bike, MapPin, User, AlertTriangle, Coins } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { useCart } from '@/contexts/CartContext'
 import { useSettings } from '@/hooks'
@@ -28,6 +28,8 @@ export default function Checkout() {
   const { state, subtotal, total, clearCart } = useCart()
   const { settings } = useSettings()
   const [paymentMethod, setPaymentMethod] = useState<string>('')
+  const [changeNeeded, setChangeNeeded] = useState(false)
+  const [changeFor, setChangeFor] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
@@ -101,6 +103,10 @@ export default function Checkout() {
         updatedAt: new Date().toISOString(),
       }
       const firestoreData: Record<string, unknown> = { ...orderData }
+      if (paymentMethod === 'cash') {
+        firestoreData.changeNeeded = changeNeeded
+        if (changeNeeded && changeFor) firestoreData.changeFor = parseFloat(changeFor)
+      }
       if (state.couponCode) firestoreData.couponCode = state.couponCode
 
       const saved = await ordersService.create(firestoreData)
@@ -179,6 +185,23 @@ export default function Checkout() {
                   })
                 )}
               </div>
+
+              {paymentMethod === 'cash' && (
+                <div className="mt-4 rounded-xl border border-border bg-surface-hover p-4">
+                  <div className="flex items-center gap-3">
+                    <Coins size={20} className="text-muted" />
+                    <label className="flex cursor-pointer items-center gap-3">
+                      <input type="checkbox" checked={changeNeeded} onChange={(e) => setChangeNeeded(e.target.checked)} className="h-4 w-4 accent-red-600" />
+                      <span className="text-sm text-white">Vai precisar de troco?</span>
+                    </label>
+                  </div>
+                  {changeNeeded && (
+                    <div className="mt-3 ml-7">
+                      <Input type="number" label="Troco para quanto?" placeholder="Ex: 100" value={changeFor} onChange={(e) => setChangeFor(e.target.value)} min={0} step="0.01" />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
