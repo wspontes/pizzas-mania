@@ -38,6 +38,29 @@ export default function Settings() {
         setMinOrder(String(data.minOrder || 25))
         setFreeDelivery(String(data.freeDeliveryFrom || 80))
         if (data.neighborhoods?.length) setNeighborhoods(data.neighborhoods)
+        if (data.businessHours?.length) {
+          const dayNames = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo']
+          setHours(data.businessHours.map((h) => ({
+            day: dayNames[h.dayOfWeek] || `Dia ${h.dayOfWeek}`,
+            open: h.open,
+            close: h.close,
+            closed: h.closed,
+          })))
+        }
+        if (data.paymentMethods) {
+          const pm = data.paymentMethods
+          if (pm.pix) setPixKey(pm.pix.key || '')
+          if (pm.credit) { setAcceptCredit(pm.credit.enabled); setInstallments(String(pm.credit.installments || 12)) }
+          if (pm.debit) setAcceptDebit(pm.debit.enabled)
+          if (pm.cash) setAcceptCash(pm.cash.enabled)
+          if (pm.delivery) setAcceptDelivery(pm.delivery.enabled)
+        }
+        if (data.banner) {
+          setBannerTitle(data.banner.title || 'A melhor pizza da cidade')
+          setBannerSubtitle(data.banner.subtitle || 'Massa artesanal, ingredientes frescos e o sabor que só a Pizzas Mania tem.')
+          setBannerImage(data.banner.image || '')
+          setBannerActive(data.banner.active ?? true)
+        }
       }
     }).catch(() => {})
   }, [])
@@ -110,19 +133,17 @@ export default function Settings() {
                   <span className="text-sm text-white">Banner ativo na página inicial</span>
                 </label>
               </div>
-              <div className="flex items-center justify-center">
-                {bannerImage ? (
-                  <img
-                    src={bannerImage}
-                    alt="Preview do banner"
-                    className="max-h-48 rounded-xl object-cover border border-border"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                  />
-                ) : (
-                  <div className="flex h-48 w-full items-center justify-center rounded-xl bg-surface-hover text-sm text-muted">
-                    Prévia da imagem
-                  </div>
+              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-accent/20 via-surface to-surface p-6 md:p-8 min-h-[180px] flex items-center">
+                {bannerActive && (
+                  <div className="absolute right-0 top-0 h-40 w-40 translate-x-8 -translate-y-8 rounded-full bg-accent/10 blur-3xl" />
                 )}
+                {bannerImage && (
+                  <img src={bannerImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                )}
+                <div className="relative z-10">
+                  <p className="text-lg font-bold text-white">{bannerTitle || 'Título do banner'}</p>
+                  <p className="text-sm text-muted mt-1">{bannerSubtitle || 'Subtítulo do banner'}</p>
+                </div>
               </div>
             </div>
           </div>

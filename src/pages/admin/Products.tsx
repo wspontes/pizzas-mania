@@ -127,8 +127,8 @@ export default function Products() {
                     </td>
                     <td className="p-4 text-muted">{getCategoryName(product.categoryId)}</td>
                     <td className="p-4 text-white">
-                      R$ {(product.discountPrice ?? product.price).toFixed(2)}
-                      {product.discountPrice && <span className="ml-1 text-xs text-muted line-through">R$ {product.price.toFixed(2)}</span>}
+                      R$ {((product.discountPrice ?? 0) > 0 ? (product.discountPrice as number) : product.price).toFixed(2)}
+                      {(product.discountPrice ?? 0) > 0 && <span className="ml-1 text-xs text-muted line-through">R$ {product.price.toFixed(2)}</span>}
                     </td>
                     <td className="p-4 text-xs text-muted">{product.order || '-'}</td>
                     <td className="p-4">

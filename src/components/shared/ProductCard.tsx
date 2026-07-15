@@ -12,7 +12,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product, className }: ProductCardProps) {
   const { addItem } = useCart()
-  const price = product.discountPrice ?? product.price
+  const price = product.discountPrice && product.discountPrice > 0 ? product.discountPrice : product.price
 
   const handleAddToCart = () => {
     addItem({
@@ -59,7 +59,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
         <div className="mt-4 flex items-center justify-between">
           <div className="flex flex-col">
-            {product.discountPrice && (
+            {(product.discountPrice ?? 0) > 0 && (
               <span className="text-xs text-muted line-through">
                 {formatCurrency(product.price)}
               </span>
