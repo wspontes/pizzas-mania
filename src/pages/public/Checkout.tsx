@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, CreditCard, Banknote, QrCode, Bike, MapPin, User } from 'lucide-react'
+import { ArrowLeft, CreditCard, Banknote, QrCode, Bike, MapPin, User, AlertTriangle } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { useCart } from '@/contexts/CartContext'
 import { useSettings } from '@/hooks'
@@ -45,6 +45,8 @@ export default function Checkout() {
     return null
   }
 
+  const minOrder = settings?.minOrder ?? 25
+  const belowMin = subtotal > 0 && subtotal < minOrder
   const pm = settings?.paymentMethods
 
   const availableMethods = [
@@ -200,7 +202,13 @@ export default function Checkout() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full" size="lg" disabled={!paymentMethod || !form.name || !form.phone || !form.street || !form.number || !form.neighborhood} loading={submitting}>
+            {belowMin && (
+              <div className="flex items-start gap-2 rounded-lg bg-yellow-500/10 p-3 text-sm text-yellow-400">
+                <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                <span>Pedido mínimo de {formatCurrency(minOrder)}. Adicione mais {formatCurrency(minOrder - subtotal)} em produtos.</span>
+              </div>
+            )}
+            <Button type="submit" className="w-full" size="lg" disabled={belowMin || !paymentMethod || !form.name || !form.phone || !form.street || !form.number || !form.neighborhood} loading={submitting}>
               {submitting ? 'Finalizando...' : `Confirmar Pedido - ${formatCurrency(total)}`}
             </Button>
           </div>

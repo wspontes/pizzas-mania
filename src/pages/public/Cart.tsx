@@ -1,14 +1,19 @@
 import { Link } from 'react-router-dom'
-import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft, Ticket } from 'lucide-react'
+import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft, Ticket, AlertTriangle } from 'lucide-react'
 import { useState } from 'react'
 import { Button, Input } from '@/components/ui'
 import { useCart } from '@/contexts/CartContext'
+import { useSettings } from '@/hooks'
 import { formatCurrency } from '@/utils'
 
 export default function Cart() {
   const { state, removeItem, updateQuantity, applyCoupon, subtotal, total } = useCart()
+  const { settings } = useSettings()
   const [couponInput, setCouponInput] = useState('')
   const [couponApplied, setCouponApplied] = useState(false)
+
+  const minOrder = settings?.minOrder ?? 25
+  const belowMin = subtotal > 0 && subtotal < minOrder
 
   const handleApplyCoupon = () => {
     if (!couponInput.trim()) return
@@ -145,11 +150,26 @@ export default function Cart() {
               </div>
             </div>
 
-            <Link to="/checkout" className="mt-4 block">
-              <Button className="w-full" size="lg">
-                Continuar
-              </Button>
-            </Link>
+            {belowMin && (
+              <div className="mt-3 flex items-start gap-2 rounded-lg bg-yellow-500/10 p-3 text-sm text-yellow-400">
+                <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                <span>Pedido mínimo de {formatCurrency(minOrder)}. Adicione mais {formatCurrency(minOrder - subtotal)} em produtos.</span>
+              </div>
+            )}
+
+            {belowMin ? (
+              <div className="mt-4 block">
+                <Button className="w-full" size="lg" disabled>
+                  Continuar
+                </Button>
+              </div>
+            ) : (
+              <Link to="/checkout" className="mt-4 block">
+                <Button className="w-full" size="lg">
+                  Continuar
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>
