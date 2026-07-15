@@ -35,7 +35,7 @@ export default function OrderConfirmed() {
 
         <h1 className="text-2xl font-bold text-white">Pedido Confirmado!</h1>
         <p className="mt-2 text-muted">
-          Seu pedido foi recebido e já está sendo preparado.
+          Em breve entraremos em contato com mais detalhes do seu pedido.
         </p>
 
         <div className="mt-8 rounded-xl border border-border bg-surface p-6 text-left">

@@ -32,7 +32,7 @@ export default function Checkout() {
   const [error, setError] = useState('')
   const [form, setForm] = useState({
     name: '',
-    phone: '',
+    whatsapp: '+55',
     street: '',
     number: '',
     complement: '',
@@ -77,7 +77,7 @@ export default function Checkout() {
     try {
       const orderData = {
         customerName: form.name,
-        customerPhone: form.phone,
+        customerPhone: form.whatsapp,
         deliveryAddress: {
           street: form.street,
           number: form.number,
@@ -129,7 +129,7 @@ export default function Checkout() {
               </h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Input label="Nome completo" name="name" placeholder="Seu nome" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-                <Input label="Telefone" name="phone" placeholder="(11) 99999-9999" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required />
+                <Input label="WhatsApp" name="whatsapp" placeholder="+5511999999999" value={form.whatsapp} onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setForm({ ...form, whatsapp: v ? '+55' + v.replace(/^55/, '') : '+55' }) }} required />
               </div>
             </div>
 
@@ -219,7 +219,7 @@ export default function Checkout() {
                 <span>Pedido mínimo de {formatCurrency(minOrder)}. Adicione mais {formatCurrency(minOrder - subtotal)} em produtos.</span>
               </div>
             )}
-            <Button type="submit" className="w-full" size="lg" disabled={belowMin || !paymentMethod || !form.name || !form.phone || !form.street || !form.number || !form.neighborhood} loading={submitting}>
+            <Button type="submit" className="w-full" size="lg" disabled={belowMin || !paymentMethod || !form.name || form.whatsapp.length < 8 || !form.street || !form.number || !form.neighborhood} loading={submitting}>
               {submitting ? 'Finalizando...' : `Confirmar Pedido - ${formatCurrency(total)}`}
             </Button>
           </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { ChefHat, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { ordersService } from '@/services'
+import { useSettings } from '@/hooks'
 import type { Order } from '@/types'
 import { formatCurrency, formatTime } from '@/utils'
 
@@ -17,10 +18,17 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 
 const statuses = ['received', 'analyzing', 'accepted', 'preparing', 'outForDelivery', 'delivered'] as const
 
+function sendWhatsApp(phone: string, message: string) {
+  const cleaned = phone.replace(/\D/g, '')
+  if (cleaned.length < 10) return
+  window.open(`https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`, '_blank')
+}
+
 export default function OrdersAdmin() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>('all')
+  const { settings } = useSettings()
 
   const load = async () => {
     try {
@@ -43,6 +51,12 @@ export default function OrdersAdmin() {
     const nextStatus = statuses[currentIndex + 1]
     await ordersService.update(orderId, { status: nextStatus } as Partial<Order>)
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o)))
+
+    if (nextStatus === 'accepted') {
+      sendWhatsApp(order.customerPhone, `Olá ${order.customerName}! Seu pedido foi ACEITO e já está em preparação. Obrigado por escolher a Pizzas Mania! 🍕`)
+    } else if (nextStatus === 'outForDelivery') {
+      sendWhatsApp(order.customerPhone, `Olá ${order.customerName}! Seu pedido SAIU PARA ENTREGA. Fique atento ao seu celular! 🛵🍕`)
+    }
   }
 
   const cancelOrder = async (orderId: string) => {
@@ -115,6 +129,9 @@ export default function OrdersAdmin() {
                     <span>{order.paymentMethod === 'pix' ? 'PIX' : order.paymentMethod === 'credit' ? 'Cartão' : order.paymentMethod === 'cash' ? 'Dinheiro' : 'Entrega'}</span>
                   </div>
                   <span className="font-semibold text-white">{formatCurrency(order.total)}</span>
+                </div>
+                <div className="mt-2 text-xs text-muted">
+                  WhatsApp: {order.customerPhone}
                 </div>
                 {order.status !== 'delivered' && order.status !== 'cancelled' && (
                   <div className="mt-3 flex gap-2 border-t border-border pt-3">

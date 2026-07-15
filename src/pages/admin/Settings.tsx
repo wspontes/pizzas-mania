@@ -32,6 +32,7 @@ export default function Settings() {
   const [bannerImage, setBannerImage] = useState('')
   const [bannerActive, setBannerActive] = useState(true)
   const [bannerAlign, setBannerAlign] = useState<'left' | 'center' | 'right'>('left')
+  const [whatsapp, setWhatsapp] = useState('')
 
   useEffect(() => {
     settingsService.get().then((data) => {
@@ -63,6 +64,7 @@ export default function Settings() {
           setBannerActive(data.banner.active ?? true)
           setBannerAlign(data.banner.align || 'left')
         }
+        if (data.whatsapp) setWhatsapp(data.whatsapp)
       }
     }).catch(() => {})
   }, [])
@@ -93,6 +95,7 @@ export default function Settings() {
         active: bannerActive,
         align: bannerAlign,
       },
+      whatsapp,
     }
     await settingsService.save(data)
     setSaving(false)
@@ -226,6 +229,15 @@ export default function Settings() {
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
+            <DollarSign size={18} className="text-accent" />
+            WhatsApp da Pizzaria
+          </h2>
+          <p className="mb-3 text-xs text-muted">Número usado para enviar confirmações aos clientes</p>
+          <Input label="WhatsApp" placeholder="5511999999999" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, ''))} />
         </div>
 
         <div className="rounded-xl border border-border bg-surface p-6">

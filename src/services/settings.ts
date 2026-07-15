@@ -23,6 +23,7 @@ export interface BusinessSettings {
     cash?: { enabled: boolean }
     delivery?: { enabled: boolean }
   }
+  whatsapp?: string
   banner?: {
     title: string
     subtitle: string
