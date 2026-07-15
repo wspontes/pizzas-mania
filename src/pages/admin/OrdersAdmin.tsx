@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
-import { ChefHat, XCircle } from 'lucide-react'
+import { ChefHat, XCircle, MessageCircle, X } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { ordersService } from '@/services'
-import { useSettings } from '@/hooks'
 import type { Order } from '@/types'
 import { formatCurrency, formatTime } from '@/utils'
 
@@ -18,17 +17,11 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 
 const statuses = ['received', 'analyzing', 'accepted', 'preparing', 'outForDelivery', 'delivered'] as const
 
-function sendWhatsApp(phone: string, message: string) {
-  const cleaned = phone.replace(/\D/g, '')
-  if (cleaned.length < 10) return
-  window.open(`https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`, '_blank')
-}
-
 export default function OrdersAdmin() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>('all')
-  const { settings } = useSettings()
+  const [whatsappModal, setWhatsappModal] = useState<{ phone: string; name: string; message: string } | null>(null)
 
   const load = async () => {
     try {
@@ -53,9 +46,9 @@ export default function OrdersAdmin() {
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o)))
 
     if (nextStatus === 'accepted') {
-      sendWhatsApp(order.customerPhone, `Olá ${order.customerName}! Seu pedido foi ACEITO e já está em preparação. Obrigado por escolher a Pizzas Mania! 🍕`)
+      setWhatsappModal({ phone: order.customerPhone, name: order.customerName, message: `Olá ${order.customerName}! Seu pedido foi ACEITO e já está em preparação. Obrigado por escolher a Pizzas Mania! 🍕` })
     } else if (nextStatus === 'outForDelivery') {
-      sendWhatsApp(order.customerPhone, `Olá ${order.customerName}! Seu pedido SAIU PARA ENTREGA. Fique atento ao seu celular! 🛵🍕`)
+      setWhatsappModal({ phone: order.customerPhone, name: order.customerName, message: `Olá ${order.customerName}! Seu pedido SAIU PARA ENTREGA. Fique atento ao seu celular! 🛵🍕` })
     }
   }
 
@@ -148,6 +141,30 @@ export default function OrdersAdmin() {
               </div>
             )
           })}
+        </div>
+      )}
+      {whatsappModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setWhatsappModal(null)}>
+          <div className="mx-4 w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-white">
+                <MessageCircle size={20} className="text-green-500" />
+                WhatsApp
+              </h3>
+              <button onClick={() => setWhatsappModal(null)} className="text-muted hover:text-white transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+            <p className="mb-4 text-sm text-muted">Enviar mensagem para <span className="text-white font-medium">{whatsappModal.name}</span></p>
+            <textarea className="mb-4 w-full rounded-lg border border-border bg-surface-hover px-3 py-2.5 text-sm text-white" rows={4} value={whatsappModal.message} onChange={(e) => setWhatsappModal({ ...whatsappModal, message: e.target.value })} />
+            <div className="flex gap-2">
+              <Button className="flex-1" onClick={() => { window.open(`https://wa.me/${whatsappModal.phone.replace(/\D/g, '')}?text=${encodeURIComponent(whatsappModal.message)}`, '_blank'); setWhatsappModal(null) }}>
+                <MessageCircle size={16} />
+                Enviar via WhatsApp
+              </Button>
+              <Button variant="ghost" onClick={() => setWhatsappModal(null)}>Cancelar</Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

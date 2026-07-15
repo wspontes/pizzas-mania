@@ -29,10 +29,11 @@ export default function Checkout() {
   const { settings } = useSettings()
   const [paymentMethod, setPaymentMethod] = useState<string>('')
   const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
     name: '',
-    whatsapp: '+55',
+    whatsappDigits: '',
     street: '',
     number: '',
     complement: '',
@@ -41,7 +42,7 @@ export default function Checkout() {
     reference: '',
   })
 
-  if (state.items.length === 0) {
+  if (state.items.length === 0 && !submitted) {
     navigate('/carrinho', { replace: true })
     return null
   }
@@ -74,10 +75,11 @@ export default function Checkout() {
     if (!paymentMethod) { setError('Selecione uma forma de pagamento'); return }
     setSubmitting(true)
 
+    setSubmitted(true)
     try {
       const orderData = {
         customerName: form.name,
-        customerPhone: form.whatsapp,
+        customerPhone: '+55' + form.whatsappDigits,
         deliveryAddress: {
           street: form.street,
           number: form.number,
@@ -129,7 +131,7 @@ export default function Checkout() {
               </h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Input label="Nome completo" name="name" placeholder="Seu nome" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-                <Input label="WhatsApp" name="whatsapp" placeholder="+5511999999999" value={form.whatsapp} onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setForm({ ...form, whatsapp: v ? '+55' + v.replace(/^55/, '') : '+55' }) }} required />
+                <Input label="WhatsApp" name="whatsapp" placeholder="11999999999" value={form.whatsappDigits} onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setForm({ ...form, whatsappDigits: v }) }} required />
               </div>
             </div>
 
@@ -219,7 +221,7 @@ export default function Checkout() {
                 <span>Pedido mínimo de {formatCurrency(minOrder)}. Adicione mais {formatCurrency(minOrder - subtotal)} em produtos.</span>
               </div>
             )}
-            <Button type="submit" className="w-full" size="lg" disabled={belowMin || !paymentMethod || !form.name || form.whatsapp.length < 8 || !form.street || !form.number || !form.neighborhood} loading={submitting}>
+            <Button type="submit" className="w-full" size="lg" disabled={belowMin || !paymentMethod || !form.name || form.whatsappDigits.length < 10 || !form.street || !form.number || !form.neighborhood} loading={submitting}>
               {submitting ? 'Finalizando...' : `Confirmar Pedido - ${formatCurrency(total)}`}
             </Button>
           </div>

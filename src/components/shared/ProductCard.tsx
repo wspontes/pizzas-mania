@@ -3,6 +3,7 @@ import { ShoppingCart, Star } from 'lucide-react'
 import { cn, formatCurrency } from '@/utils'
 import { Button } from '@/components/ui'
 import { useCart } from '@/contexts/CartContext'
+import { useToast } from '@/contexts/ToastContext'
 import type { Product } from '@/types'
 
 interface ProductCardProps {
@@ -12,6 +13,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product, className }: ProductCardProps) {
   const { addItem } = useCart()
+  const { showToast } = useToast()
   const price = product.discountPrice && product.discountPrice > 0 ? product.discountPrice : product.price
 
   const handleAddToCart = () => {
@@ -21,6 +23,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
       quantity: 1,
       price,
     })
+    showToast('Adicionado no carrinho!')
   }
 
   return (

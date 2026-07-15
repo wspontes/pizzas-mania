@@ -2,6 +2,7 @@ import { RouterProvider } from 'react-router-dom'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { CartProvider } from '@/contexts/CartContext'
+import { ToastProvider } from '@/contexts/ToastContext'
 import { router } from '@/routes'
 
 export default function App() {
@@ -9,7 +10,9 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <CartProvider>
-          <RouterProvider router={router} />
+          <ToastProvider>
+            <RouterProvider router={router} />
+          </ToastProvider>
         </CartProvider>
       </AuthProvider>
     </ThemeProvider>
