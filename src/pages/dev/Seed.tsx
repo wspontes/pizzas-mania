@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc } from 'firebase/firestore'
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth'
+import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { auth, db } from '@/firebase/config'
 import { Button } from '@/components/ui'
 
@@ -21,9 +21,22 @@ export default function Seed() {
     setMessage('')
 
     try {
-      const result = await createUserWithEmailAndPassword(auth, testUser.email, testUser.password)
+      let uid: string
 
-      await setDoc(doc(db, 'users', result.user.uid), {
+      try {
+        const result = await createUserWithEmailAndPassword(auth, testUser.email, testUser.password)
+        uid = result.user.uid
+      } catch (err: unknown) {
+        const error = err as { code?: string }
+        if (error.code === 'auth/email-already-in-use') {
+          const result = await signInWithEmailAndPassword(auth, testUser.email, testUser.password)
+          uid = result.user.uid
+        } else {
+          throw err
+        }
+      }
+
+      await setDoc(doc(db, 'users', uid), {
         name: testUser.name,
         username: testUser.username,
         email: testUser.email,
@@ -88,14 +101,14 @@ export default function Seed() {
       })
 
       setStatus('success')
-      setMessage('Dados criados com sucesso!')
+      setMessage('Dados criados com sucesso! Você já pode fazer login.')
     } catch (err) {
       setStatus('error')
-      const message = err instanceof Error ? err.message : ''
-      if (message.includes('email-already-in-use')) {
-        setMessage('Usuário já existe! Faça login com: teste / Teste@123')
+      const error = err as { code?: string; message?: string }
+      if (error.code === 'auth/network-request-failed') {
+        setMessage('Sem conexão com a internet')
       } else {
-        setMessage('Erro: ' + message)
+        setMessage('Erro: ' + (error.message || 'Desconhecido'))
       }
     }
   }
@@ -112,8 +125,7 @@ export default function Seed() {
           <p className="text-white font-medium mb-2">Conta que será criada:</p>
           <p className="text-muted">Usuário: <span className="text-white">teste</span></p>
           <p className="text-muted">Senha: <span className="text-white">Teste@123</span></p>
-          <p className="text-muted">Email: <span className="text-white">{testUser.email}</span></p>
-          <p className="text-muted mt-2">+ Categorias e produtos de exemplo</p>
+          <p className="text-muted">+ Categorias e produtos de exemplo</p>
         </div>
 
         <Button
