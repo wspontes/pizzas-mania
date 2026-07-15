@@ -29,6 +29,7 @@ export default function Checkout() {
   const { settings } = useSettings()
   const [paymentMethod, setPaymentMethod] = useState<string>('')
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -69,7 +70,8 @@ export default function Checkout() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!paymentMethod) return
+    setError('')
+    if (!paymentMethod) { setError('Selecione uma forma de pagamento'); return }
     setSubmitting(true)
 
     try {
@@ -100,7 +102,9 @@ export default function Checkout() {
       const saved = await ordersService.create(orderData)
       clearCart()
       navigate('/pedido/confirmacao', { state: { order: { ...orderData, id: saved.id } } })
-    } catch {
+    } catch (err) {
+      console.error('Erro ao criar pedido:', err)
+      setError(err instanceof Error ? err.message : 'Erro ao finalizar pedido. Tente novamente.')
       setSubmitting(false)
     }
   }
@@ -202,6 +206,12 @@ export default function Checkout() {
               </div>
             </div>
 
+            {error && (
+              <div className="flex items-start gap-2 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">
+                <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
             {belowMin && (
               <div className="flex items-start gap-2 rounded-lg bg-yellow-500/10 p-3 text-sm text-yellow-400">
                 <AlertTriangle size={16} className="mt-0.5 shrink-0" />
