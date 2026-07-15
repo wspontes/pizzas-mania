@@ -7,6 +7,8 @@ const Menu = lazy(() => import('@/pages/public/Menu'))
 const Login = lazy(() => import('@/pages/public/Login'))
 const Register = lazy(() => import('@/pages/public/Register'))
 const Cart = lazy(() => import('@/pages/public/Cart'))
+const Checkout = lazy(() => import('@/pages/public/Checkout'))
+const OrderConfirmed = lazy(() => import('@/pages/public/OrderConfirmed'))
 const AdminDashboard = lazy(() => import('@/pages/admin/Dashboard'))
 
 function PageLoader() {
@@ -25,6 +27,8 @@ export const router = createBrowserRouter([
       { index: true, element: <Suspense fallback={<PageLoader />}><Home /></Suspense> },
       { path: 'cardapio', element: <Suspense fallback={<PageLoader />}><Menu /></Suspense> },
       { path: 'carrinho', element: <Suspense fallback={<PageLoader />}><Cart /></Suspense> },
+      { path: 'checkout', element: <Suspense fallback={<PageLoader />}><Checkout /></Suspense> },
+      { path: 'pedido/confirmacao', element: <Suspense fallback={<PageLoader />}><OrderConfirmed /></Suspense> },
     ],
   },
   {
