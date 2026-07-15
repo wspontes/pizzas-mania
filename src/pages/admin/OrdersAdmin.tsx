@@ -119,10 +119,10 @@ export default function OrdersAdmin() {
         </div>
       </div>
 
-      <div className="mb-5 -mx-4 px-4">
-        <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-2">
+      <div className="mb-5">
+        <div className="flex flex-wrap gap-2">
           {filters.map((f) => (
-            <button key={f.key} onClick={() => setFilter(f.key)} className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2.5 text-xs font-medium transition-colors ${filter === f.key ? 'bg-accent text-white shadow-sm' : 'bg-surface text-muted hover:text-white border border-border'}`}>
+            <button key={f.key} onClick={() => setFilter(f.key)} className={`rounded-full px-4 py-2.5 text-xs font-medium transition-colors ${filter === f.key ? 'bg-accent text-white shadow-sm' : 'bg-surface text-muted hover:text-white border border-border'}`}>
               {f.label} <span className={`${filter === f.key ? 'text-white/70' : 'text-muted/60'}`}>({f.count})</span>
             </button>
           ))}

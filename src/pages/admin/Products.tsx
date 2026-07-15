@@ -93,13 +93,13 @@ export default function Products() {
         </div>
       </div>
 
-      <div className="mb-5 overflow-x-auto scrollbar-thin -mx-4 px-4">
-        <div className="flex gap-2 min-w-max pb-1">
-          <button onClick={() => setFilterCat('all')} className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-medium transition-colors ${filterCat === 'all' ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-white border border-border'}`}>
+      <div className="mb-5">
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => setFilterCat('all')} className={`rounded-full px-3.5 py-2 text-xs font-medium transition-colors ${filterCat === 'all' ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-white border border-border'}`}>
             Todas
           </button>
           {categories.filter((c) => c.active).map((cat) => (
-            <button key={cat.id} onClick={() => setFilterCat(cat.id)} className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-medium transition-colors ${filterCat === cat.id ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-white border border-border'}`}>
+            <button key={cat.id} onClick={() => setFilterCat(cat.id)} className={`rounded-full px-3.5 py-2 text-xs font-medium transition-colors ${filterCat === cat.id ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-white border border-border'}`}>
               {cat.name}
             </button>
           ))}
