@@ -31,6 +31,7 @@ export default function Settings() {
   const [bannerSubtitle, setBannerSubtitle] = useState('Massa artesanal, ingredientes frescos e o sabor que só a Pizzas Mania tem.')
   const [bannerImage, setBannerImage] = useState('')
   const [bannerActive, setBannerActive] = useState(true)
+  const [bannerAlign, setBannerAlign] = useState<'left' | 'center' | 'right'>('left')
 
   useEffect(() => {
     settingsService.get().then((data) => {
@@ -60,6 +61,7 @@ export default function Settings() {
           setBannerSubtitle(data.banner.subtitle || 'Massa artesanal, ingredientes frescos e o sabor que só a Pizzas Mania tem.')
           setBannerImage(data.banner.image || '')
           setBannerActive(data.banner.active ?? true)
+          setBannerAlign(data.banner.align || 'left')
         }
       }
     }).catch(() => {})
@@ -89,6 +91,7 @@ export default function Settings() {
         subtitle: bannerSubtitle,
         image: bannerImage,
         active: bannerActive,
+        align: bannerAlign,
       },
     }
     await settingsService.save(data)
@@ -128,19 +131,36 @@ export default function Settings() {
                 <Input label="Título" value={bannerTitle} onChange={(e) => setBannerTitle(e.target.value)} />
                 <Input label="Subtítulo" value={bannerSubtitle} onChange={(e) => setBannerSubtitle(e.target.value)} />
                 <Input label="URL da imagem (opcional)" placeholder="https://..." value={bannerImage} onChange={(e) => setBannerImage(e.target.value)} />
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-white">Alinhamento do texto</label>
+                  <div className="flex gap-2">
+                    {(['left', 'center', 'right'] as const).map((align) => (
+                      <button
+                        key={align}
+                        type="button"
+                        onClick={() => setBannerAlign(align)}
+                        className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+                          bannerAlign === align ? 'border-accent bg-accent/10 text-accent' : 'border-border bg-surface-hover text-muted hover:text-white'
+                        }`}
+                      >
+                        {align === 'left' ? 'Esquerda' : align === 'center' ? 'Centro' : 'Direita'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={bannerActive} onChange={(e) => setBannerActive(e.target.checked)} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
                   <span className="text-sm text-white">Banner ativo na página inicial</span>
                 </label>
               </div>
-              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-accent/20 via-surface to-surface p-6 md:p-8 min-h-[180px] flex items-center">
+              <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br from-accent/20 via-surface to-surface p-6 md:p-8 min-h-[180px] flex flex-col items-${bannerAlign === 'center' ? 'center' : bannerAlign === 'right' ? 'end' : 'start'} justify-center`}>
                 {bannerActive && (
                   <div className="absolute right-0 top-0 h-40 w-40 translate-x-8 -translate-y-8 rounded-full bg-accent/10 blur-3xl" />
                 )}
                 {bannerImage && (
                   <img src={bannerImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                 )}
-                <div className="relative z-10">
+                <div className={`relative z-10 ${bannerAlign === 'center' ? '' : 'max-w-xs'}`}>
                   <p className="text-lg font-bold text-white">{bannerTitle || 'Título do banner'}</p>
                   <p className="text-sm text-muted mt-1">{bannerSubtitle || 'Subtítulo do banner'}</p>
                 </div>

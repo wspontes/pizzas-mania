@@ -3,20 +3,30 @@ import { useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, CreditCard, Banknote, QrCode, Bike, MapPin, User } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { useCart } from '@/contexts/CartContext'
+import { useSettings } from '@/hooks'
 import { ordersService } from '@/services'
 import { formatCurrency } from '@/utils'
 
-const paymentMethods = [
-  { id: 'pix', label: 'PIX', icon: QrCode, description: 'Pagamento via QR Code' },
-  { id: 'credit', label: 'Cartão de Crédito', icon: CreditCard, description: 'Parcelamos em até 12x' },
-  { id: 'debit', label: 'Cartão de Débito', icon: CreditCard, description: 'Pagamento na hora' },
-  { id: 'cash', label: 'Dinheiro', icon: Banknote, description: 'Troco disponível' },
-  { id: 'delivery', label: 'Pagar na Entrega', icon: Bike, description: 'Pague ao receber' },
-] as const
+const paymentIcons = {
+  pix: QrCode,
+  credit: CreditCard,
+  debit: CreditCard,
+  cash: Banknote,
+  delivery: Bike,
+} as const
+
+const paymentDescriptions: Record<string, string> = {
+  pix: 'Pagamento via QR Code',
+  credit: 'Pagamento com cartão de crédito',
+  debit: 'Pagamento com cartão de débito',
+  cash: 'Pague com dinheiro',
+  delivery: 'Pague ao receber',
+}
 
 export default function Checkout() {
   const navigate = useNavigate()
   const { state, subtotal, total, clearCart } = useCart()
+  const { settings } = useSettings()
   const [paymentMethod, setPaymentMethod] = useState<string>('')
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState({
@@ -33,6 +43,26 @@ export default function Checkout() {
   if (state.items.length === 0) {
     navigate('/carrinho', { replace: true })
     return null
+  }
+
+  const pm = settings?.paymentMethods
+
+  const availableMethods = [
+    pm?.pix?.enabled && { id: 'pix', label: 'PIX', desc: pm.pix.key ? `Chave: ${pm.pix.key}` : paymentDescriptions.pix } as const,
+    pm?.credit?.enabled && { id: 'credit', label: 'Cartão de Crédito', desc: `Parcelamos em até ${pm.credit?.installments || 12}x` } as const,
+    pm?.debit?.enabled && { id: 'debit', label: 'Cartão de Débito', desc: paymentDescriptions.debit } as const,
+    pm?.cash?.enabled && { id: 'cash', label: 'Dinheiro', desc: paymentDescriptions.cash } as const,
+    pm?.delivery?.enabled && { id: 'delivery', label: 'Pagar na Entrega', desc: paymentDescriptions.delivery } as const,
+  ].filter(Boolean) as { id: string; label: string; desc: string }[]
+
+  if (availableMethods.length === 0) {
+    availableMethods.push(
+      { id: 'pix', label: 'PIX', desc: paymentDescriptions.pix },
+      { id: 'credit', label: 'Cartão de Crédito', desc: 'Parcelamos em até 12x' },
+      { id: 'debit', label: 'Cartão de Débito', desc: paymentDescriptions.debit },
+      { id: 'cash', label: 'Dinheiro', desc: paymentDescriptions.cash },
+      { id: 'delivery', label: 'Pagar na Entrega', desc: paymentDescriptions.delivery },
+    )
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,26 +153,30 @@ export default function Checkout() {
                 Forma de Pagamento
               </h2>
               <div className="grid gap-3 sm:grid-cols-2">
-                {paymentMethods.map((method) => {
-                  const Icon = method.icon
-                  const selected = paymentMethod === method.id
-                  return (
-                    <button
-                      key={method.id}
-                      type="button"
-                      onClick={() => setPaymentMethod(method.id)}
-                      className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${
-                        selected ? 'border-accent bg-accent/10' : 'border-border bg-surface-hover hover:border-accent/50'
-                      }`}
-                    >
-                      <Icon size={24} className={selected ? 'text-accent' : 'text-muted'} />
-                      <div>
-                        <p className={`text-sm font-medium ${selected ? 'text-white' : 'text-muted'}`}>{method.label}</p>
-                        <p className="text-xs text-muted">{method.description}</p>
-                      </div>
-                    </button>
-                  )
-                })}
+                {availableMethods.length === 0 ? (
+                  <p className="text-sm text-muted col-span-2">Nenhuma forma de pagamento disponível</p>
+                ) : (
+                  availableMethods.map((method) => {
+                    const Icon = paymentIcons[method.id as keyof typeof paymentIcons]
+                    const selected = paymentMethod === method.id
+                    return (
+                      <button
+                        key={method.id}
+                        type="button"
+                        onClick={() => setPaymentMethod(method.id)}
+                        className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${
+                          selected ? 'border-accent bg-accent/10' : 'border-border bg-surface-hover hover:border-accent/50'
+                        }`}
+                      >
+                        <Icon size={24} className={selected ? 'text-accent' : 'text-muted'} />
+                        <div>
+                          <p className={`text-sm font-medium ${selected ? 'text-white' : 'text-muted'}`}>{method.label}</p>
+                          <p className="text-xs text-muted">{method.desc}</p>
+                        </div>
+                      </button>
+                    )
+                  })
+                )}
               </div>
             </div>
           </div>

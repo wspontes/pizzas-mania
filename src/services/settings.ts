@@ -28,6 +28,7 @@ export interface BusinessSettings {
     subtitle: string
     image?: string
     active: boolean
+    align?: 'left' | 'center' | 'right'
   }
 }
 
