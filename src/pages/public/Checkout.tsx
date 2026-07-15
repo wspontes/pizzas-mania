@@ -47,6 +47,7 @@ export default function Checkout() {
     return null
   }
 
+  const pixKey = settings?.paymentMethods?.pix?.key
   const minOrder = settings?.minOrder ?? 25
   const belowMin = subtotal > 0 && subtotal < minOrder
   const pm = settings?.paymentMethods
@@ -94,8 +95,8 @@ export default function Checkout() {
         discount: state.couponDiscount,
         total,
         paymentMethod: paymentMethod as 'pix' | 'credit' | 'debit' | 'cash' | 'delivery',
-        paymentStatus: 'pending' as const,
-        status: 'received' as const,
+        paymentStatus: paymentMethod === 'pix' ? 'pending' as const : 'paid' as const,
+        status: paymentMethod === 'pix' ? 'waitingPayment' as const : 'received' as const,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
@@ -113,41 +114,39 @@ export default function Checkout() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-6 flex items-center gap-4">
+    <div className="container mx-auto px-4 py-6">
+      <div className="mb-6 flex items-center gap-3">
         <Link to="/carrinho" className="text-muted transition-colors hover:text-white">
           <ArrowLeft size={20} />
         </Link>
-        <h1 className="text-2xl font-bold text-white">Finalizar Pedido</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-white">Finalizar Pedido</h1>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
-            <div className="rounded-xl border border-border bg-surface p-6">
-              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
+            <div className="rounded-xl border border-border bg-surface p-4 md:p-6">
+              <h2 className="mb-4 flex items-center gap-2 text-base md:text-lg font-semibold text-white">
                 <User size={18} className="text-accent" />
                 Seus Dados
               </h2>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4">
                 <Input label="Nome completo" name="name" placeholder="Seu nome" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
                 <Input label="WhatsApp" name="whatsapp" placeholder="11999999999" value={form.whatsappDigits} onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setForm({ ...form, whatsappDigits: v }) }} required />
               </div>
             </div>
 
-            <div className="rounded-xl border border-border bg-surface p-6">
-              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
+            <div className="rounded-xl border border-border bg-surface p-4 md:p-6">
+              <h2 className="mb-4 flex items-center gap-2 text-base md:text-lg font-semibold text-white">
                 <MapPin size={18} className="text-accent" />
                 Endereço de Entrega
               </h2>
               <div className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="sm:col-span-2">
-                    <Input label="Rua" name="street" placeholder="Nome da rua" value={form.street} onChange={(e) => setForm({ ...form, street: e.target.value })} required />
-                  </div>
+                <div className="grid gap-4">
+                  <Input label="Rua" name="street" placeholder="Nome da rua" value={form.street} onChange={(e) => setForm({ ...form, street: e.target.value })} required />
                   <Input label="Número" name="number" placeholder="N°" value={form.number} onChange={(e) => setForm({ ...form, number: e.target.value })} required />
                 </div>
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-4">
                   <Input label="Complemento" name="complement" placeholder="Apto, Bloco..." value={form.complement} onChange={(e) => setForm({ ...form, complement: e.target.value })} />
                   <Input label="Bairro" name="neighborhood" placeholder="Seu bairro" value={form.neighborhood} onChange={(e) => setForm({ ...form, neighborhood: e.target.value })} required />
                   <Input label="Cidade" name="city" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} required />
@@ -156,27 +155,20 @@ export default function Checkout() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-border bg-surface p-6">
-              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
+            <div className="rounded-xl border border-border bg-surface p-4 md:p-6">
+              <h2 className="mb-4 flex items-center gap-2 text-base md:text-lg font-semibold text-white">
                 <Banknote size={18} className="text-accent" />
                 Forma de Pagamento
               </h2>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3">
                 {availableMethods.length === 0 ? (
-                  <p className="text-sm text-muted col-span-2">Nenhuma forma de pagamento disponível</p>
+                  <p className="text-sm text-muted">Nenhuma forma de pagamento disponível</p>
                 ) : (
                   availableMethods.map((method) => {
                     const Icon = paymentIcons[method.id as keyof typeof paymentIcons]
                     const selected = paymentMethod === method.id
                     return (
-                      <button
-                        key={method.id}
-                        type="button"
-                        onClick={() => setPaymentMethod(method.id)}
-                        className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${
-                          selected ? 'border-accent bg-accent/10' : 'border-border bg-surface-hover hover:border-accent/50'
-                        }`}
-                      >
+                      <button key={method.id} type="button" onClick={() => setPaymentMethod(method.id)} className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${selected ? 'border-accent bg-accent/10' : 'border-border bg-surface-hover hover:border-accent/50'}`}>
                         <Icon size={24} className={selected ? 'text-accent' : 'text-muted'} />
                         <div>
                           <p className={`text-sm font-medium ${selected ? 'text-white' : 'text-muted'}`}>{method.label}</p>
@@ -192,7 +184,7 @@ export default function Checkout() {
 
           <div className="space-y-4">
             <div className="rounded-xl border border-border bg-surface p-4">
-              <h3 className="mb-3 font-semibold text-white">Resumo do Pedido</h3>
+              <h3 className="mb-3 font-semibold text-white text-sm">Resumo do Pedido</h3>
               <div className="mb-3 max-h-48 space-y-2 overflow-y-auto scrollbar-thin">
                 {state.items.map((item) => (
                   <div key={`${item.productId}-${item.size}`} className="flex justify-between text-sm">
@@ -205,10 +197,20 @@ export default function Checkout() {
                 <div className="flex justify-between text-muted"><span>Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
                 {state.couponDiscount > 0 && <div className="flex justify-between text-green-400"><span>Desconto</span><span>-{formatCurrency(state.couponDiscount)}</span></div>}
                 <div className="flex justify-between text-muted"><span>Entrega</span><span>{formatCurrency(state.deliveryFee)}</span></div>
-                <div className="flex justify-between font-semibold text-white text-base pt-2 border-t border-border"><span>Total</span><span>{formatCurrency(total)}</span></div>
+                <div className="flex justify-between font-semibold text-white pt-2 border-t border-border"><span>Total</span><span>{formatCurrency(total)}</span></div>
               </div>
             </div>
 
+            {paymentMethod === 'pix' && pixKey && (
+              <div className="rounded-xl border border-green-500/30 bg-green-500/5 p-4">
+                <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-green-400"><QrCode size={16} />Pagamento PIX</h4>
+                <p className="mb-2 text-xs text-muted">Após confirmar, faça o PIX para a chave abaixo:</p>
+                <div className="rounded-lg bg-surface-hover px-3 py-2 text-center">
+                  <p className="text-sm font-mono text-white select-all">{pixKey}</p>
+                </div>
+                <p className="mt-2 text-xs text-muted">Pedido processado após confirmação do pagamento.</p>
+              </div>
+            )}
             {error && (
               <div className="flex items-start gap-2 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">
                 <AlertTriangle size={16} className="mt-0.5 shrink-0" />

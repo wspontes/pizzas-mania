@@ -27,6 +27,7 @@ export const themeConfig = {
 } as const
 
 export const orderStatus = {
+  waitingPayment: 'Aguardando Pagamento',
   received: 'Recebido',
   analyzing: 'Em análise',
   accepted: 'Aceito',

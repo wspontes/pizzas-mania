@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { ChefHat, XCircle, MessageCircle, X, ArrowLeft, MessageSquare } from 'lucide-react'
+import { ChefHat, XCircle, MessageCircle, X, ArrowLeft, MessageSquare, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { ordersService } from '@/services'
 import type { Order } from '@/types'
 import { formatCurrency, formatTime } from '@/utils'
 
 const statusConfig: Record<string, { label: string; color: string }> = {
+  waitingPayment: { label: 'Aguardando Pagamento', color: 'bg-yellow-500/10 text-yellow-400' },
   received: { label: 'Recebido', color: 'bg-blue-500/10 text-blue-400' },
   analyzing: { label: 'Em análise', color: 'bg-yellow-500/10 text-yellow-400' },
   accepted: { label: 'Aceito', color: 'bg-green-500/10 text-green-400' },
@@ -15,7 +16,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   cancelled: { label: 'Cancelado', color: 'bg-red-500/10 text-red-400' },
 }
 
-const statuses = ['received', 'analyzing', 'accepted', 'preparing', 'outForDelivery', 'delivered'] as const
+const statuses = ['waitingPayment', 'received', 'analyzing', 'accepted', 'preparing', 'outForDelivery', 'delivered'] as const
 
 export default function OrdersAdmin() {
   const [orders, setOrders] = useState<Order[]>([])
@@ -42,14 +43,19 @@ export default function OrdersAdmin() {
     const currentIndex = statuses.indexOf(order.status as typeof statuses[number])
     if (currentIndex >= statuses.length - 1) return
     const nextStatus = statuses[currentIndex + 1]
-    await ordersService.update(orderId, { status: nextStatus } as Partial<Order>)
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o)))
+    await ordersService.update(orderId, { status: nextStatus, paymentStatus: nextStatus === 'received' ? 'paid' : undefined } as Partial<Order>)
+    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus, paymentStatus: nextStatus === 'received' ? 'paid' : o.paymentStatus } : o)))
 
     if (nextStatus === 'accepted') {
       setWhatsappModal({ phone: order.customerPhone, name: order.customerName, message: `Olá ${order.customerName}! Seu pedido foi ACEITO e já está em preparação. Obrigado por escolher a Pizzas Mania! 🍕` })
     } else if (nextStatus === 'outForDelivery') {
       setWhatsappModal({ phone: order.customerPhone, name: order.customerName, message: `Olá ${order.customerName}! Seu pedido SAIU PARA ENTREGA. Fique atento ao seu celular! 🛵🍕` })
     }
+  }
+
+  const confirmPayment = async (orderId: string) => {
+    await ordersService.update(orderId, { status: 'received', paymentStatus: 'paid' } as Partial<Order>)
+    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: 'received', paymentStatus: 'paid' } : o)))
   }
 
   const backStatus = async (orderId: string) => {
@@ -85,18 +91,11 @@ export default function OrdersAdmin() {
       </div>
 
       <div className="mb-6 flex flex-wrap gap-2">
-        <button
-          onClick={() => setFilter('all')}
-          className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filter === 'all' ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-white border border-border'}`}
-        >
+        <button onClick={() => setFilter('all')} className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filter === 'all' ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-white border border-border'}`}>
           Todos ({orders.length})
         </button>
         {Object.entries(statusConfig).map(([key, cfg]) => (
-          <button
-            key={key}
-            onClick={() => setFilter(key)}
-            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filter === key ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-white border border-border'}`}
-          >
+          <button key={key} onClick={() => setFilter(key)} className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filter === key ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-white border border-border'}`}>
             {cfg.label} ({orders.filter((o) => o.status === key).length})
           </button>
         ))}
@@ -109,13 +108,13 @@ export default function OrdersAdmin() {
       ) : (
         <div className="space-y-3">
           {filtered.map((order) => {
-            const status = statusConfig[order.status] || statusConfig.received
+            const status = statusConfig[order.status] || statusConfig.waitingPayment
             return (
               <div key={order.id} className="rounded-xl border border-border bg-surface p-4">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-medium text-white">{order.customerName}</span>
-                    <span className="text-xs text-muted">{order.id}</span>
+                    <span className="text-xs text-muted break-all">#{order.id.slice(0, 8)}</span>
                   </div>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${status.color}`}>
                     {status.label}
@@ -126,18 +125,22 @@ export default function OrdersAdmin() {
                     <p key={idx}>{item.quantity}x {item.productName}</p>
                   ))}
                 </div>
-                <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+                <div className="mt-3 flex items-center justify-between border-t border-border pt-3 flex-wrap gap-2">
                   <div className="flex gap-3 text-xs text-muted">
                     <span>{formatTime(new Date(order.createdAt))}</span>
                     <span>{order.paymentMethod === 'pix' ? 'PIX' : order.paymentMethod === 'credit' ? 'Cartão' : order.paymentMethod === 'cash' ? 'Dinheiro' : 'Entrega'}</span>
                   </div>
                   <span className="font-semibold text-white">{formatCurrency(order.total)}</span>
                 </div>
-                <div className="mt-2 text-xs text-muted">
-                  WhatsApp: {order.customerPhone}
-                </div>
+
                 <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
-                  {order.status !== 'delivered' && order.status !== 'cancelled' && (
+                  {order.status === 'waitingPayment' && (
+                    <Button size="sm" onClick={() => confirmPayment(order.id)} className="bg-green-600 hover:bg-green-700">
+                      <CheckCircle size={14} />
+                      Confirmar Pagamento
+                    </Button>
+                  )}
+                  {order.status !== 'waitingPayment' && order.status !== 'delivered' && order.status !== 'cancelled' && (
                     <>
                       {order.status !== 'received' && (
                         <Button size="sm" variant="ghost" onClick={() => backStatus(order.id)}>
@@ -149,11 +152,13 @@ export default function OrdersAdmin() {
                         <ChefHat size={14} />
                         Avançar
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => cancelOrder(order.id)}>
-                        <XCircle size={14} />
-                        Cancelar
-                      </Button>
                     </>
+                  )}
+                  {order.status !== 'delivered' && order.status !== 'cancelled' && (
+                    <Button size="sm" variant="ghost" onClick={() => cancelOrder(order.id)}>
+                      <XCircle size={14} />
+                      Cancelar
+                    </Button>
                   )}
                   <Button size="sm" variant="ghost" onClick={() => setWhatsappModal({ phone: order.customerPhone, name: order.customerName, message: `Olá ${order.customerName}!` })} className="text-green-500 hover:text-green-400 hover:bg-green-500/10 ml-auto">
                     <MessageSquare size={14} />
@@ -166,8 +171,8 @@ export default function OrdersAdmin() {
         </div>
       )}
       {whatsappModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setWhatsappModal(null)}>
-          <div className="mx-4 w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setWhatsappModal(null)}>
+          <div className="w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
               <h3 className="flex items-center gap-2 text-lg font-semibold text-white">
                 <MessageCircle size={20} className="text-green-500" />
@@ -179,7 +184,7 @@ export default function OrdersAdmin() {
             </div>
             <p className="mb-4 text-sm text-muted">Enviar mensagem para <span className="text-white font-medium">{whatsappModal.name}</span></p>
             <textarea className="mb-4 w-full rounded-lg border border-border bg-surface-hover px-3 py-2.5 text-sm text-white" rows={4} value={whatsappModal.message} onChange={(e) => setWhatsappModal({ ...whatsappModal, message: e.target.value })} />
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-col sm:flex-row">
               <Button className="flex-1" onClick={() => { window.open(`https://wa.me/${whatsappModal.phone.replace(/\D/g, '')}?text=${encodeURIComponent(whatsappModal.message)}`, '_blank'); setWhatsappModal(null) }}>
                 <MessageCircle size={16} />
                 Enviar via WhatsApp

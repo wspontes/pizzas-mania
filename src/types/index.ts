@@ -137,7 +137,7 @@ export interface OrderItem {
 }
 
 export type PaymentMethod = 'pix' | 'credit' | 'debit' | 'cash' | 'delivery'
-export type PaymentStatus = 'pending' | 'approved' | 'rejected' | 'refunded'
+export type PaymentStatus = 'pending' | 'paid' | 'approved' | 'rejected' | 'refunded'
 
 export interface Coupon {
   id: string
