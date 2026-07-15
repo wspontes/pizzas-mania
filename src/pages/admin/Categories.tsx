@@ -1,33 +1,39 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Pencil, Trash2, Check, X } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
-
-interface Category {
-  id: string
-  name: string
-  order: number
-  active: boolean
-  productCount: number
-}
+import { categoriesService } from '@/services'
+import type { Category } from '@/types'
 
 export default function Categories() {
-  const [categories, setCategories] = useState<Category[]>([
-    { id: '1', name: 'Pizzas', order: 1, active: true, productCount: 8 },
-    { id: '2', name: 'Bebidas', order: 2, active: true, productCount: 12 },
-    { id: '3', name: 'Sobremesas', order: 3, active: true, productCount: 5 },
-    { id: '4', name: 'Combos', order: 4, active: false, productCount: 3 },
-  ])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loading, setLoading] = useState(true)
   const [newCategory, setNewCategory] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
 
-  const handleAdd = () => {
+  const load = async () => {
+    try {
+      const data = await categoriesService.getActiveCategories()
+      setCategories(data)
+    } catch {
+      setCategories([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
+
+  const handleAdd = async () => {
     const name = newCategory.trim()
     if (!name) return
-    setCategories((prev) => [
-      ...prev,
-      { id: String(Date.now()), name, order: prev.length + 1, active: true, productCount: 0 },
-    ])
+    const created = await categoriesService.create({
+      name,
+      slug: name.toLowerCase().replace(/\s+/g, '-'),
+      order: categories.length + 1,
+      active: true,
+    })
+    setCategories((prev) => [...prev, created])
     setNewCategory('')
   }
 
@@ -36,32 +42,43 @@ export default function Categories() {
     setEditingName(cat.name)
   }
 
-  const confirmEdit = () => {
+  const confirmEdit = async () => {
     const name = editingName.trim()
     if (!name || !editingId) return
+    await categoriesService.update(editingId, { name })
     setCategories((prev) => prev.map((c) => (c.id === editingId ? { ...c, name } : c)))
     setEditingId(null)
   }
 
-  const cancelEdit = () => {
-    setEditingId(null)
-  }
+  const cancelEdit = () => setEditingId(null)
 
-  const handleDelete = (id: string, name: string) => {
+  const handleDelete = async (id: string, name: string) => {
     if (window.confirm(`Tem certeza que deseja excluir "${name}"?`)) {
+      await categoriesService.delete(id)
       setCategories((prev) => prev.filter((c) => c.id !== id))
     }
   }
 
-  const toggleActive = (id: string) => {
+  const toggleActive = async (id: string) => {
+    const cat = categories.find((c) => c.id === id)
+    if (!cat) return
+    await categoriesService.update(id, { active: !cat.active })
     setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, active: !c.active } : c)))
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      </div>
+    )
   }
 
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-white">Categorias</h1>
-        <p className="text-sm text-muted">Organize as categorias do cardápio</p>
+        <p className="text-sm text-muted">{categories.length} categorias</p>
       </div>
 
       <div className="mb-6 flex gap-2">
@@ -95,16 +112,10 @@ export default function Categories() {
                       className="h-8"
                       autoFocus
                     />
-                    <button
-                      onClick={confirmEdit}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-green-400 hover:bg-green-500/10 transition-colors"
-                    >
+                    <button onClick={confirmEdit} className="flex h-8 w-8 items-center justify-center rounded-lg text-green-400 hover:bg-green-500/10 transition-colors">
                       <Check size={16} />
                     </button>
-                    <button
-                      onClick={cancelEdit}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors"
-                    >
+                    <button onClick={cancelEdit} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors">
                       <X size={16} />
                     </button>
                   </div>
@@ -112,7 +123,6 @@ export default function Categories() {
                   <>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-white">{category.name}</p>
-                      <p className="text-xs text-muted">{category.productCount} produtos</p>
                     </div>
                     <button
                       onClick={() => toggleActive(category.id)}
@@ -124,18 +134,10 @@ export default function Categories() {
                     >
                       {category.active ? 'Ativo' : 'Inativo'}
                     </button>
-                    <button
-                      onClick={() => startEdit(category)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors"
-                      title="Editar"
-                    >
+                    <button onClick={() => startEdit(category)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors" title="Editar">
                       <Pencil size={15} />
                     </button>
-                    <button
-                      onClick={() => handleDelete(category.id, category.name)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-400 transition-colors"
-                      title="Excluir"
-                    >
+                    <button onClick={() => handleDelete(category.id, category.name)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-400 transition-colors" title="Excluir">
                       <Trash2 size={15} />
                     </button>
                   </>

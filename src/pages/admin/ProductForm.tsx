@@ -1,21 +1,70 @@
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
-import { useState } from 'react'
+import { productsService, categoriesService } from '@/services'
+import type { Product, Category } from '@/types'
 
 export default function ProductForm() {
   const navigate = useNavigate()
+  const { id } = useParams()
+  const isEditing = !!id
+  const [categories, setCategories] = useState<Category[]>([])
+  const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
     name: '',
     description: '',
     price: '',
+    discountPrice: '',
     categoryId: '',
     active: true,
+    featured: false,
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    categoriesService.getActiveCategories().then(setCategories).catch(() => {})
+    if (id) {
+      productsService.getById(id).then((product) => {
+        if (product) {
+          setForm({
+            name: product.name,
+            description: product.description,
+            price: String(product.price),
+            discountPrice: product.discountPrice ? String(product.discountPrice) : '',
+            categoryId: product.categoryId,
+            active: product.active,
+            featured: product.featured ?? false,
+          })
+        }
+      }).catch(() => {})
+    }
+  }, [id])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    navigate('/admin/produtos')
+    setSaving(true)
+
+    const data = {
+      name: form.name,
+      description: form.description,
+      slug: form.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+      price: Number(form.price),
+      discountPrice: form.discountPrice ? Number(form.discountPrice) : 0,
+      categoryId: form.categoryId,
+      active: form.active,
+      featured: form.featured,
+    }
+
+    try {
+      if (isEditing && id) {
+        await productsService.update(id, data)
+      } else {
+        await productsService.create(data)
+      }
+      navigate('/admin/produtos')
+    } catch {
+      setSaving(false)
+    }
   }
 
   return (
@@ -25,8 +74,8 @@ export default function ProductForm() {
           <ArrowLeft size={20} />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-white">Novo Produto</h1>
-          <p className="text-sm text-muted">Adicione um novo item ao cardápio</p>
+          <h1 className="text-2xl font-bold text-white">{isEditing ? 'Editar' : 'Novo'} Produto</h1>
+          <p className="text-sm text-muted">{isEditing ? 'Altere os dados do produto' : 'Adicione um novo item ao cardápio'}</p>
         </div>
       </div>
 
@@ -60,22 +109,31 @@ export default function ProductForm() {
             onChange={(e) => setForm({ ...form, price: e.target.value })}
             required
           />
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-white">Categoria</label>
-            <select
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-white transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-              value={form.categoryId}
-              onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-            >
-              <option value="">Selecione</option>
-              <option value="1">Pizzas</option>
-              <option value="2">Bebidas</option>
-              <option value="3">Sobremesas</option>
-            </select>
-          </div>
+          <Input
+            label="Preço promocional"
+            type="number"
+            step="0.01"
+            placeholder="29.90"
+            value={form.discountPrice}
+            onChange={(e) => setForm({ ...form, discountPrice: e.target.value })}
+          />
         </div>
 
-        <div className="flex items-center gap-3">
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-white">Categoria</label>
+          <select
+            className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-white transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            value={form.categoryId}
+            onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+          >
+            <option value="">Selecione</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex items-center gap-6">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
@@ -83,12 +141,23 @@ export default function ProductForm() {
               onChange={(e) => setForm({ ...form, active: e.target.checked })}
               className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent"
             />
-            <span className="text-sm text-white">Produto ativo</span>
+            <span className="text-sm text-white">Ativo</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.featured}
+              onChange={(e) => setForm({ ...form, featured: e.target.checked })}
+              className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent"
+            />
+            <span className="text-sm text-white">Destaque (Home)</span>
           </label>
         </div>
 
         <div className="flex gap-3">
-          <Button type="submit">Salvar</Button>
+          <Button type="submit" loading={saving}>
+            {saving ? 'Salvando...' : 'Salvar'}
+          </Button>
           <Button type="button" variant="ghost" onClick={() => navigate('/admin/produtos')}>
             Cancelar
           </Button>

@@ -7,8 +7,8 @@ export interface User {
   phone?: string
   role: UserRole
   photoURL?: string
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string
+  updatedAt: string
   active: boolean
 }
 
@@ -95,10 +95,17 @@ export interface Flavor {
 
 export interface Order {
   id: string
-  customerId: string
+  customerId?: string
   customerName: string
   customerPhone: string
-  deliveryAddress?: Address
+  deliveryAddress?: {
+    street: string
+    number: string
+    complement?: string
+    neighborhood: string
+    city: string
+    reference?: string
+  }
   items: OrderItem[]
   subtotal: number
   deliveryFee: number
@@ -111,8 +118,8 @@ export interface Order {
   couponCode?: string
   preparationTime?: number
   deliveryTime?: number
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string
+  updatedAt: string
 }
 
 export interface OrderItem {
@@ -150,8 +157,8 @@ export interface Promotion {
   image?: string
   type: 'product' | 'category' | 'order'
   discount: number
-  startsAt: Date
-  endsAt: Date
+  startsAt: string
+  endsAt: string
   active: boolean
 }
 
@@ -182,5 +189,5 @@ export interface Notification {
   message: string
   read: boolean
   type: 'order' | 'system' | 'promotion'
-  createdAt: Date
+  createdAt: string
 }

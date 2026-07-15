@@ -43,7 +43,7 @@ export class FirestoreService<T> {
     }
   }
 
-  async create(data: T): Promise<T & WithId> {
+  async create(data: Partial<T>): Promise<T & WithId> {
     try {
       const docRef = await addDoc(this.collectionRef, data as Record<string, unknown>)
       return { id: docRef.id, ...data } as T & WithId

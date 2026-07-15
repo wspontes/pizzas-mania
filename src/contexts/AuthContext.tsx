@@ -39,8 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: fbUser.email || '',
           role: 'admin',
           active: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         })
       }
     } catch {
@@ -50,8 +50,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: fbUser.email || '',
         role: 'admin',
         active: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       })
     }
   }
