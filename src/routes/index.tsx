@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
-import { PublicLayout, AuthLayout, AdminLayout } from '@/layouts'
+import { PublicLayout, AuthLayout, AdminLayout, KitchenLayout } from '@/layouts'
 
 const Home = lazy(() => import('@/pages/public/Home'))
 const Menu = lazy(() => import('@/pages/public/Menu'))
@@ -14,6 +14,7 @@ const AdminProducts = lazy(() => import('@/pages/admin/Products'))
 const AdminProductForm = lazy(() => import('@/pages/admin/ProductForm'))
 const AdminCategories = lazy(() => import('@/pages/admin/Categories'))
 const AdminOrders = lazy(() => import('@/pages/admin/OrdersAdmin'))
+const KitchenDashboard = lazy(() => import('@/pages/kitchen/Dashboard'))
 
 function PageLoader() {
   return (
@@ -52,6 +53,13 @@ export const router = createBrowserRouter([
       { path: 'produtos', element: <Suspense fallback={<PageLoader />}><AdminProducts /></Suspense> },
       { path: 'produtos/novo', element: <Suspense fallback={<PageLoader />}><AdminProductForm /></Suspense> },
       { path: 'categorias', element: <Suspense fallback={<PageLoader />}><AdminCategories /></Suspense> },
+    ],
+  },
+  {
+    path: '/cozinha',
+    element: <KitchenLayout />,
+    children: [
+      { index: true, element: <Suspense fallback={<PageLoader />}><KitchenDashboard /></Suspense> },
     ],
   },
   {
