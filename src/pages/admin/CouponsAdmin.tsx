@@ -32,16 +32,17 @@ export default function CouponsAdmin() {
       return
     }
     try {
-      const created = await couponsService.create({
+      const couponData: Record<string, unknown> = {
         code: form.code.toUpperCase(),
         type: form.type,
         value: Number(form.value),
-        minOrder: form.minOrder ? Number(form.minOrder) : undefined,
-        maxUses: form.maxUses ? Number(form.maxUses) : undefined,
         usedCount: 0,
         expiresAt: new Date(form.expiresAt),
         active: true,
-      } as Coupon)
+      }
+      if (form.minOrder) couponData.minOrder = Number(form.minOrder)
+      if (form.maxUses) couponData.maxUses = Number(form.maxUses)
+      const created = await couponsService.create(couponData as unknown as Coupon)
       setCoupons((prev) => [...prev, created])
       setForm({ code: '', type: 'percentage', value: '', minOrder: '', maxUses: '', expiresAt: '' })
       setShowForm(false)
