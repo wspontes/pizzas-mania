@@ -1,31 +1,117 @@
-import { useState } from 'react'
-import { ShoppingBag, DollarSign, Users, TrendingUp, Clock, Receipt } from 'lucide-react'
-
-const stats = [
-  { label: 'Pedidos Hoje', value: '12', icon: ShoppingBag, change: '+3', changeType: 'positive' as const },
-  { label: 'Faturamento Hoje', value: 'R$ 587,00', icon: DollarSign, change: '+22%', changeType: 'positive' as const },
-  { label: 'Ticket Médio', value: 'R$ 48,90', icon: TrendingUp, change: '+5%', changeType: 'positive' as const },
-  { label: 'Pedidos no Mês', value: '284', icon: Receipt, change: '+18%', changeType: 'positive' as const },
-  { label: 'Clientes', value: '156', icon: Users, change: '+12%', changeType: 'positive' as const },
-  { label: 'Tempo Médio', value: '28 min', icon: Clock, change: '-2 min', changeType: 'positive' as const },
-]
-
-const recentOrders = [
-  { id: '#001', customer: 'João Silva', items: 2, total: 89.90, status: 'Preparando', time: '5 min' },
-  { id: '#002', customer: 'Maria Santos', items: 1, total: 45.00, status: 'Recebido', time: '2 min' },
-  { id: '#003', customer: 'Pedro Alves', items: 3, total: 127.50, status: 'Saiu para entrega', time: '15 min' },
-  { id: '#004', customer: 'Ana Costa', items: 2, total: 68.00, status: 'Entregue', time: '42 min' },
-]
+import { useState, useEffect } from 'react'
+import { ShoppingBag, DollarSign, TrendingUp, Clock, Receipt, Calendar } from 'lucide-react'
+import { ordersService } from '@/services'
+import type { Order } from '@/types'
+import { formatCurrency } from '@/utils'
 
 export default function Dashboard() {
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
+  const [dateRange, setDateRange] = useState<'today' | 'week' | 'month'>('today')
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await ordersService.getAll()
+        setOrders(data)
+      } catch {
+        setOrders([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
+
+  const now = new Date()
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
+  const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay()).toISOString()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+
+  const filterStart = dateRange === 'today' ? startOfDay : dateRange === 'week' ? startOfWeek : startOfMonth
+
+  const filteredOrders = orders.filter((o) => o.createdAt >= filterStart && o.status !== 'cancelled')
+  const deliveredOrders = filteredOrders.filter((o) => o.status === 'delivered')
+
+  const totalOrders = filteredOrders.length
+  const totalRevenue = deliveredOrders.reduce((sum, o) => sum + o.total, 0)
+  const avgOrder = totalOrders > 0 ? totalRevenue / totalOrders : 0
+  const avgTime = deliveredOrders.length > 0
+    ? Math.round(
+        deliveredOrders.reduce((sum, o) => {
+          const created = new Date(o.createdAt).getTime()
+          const updated = new Date(o.updatedAt).getTime()
+          return sum + (updated - created)
+        }, 0) / deliveredOrders.length / 60000
+      )
+    : 0
+
+  const stats = [
+    {
+      label: 'Faturamento',
+      value: formatCurrency(totalRevenue),
+      icon: DollarSign,
+      sub: `${deliveredOrders.length} pedidos concluídos`,
+    },
+    {
+      label: 'Pedidos',
+      value: String(totalOrders),
+      icon: ShoppingBag,
+      sub: `${filteredOrders.filter((o) => o.status === 'preparing').length} em preparo`,
+    },
+    {
+      label: 'Pedido Médio',
+      value: formatCurrency(avgOrder),
+      icon: TrendingUp,
+      sub: 'por pedido',
+    },
+    {
+      label: 'Tempo Médio',
+      value: `${avgTime} min`,
+      icon: Clock,
+      sub: 'do pedido à entrega',
+    },
+  ]
+
+  const recentOrders = [...filteredOrders]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 8)
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      </div>
+    )
+  }
+
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-sm text-muted">Visão geral do seu negócio</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+          <p className="text-sm text-muted">Visão geral do seu negócio</p>
+        </div>
+        <div className="flex gap-1 rounded-lg border border-border bg-surface p-1">
+          {([
+            { key: 'today', label: 'Hoje' },
+            { key: 'week', label: 'Semana' },
+            { key: 'month', label: 'Mês' },
+          ] as const).map((opt) => (
+            <button
+              key={opt.key}
+              onClick={() => setDateRange(opt.key)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                dateRange === opt.key ? 'bg-accent text-white' : 'text-muted hover:text-white'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon
           return (
@@ -34,14 +120,10 @@ export default function Dashboard() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent">
                   <Icon size={20} />
                 </div>
-                <span className={`text-xs font-medium ${
-                  stat.changeType === 'positive' ? 'text-green-400' : 'text-red-400'
-                }`}>
-                  {stat.change}
-                </span>
               </div>
               <p className="mt-3 text-2xl font-bold text-white">{stat.value}</p>
               <p className="text-sm text-muted">{stat.label}</p>
+              <p className="text-xs text-muted/60">{stat.sub}</p>
             </div>
           )
         })}
@@ -51,22 +133,27 @@ export default function Dashboard() {
         <div className="border-b border-border p-4">
           <h2 className="font-semibold text-white">Pedidos Recentes</h2>
         </div>
-        <div className="divide-y divide-border">
-          {recentOrders.map((order) => (
-            <div key={order.id} className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
+        {recentOrders.length === 0 ? (
+          <div className="p-8 text-center text-muted">Nenhum pedido neste período</div>
+        ) : (
+          <div className="divide-y divide-border">
+            {recentOrders.map((order) => (
+              <div key={order.id} className="flex items-center justify-between p-4 hover:bg-surface-hover transition-colors">
                 <div>
-                  <p className="text-sm font-medium text-white">{order.customer}</p>
-                  <p className="text-xs text-muted">{order.id} • {order.items} itens</p>
+                  <p className="text-sm font-medium text-white">{order.customerName}</p>
+                  <p className="text-xs text-muted">
+                    {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    {' • '}{order.items.reduce((s, i) => s + i.quantity, 0)} itens
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-white">{formatCurrency(order.total)}</p>
+                  <p className="text-xs text-muted capitalize">{order.status === 'delivered' ? 'Entregue' : order.status === 'preparing' ? 'Preparando' : order.status === 'received' ? 'Recebido' : order.status === 'outForDelivery' ? 'Saiu' : order.status}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-medium text-white">R$ {order.total.toFixed(2)}</p>
-                <p className="text-xs text-muted">{order.time}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

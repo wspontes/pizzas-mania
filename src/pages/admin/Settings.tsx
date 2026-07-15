@@ -1,23 +1,11 @@
-import { useState } from 'react'
-import { Clock, MapPin, DollarSign, Plus } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Clock, MapPin, DollarSign, CreditCard, Image, Plus } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
-
-interface BusinessHour {
-  day: string
-  open: string
-  close: string
-  closed: boolean
-}
-
-interface Neighborhood {
-  name: string
-  fee: number
-  estimatedTime: number
-  active: boolean
-}
+import { settingsService, type BusinessSettings } from '@/services/settings'
 
 export default function Settings() {
-  const [hours, setHours] = useState<BusinessHour[]>([
+  const [saving, setSaving] = useState(false)
+  const [hours, setHours] = useState([
     { day: 'Segunda-feira', open: '18:00', close: '23:00', closed: false },
     { day: 'Terça-feira', open: '18:00', close: '23:00', closed: false },
     { day: 'Quarta-feira', open: '18:00', close: '23:00', closed: false },
@@ -27,31 +15,71 @@ export default function Settings() {
     { day: 'Domingo', open: '18:00', close: '22:00', closed: false },
   ])
 
-  const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([
+  const [neighborhoods, setNeighborhoods] = useState([
     { name: 'Centro', fee: 5.00, estimatedTime: 25, active: true },
-    { name: 'Jardim América', fee: 8.00, estimatedTime: 35, active: true },
-    { name: 'Vila Nova', fee: 10.00, estimatedTime: 40, active: true },
   ])
-
-  const [newNeighborhood, setNewNeighborhood] = useState('')
-  const [newFee, setNewFee] = useState('')
-  const [newTime, setNewTime] = useState('')
   const [minOrder, setMinOrder] = useState('25.00')
   const [freeDelivery, setFreeDelivery] = useState('80.00')
+  const [newNb, setNewNb] = useState({ name: '', fee: '', time: '' })
+  const [pixKey, setPixKey] = useState('')
+  const [acceptCredit, setAcceptCredit] = useState(true)
+  const [acceptDebit, setAcceptDebit] = useState(true)
+  const [acceptCash, setAcceptCash] = useState(true)
+  const [acceptDelivery, setAcceptDelivery] = useState(true)
+  const [installments, setInstallments] = useState('12')
+  const [bannerTitle, setBannerTitle] = useState('A melhor pizza da cidade')
+  const [bannerSubtitle, setBannerSubtitle] = useState('Massa artesanal, ingredientes frescos e o sabor que só a Pizzas Mania tem.')
+  const [bannerImage, setBannerImage] = useState('')
+  const [bannerActive, setBannerActive] = useState(true)
+
+  useEffect(() => {
+    settingsService.get().then((data) => {
+      if (data) {
+        setMinOrder(String(data.minOrder || 25))
+        setFreeDelivery(String(data.freeDeliveryFrom || 80))
+        if (data.neighborhoods?.length) setNeighborhoods(data.neighborhoods)
+      }
+    }).catch(() => {})
+  }, [])
+
+  const handleSave = async () => {
+    setSaving(true)
+    const data: BusinessSettings = {
+      businessHours: hours.map((h, i) => ({
+        dayOfWeek: i,
+        open: h.open,
+        close: h.close,
+        closed: h.closed,
+      })),
+      minOrder: Number(minOrder),
+      freeDeliveryFrom: Number(freeDelivery),
+      neighborhoods,
+      paymentMethods: {
+        pix: { enabled: true, key: pixKey },
+        credit: { enabled: acceptCredit, installments: Number(installments) },
+        debit: { enabled: acceptDebit },
+        cash: { enabled: acceptCash },
+        delivery: { enabled: acceptDelivery },
+      },
+      banner: {
+        title: bannerTitle,
+        subtitle: bannerSubtitle,
+        image: bannerImage,
+        active: bannerActive,
+      },
+    }
+    await settingsService.save(data)
+    setSaving(false)
+  }
 
   const toggleDay = (index: number) => {
     setHours((prev) => prev.map((d, i) => i === index ? { ...d, closed: !d.closed } : d))
   }
 
   const addNeighborhood = () => {
-    if (!newNeighborhood.trim() || !newFee || !newTime) return
-    setNeighborhoods((prev) => [
-      ...prev,
-      { name: newNeighborhood, fee: Number(newFee), estimatedTime: Number(newTime), active: true },
-    ])
-    setNewNeighborhood('')
-    setNewFee('')
-    setNewTime('')
+    if (!newNb.name.trim() || !newNb.fee || !newNb.time) return
+    setNeighborhoods((prev) => [...prev, { name: newNb.name, fee: Number(newNb.fee), estimatedTime: Number(newNb.time), active: true }])
+    setNewNb({ name: '', fee: '', time: '' })
   }
 
   const removeNeighborhood = (index: number) => {
@@ -68,6 +96,59 @@ export default function Settings() {
       <div className="space-y-6">
         <div className="rounded-xl border border-border bg-surface p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
+            <Image size={18} className="text-accent" />
+            Banner Principal
+          </h2>
+          <div className="space-y-4">
+            <div className="rounded-xl bg-surface-hover p-4 text-center mb-4">
+              <p className="text-lg font-bold text-white">{bannerTitle || 'Título do banner'}</p>
+              <p className="text-sm text-muted">{bannerSubtitle || 'Subtítulo'}</p>
+            </div>
+            <Input label="Título" value={bannerTitle} onChange={(e) => setBannerTitle(e.target.value)} />
+            <Input label="Subtítulo" value={bannerSubtitle} onChange={(e) => setBannerSubtitle(e.target.value)} />
+            <Input label="URL da imagem (opcional)" placeholder="https://..." value={bannerImage} onChange={(e) => setBannerImage(e.target.value)} />
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={bannerActive} onChange={(e) => setBannerActive(e.target.checked)} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
+              <span className="text-sm text-white">Banner ativo na página inicial</span>
+            </label>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
+            <CreditCard size={18} className="text-accent" />
+            Métodos de Pagamento
+          </h2>
+          <div className="space-y-4">
+            <div>
+              <Input label="Chave PIX (opcional)" placeholder="CNPJ, CPF, email ou telefone" value={pixKey} onChange={(e) => setPixKey(e.target.value)} />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex items-center gap-2 cursor-pointer rounded-lg border border-border bg-surface-hover p-3">
+                <input type="checkbox" checked={acceptCredit} onChange={(e) => setAcceptCredit(e.target.checked)} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
+                <span className="text-sm text-white">Cartão de Crédito</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer rounded-lg border border-border bg-surface-hover p-3">
+                <input type="checkbox" checked={acceptDebit} onChange={(e) => setAcceptDebit(e.target.checked)} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
+                <span className="text-sm text-white">Cartão de Débito</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer rounded-lg border border-border bg-surface-hover p-3">
+                <input type="checkbox" checked={acceptCash} onChange={(e) => setAcceptCash(e.target.checked)} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
+                <span className="text-sm text-white">Dinheiro</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer rounded-lg border border-border bg-surface-hover p-3">
+                <input type="checkbox" checked={acceptDelivery} onChange={(e) => setAcceptDelivery(e.target.checked)} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
+                <span className="text-sm text-white">Pagar na Entrega</span>
+              </label>
+            </div>
+            {acceptCredit && (
+              <Input label="Parcelamento máximo" type="number" value={installments} onChange={(e) => setInstallments(e.target.value)} />
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
             <Clock size={18} className="text-accent" />
             Horários de Funcionamento
           </h2>
@@ -79,29 +160,12 @@ export default function Settings() {
                   <span className="text-sm text-red-400 font-medium">Fechado</span>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <input
-                      type="time"
-                      value={day.open}
-                      onChange={(e) => setHours((prev) => prev.map((d, i) => i === index ? { ...d, open: e.target.value } : d))}
-                      className="rounded-lg border border-border bg-surface-hover px-3 py-1.5 text-sm text-white"
-                    />
+                    <input type="time" value={day.open} onChange={(e) => setHours((prev) => prev.map((d, i) => i === index ? { ...d, open: e.target.value } : d))} className="rounded-lg border border-border bg-surface-hover px-3 py-1.5 text-sm text-white" />
                     <span className="text-muted">às</span>
-                    <input
-                      type="time"
-                      value={day.close}
-                      onChange={(e) => setHours((prev) => prev.map((d, i) => i === index ? { ...d, close: e.target.value } : d))}
-                      className="rounded-lg border border-border bg-surface-hover px-3 py-1.5 text-sm text-white"
-                    />
+                    <input type="time" value={day.close} onChange={(e) => setHours((prev) => prev.map((d, i) => i === index ? { ...d, close: e.target.value } : d))} className="rounded-lg border border-border bg-surface-hover px-3 py-1.5 text-sm text-white" />
                   </div>
                 )}
-                <button
-                  onClick={() => toggleDay(index)}
-                  className={`ml-auto rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                    day.closed
-                      ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
-                      : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
-                  }`}
-                >
+                <button onClick={() => toggleDay(index)} className={`ml-auto rounded-full px-3 py-1 text-xs font-medium transition-colors ${day.closed ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'}`}>
                   {day.closed ? 'Abrir' : 'Fechar'}
                 </button>
               </div>
@@ -115,16 +179,8 @@ export default function Settings() {
             Valores
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input
-              label="Pedido mínimo"
-              value={minOrder}
-              onChange={(e) => setMinOrder(e.target.value)}
-            />
-            <Input
-              label="Frete grátis acima de"
-              value={freeDelivery}
-              onChange={(e) => setFreeDelivery(e.target.value)}
-            />
+            <Input label="Pedido mínimo (R$)" value={minOrder} onChange={(e) => setMinOrder(e.target.value)} />
+            <Input label="Frete grátis acima de (R$)" value={freeDelivery} onChange={(e) => setFreeDelivery(e.target.value)} />
           </div>
         </div>
 
@@ -134,49 +190,27 @@ export default function Settings() {
             Bairros Atendidos
           </h2>
           <div className="mb-4 grid gap-3 sm:grid-cols-4">
-            <Input
-              placeholder="Bairro"
-              value={newNeighborhood}
-              onChange={(e) => setNewNeighborhood(e.target.value)}
-            />
-            <Input
-              placeholder="Taxa R$"
-              type="number"
-              value={newFee}
-              onChange={(e) => setNewFee(e.target.value)}
-            />
-            <Input
-              placeholder="Tempo (min)"
-              type="number"
-              value={newTime}
-              onChange={(e) => setNewTime(e.target.value)}
-            />
-            <Button onClick={addNeighborhood}>
-              <Plus size={16} />
-              Adicionar
-            </Button>
+            <Input placeholder="Bairro" value={newNb.name} onChange={(e) => setNewNb({ ...newNb, name: e.target.value })} />
+            <Input placeholder="Taxa R$" type="number" value={newNb.fee} onChange={(e) => setNewNb({ ...newNb, fee: e.target.value })} />
+            <Input placeholder="Tempo (min)" type="number" value={newNb.time} onChange={(e) => setNewNb({ ...newNb, time: e.target.value })} />
+            <Button onClick={addNeighborhood}><Plus size={16} />Adicionar</Button>
           </div>
           <div className="space-y-2">
             {neighborhoods.map((n, index) => (
               <div key={index} className="flex items-center justify-between rounded-lg bg-surface-hover px-4 py-2.5">
-                <div className="flex items-center gap-4 text-sm">
-                  <span className="text-white font-medium">{n.name}</span>
-                  <span className="text-muted">R$ {n.fee.toFixed(2)}</span>
-                  <span className="text-muted">~{n.estimatedTime} min</span>
+                <span className="text-sm text-white font-medium">{n.name}</span>
+                <div className="flex items-center gap-4 text-sm text-muted">
+                  <span>R$ {n.fee.toFixed(2)}</span>
+                  <span>~{n.estimatedTime} min</span>
+                  <button onClick={() => removeNeighborhood(index)} className="text-red-400 hover:text-red-300 transition-colors">Remover</button>
                 </div>
-                <button
-                  onClick={() => removeNeighborhood(index)}
-                  className="text-sm text-red-400 hover:text-red-300 transition-colors"
-                >
-                  Remover
-                </button>
               </div>
             ))}
           </div>
         </div>
 
         <div className="flex justify-end">
-          <Button>Salvar Configurações</Button>
+          <Button onClick={handleSave} loading={saving}>Salvar Configurações</Button>
         </div>
       </div>
     </div>

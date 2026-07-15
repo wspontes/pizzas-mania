@@ -49,6 +49,7 @@ export interface Product {
   active: boolean
   featured: boolean
   customizable: boolean
+  order?: number
   sizes?: Size[]
   ingredients?: ProductIngredient[]
   createdAt: Date

@@ -16,6 +16,19 @@ export interface BusinessSettings {
     estimatedTime: number
     active: boolean
   }[]
+  paymentMethods?: {
+    pix?: { enabled: boolean; key?: string }
+    credit?: { enabled: boolean; installments?: number }
+    debit?: { enabled: boolean }
+    cash?: { enabled: boolean }
+    delivery?: { enabled: boolean }
+  }
+  banner?: {
+    title: string
+    subtitle: string
+    image?: string
+    active: boolean
+  }
 }
 
 const SETTINGS_DOC = 'business'
