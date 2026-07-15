@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { SearchBar, CategoryCard, ProductCard } from '@/components/shared'
 import { ProductCardSkeleton, CategorySkeleton } from '@/components/shared'
 import { useCategories, useProducts } from '@/hooks'
@@ -7,6 +7,12 @@ export default function Menu() {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const { categories, loading: catLoading } = useCategories()
+
+  useEffect(() => {
+    if (!catLoading && categories.length > 0 && activeCategory === null) {
+      setActiveCategory(categories[0].id)
+    }
+  }, [categories, catLoading, activeCategory])
   const { products, loading: prodLoading } = useProducts(activeCategory ?? undefined)
 
   const filteredProducts = useMemo(() => {

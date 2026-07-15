@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ChefHat, XCircle, MessageCircle, X } from 'lucide-react'
+import { ChefHat, XCircle, MessageCircle, X, ArrowLeft, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { ordersService } from '@/services'
 import type { Order } from '@/types'
@@ -50,6 +50,16 @@ export default function OrdersAdmin() {
     } else if (nextStatus === 'outForDelivery') {
       setWhatsappModal({ phone: order.customerPhone, name: order.customerName, message: `Olá ${order.customerName}! Seu pedido SAIU PARA ENTREGA. Fique atento ao seu celular! 🛵🍕` })
     }
+  }
+
+  const backStatus = async (orderId: string) => {
+    const order = orders.find((o) => o.id === orderId)
+    if (!order) return
+    const currentIndex = statuses.indexOf(order.status as typeof statuses[number])
+    if (currentIndex <= 0) return
+    const prevStatus = statuses[currentIndex - 1]
+    await ordersService.update(orderId, { status: prevStatus } as Partial<Order>)
+    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: prevStatus } : o)))
   }
 
   const cancelOrder = async (orderId: string) => {
@@ -126,18 +136,30 @@ export default function OrdersAdmin() {
                 <div className="mt-2 text-xs text-muted">
                   WhatsApp: {order.customerPhone}
                 </div>
-                {order.status !== 'delivered' && order.status !== 'cancelled' && (
-                  <div className="mt-3 flex gap-2 border-t border-border pt-3">
-                    <Button size="sm" onClick={() => advanceStatus(order.id)}>
-                      <ChefHat size={14} />
-                      Avançar
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => cancelOrder(order.id)}>
-                      <XCircle size={14} />
-                      Cancelar
-                    </Button>
-                  </div>
-                )}
+                <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
+                  {order.status !== 'delivered' && order.status !== 'cancelled' && (
+                    <>
+                      {order.status !== 'received' && (
+                        <Button size="sm" variant="ghost" onClick={() => backStatus(order.id)}>
+                          <ArrowLeft size={14} />
+                          Voltar
+                        </Button>
+                      )}
+                      <Button size="sm" onClick={() => advanceStatus(order.id)}>
+                        <ChefHat size={14} />
+                        Avançar
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => cancelOrder(order.id)}>
+                        <XCircle size={14} />
+                        Cancelar
+                      </Button>
+                    </>
+                  )}
+                  <Button size="sm" variant="ghost" onClick={() => setWhatsappModal({ phone: order.customerPhone, name: order.customerName, message: `Olá ${order.customerName}!` })} className="text-green-500 hover:text-green-400 hover:bg-green-500/10 ml-auto">
+                    <MessageSquare size={14} />
+                    Falar
+                  </Button>
+                </div>
               </div>
             )
           })}
