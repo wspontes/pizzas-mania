@@ -100,17 +100,31 @@ export default function Settings() {
             Banner Principal
           </h2>
           <div className="space-y-4">
-            <div className="rounded-xl bg-surface-hover p-4 text-center mb-4">
-              <p className="text-lg font-bold text-white">{bannerTitle || 'Título do banner'}</p>
-              <p className="text-sm text-muted">{bannerSubtitle || 'Subtítulo'}</p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-4">
+                <Input label="Título" value={bannerTitle} onChange={(e) => setBannerTitle(e.target.value)} />
+                <Input label="Subtítulo" value={bannerSubtitle} onChange={(e) => setBannerSubtitle(e.target.value)} />
+                <Input label="URL da imagem (opcional)" placeholder="https://..." value={bannerImage} onChange={(e) => setBannerImage(e.target.value)} />
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={bannerActive} onChange={(e) => setBannerActive(e.target.checked)} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
+                  <span className="text-sm text-white">Banner ativo na página inicial</span>
+                </label>
+              </div>
+              <div className="flex items-center justify-center">
+                {bannerImage ? (
+                  <img
+                    src={bannerImage}
+                    alt="Preview do banner"
+                    className="max-h-48 rounded-xl object-cover border border-border"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                  />
+                ) : (
+                  <div className="flex h-48 w-full items-center justify-center rounded-xl bg-surface-hover text-sm text-muted">
+                    Prévia da imagem
+                  </div>
+                )}
+              </div>
             </div>
-            <Input label="Título" value={bannerTitle} onChange={(e) => setBannerTitle(e.target.value)} />
-            <Input label="Subtítulo" value={bannerSubtitle} onChange={(e) => setBannerSubtitle(e.target.value)} />
-            <Input label="URL da imagem (opcional)" placeholder="https://..." value={bannerImage} onChange={(e) => setBannerImage(e.target.value)} />
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={bannerActive} onChange={(e) => setBannerActive(e.target.checked)} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
-              <span className="text-sm text-white">Banner ativo na página inicial</span>
-            </label>
           </div>
         </div>
 

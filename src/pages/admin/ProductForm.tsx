@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ImageIcon } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { productsService, categoriesService } from '@/services'
 import type { Product, Category } from '@/types'
@@ -17,6 +17,8 @@ export default function ProductForm() {
     price: '',
     discountPrice: '',
     categoryId: '',
+    image: '',
+    order: '',
     active: true,
     featured: false,
   })
@@ -32,6 +34,8 @@ export default function ProductForm() {
             price: String(product.price),
             discountPrice: product.discountPrice ? String(product.discountPrice) : '',
             categoryId: product.categoryId,
+            image: product.image || '',
+            order: product.order ? String(product.order) : '',
             active: product.active,
             featured: product.featured ?? false,
           })
@@ -44,6 +48,22 @@ export default function ProductForm() {
     e.preventDefault()
     setSaving(true)
 
+    const newOrder = form.order ? Number(form.order) : undefined
+
+    if (newOrder && newOrder > 0) {
+      const all = await productsService.getActiveProducts()
+      const siblings = all.filter((p) => p.categoryId === form.categoryId && p.id !== id)
+      const conflict = siblings.find((p) => p.order === newOrder)
+      if (conflict) {
+        const toUpdate = siblings
+          .filter((p) => p.order && p.order >= newOrder)
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        for (const p of toUpdate) {
+          await productsService.update(p.id, { order: (p.order ?? 0) + 1 } as Partial<Product>)
+        }
+      }
+    }
+
     const data = {
       name: form.name,
       description: form.description,
@@ -51,6 +71,8 @@ export default function ProductForm() {
       price: Number(form.price),
       discountPrice: form.discountPrice ? Number(form.discountPrice) : 0,
       categoryId: form.categoryId,
+      image: form.image || '',
+      order: newOrder || 0,
       active: form.active,
       featured: form.featured,
     }
@@ -80,87 +102,57 @@ export default function ProductForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 rounded-xl border border-border bg-surface p-6">
-        <Input
-          label="Nome do produto"
-          placeholder="Ex: Pizza Margherita"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          required
-        />
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-4">
+            <Input label="Nome do produto" placeholder="Ex: Pizza Margherita" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            <Input label="URL da Imagem" placeholder="https://..." value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} icon={<ImageIcon size={16} />} />
+            <div className="grid grid-cols-2 gap-3">
+              <Input label="Preço" type="number" step="0.01" placeholder="39.90" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
+              <Input label="Preço promocional" type="number" step="0.01" placeholder="29.90" value={form.discountPrice} onChange={(e) => setForm({ ...form, discountPrice: e.target.value })} />
+            </div>
+          </div>
+          <div className="flex items-center justify-center">
+            {form.image ? (
+              <img src={form.image} alt="Preview" className="max-h-40 rounded-xl object-cover border border-border" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+            ) : (
+              <div className="flex h-40 w-full items-center justify-center rounded-xl bg-surface-hover text-sm text-muted">Prévia da imagem</div>
+            )}
+          </div>
+        </div>
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-white">Descrição</label>
-          <textarea
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-white placeholder:text-muted transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-            rows={3}
-            placeholder="Descrição do produto"
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-          />
+          <textarea className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-white placeholder:text-muted transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent" rows={3} placeholder="Descrição do produto" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Input
-            label="Preço"
-            type="number"
-            step="0.01"
-            placeholder="39.90"
-            value={form.price}
-            onChange={(e) => setForm({ ...form, price: e.target.value })}
-            required
-          />
-          <Input
-            label="Preço promocional"
-            type="number"
-            step="0.01"
-            placeholder="29.90"
-            value={form.discountPrice}
-            onChange={(e) => setForm({ ...form, discountPrice: e.target.value })}
-          />
-        </div>
-
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-white">Categoria</label>
-          <select
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-white transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-            value={form.categoryId}
-            onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-          >
-            <option value="">Selecione</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-white">Categoria</label>
+            <select className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-white transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent" value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
+              <option value="">Selecione</option>
+              {categories.map((cat) => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
+            </select>
+          </div>
+          <div>
+            <Input label="Ordem na categoria" type="number" min="1" placeholder="Auto" value={form.order} onChange={(e) => setForm({ ...form, order: e.target.value })} />
+            <p className="mt-1 text-xs text-muted">Posição de exibição no cardápio</p>
+          </div>
         </div>
 
         <div className="flex items-center gap-6">
           <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.active}
-              onChange={(e) => setForm({ ...form, active: e.target.checked })}
-              className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent"
-            />
+            <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
             <span className="text-sm text-white">Ativo</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.featured}
-              onChange={(e) => setForm({ ...form, featured: e.target.checked })}
-              className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent"
-            />
+            <input type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
             <span className="text-sm text-white">Destaque (Home)</span>
           </label>
         </div>
 
         <div className="flex gap-3">
-          <Button type="submit" loading={saving}>
-            {saving ? 'Salvando...' : 'Salvar'}
-          </Button>
-          <Button type="button" variant="ghost" onClick={() => navigate('/admin/produtos')}>
-            Cancelar
-          </Button>
+          <Button type="submit" loading={saving}>{saving ? 'Salvando...' : 'Salvar'}</Button>
+          <Button type="button" variant="ghost" onClick={() => navigate('/admin/produtos')}>Cancelar</Button>
         </div>
       </form>
     </div>
