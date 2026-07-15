@@ -17,6 +17,7 @@ const AdminCategories = lazy(() => import('@/pages/admin/Categories'))
 const AdminOrders = lazy(() => import('@/pages/admin/OrdersAdmin'))
 const AdminSettings = lazy(() => import('@/pages/admin/Settings'))
 const KitchenDashboard = lazy(() => import('@/pages/kitchen/Dashboard'))
+const Seed = lazy(() => import('@/pages/dev/Seed'))
 
 function PageLoader() {
   return (
@@ -73,6 +74,10 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Suspense fallback={<PageLoader />}><KitchenDashboard /></Suspense> },
     ],
+  },
+  {
+    path: '/seed',
+    element: <Suspense fallback={<PageLoader />}><Seed /></Suspense>,
   },
   {
     path: '*',
