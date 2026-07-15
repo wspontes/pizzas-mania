@@ -81,10 +81,10 @@ export default function Checkout() {
         deliveryAddress: {
           street: form.street,
           number: form.number,
-          complement: form.complement,
+          complement: form.complement || '',
           neighborhood: form.neighborhood,
           city: form.city,
-          reference: form.reference,
+          reference: form.reference || '',
         },
         items: state.items,
         subtotal,
@@ -94,14 +94,15 @@ export default function Checkout() {
         paymentMethod: paymentMethod as 'pix' | 'credit' | 'debit' | 'cash' | 'delivery',
         paymentStatus: 'pending' as const,
         status: 'received' as const,
-        couponCode: state.couponCode,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
+      const firestoreData: Record<string, unknown> = { ...orderData }
+      if (state.couponCode) firestoreData.couponCode = state.couponCode
 
-      const saved = await ordersService.create(orderData)
+      const saved = await ordersService.create(firestoreData)
       clearCart()
-      navigate('/pedido/confirmacao', { state: { order: { ...orderData, id: saved.id } } })
+      navigate('/pedido/confirmacao', { state: { order: { ...orderData, couponCode: state.couponCode, id: saved.id } } })
     } catch (err) {
       console.error('Erro ao criar pedido:', err)
       setError(err instanceof Error ? err.message : 'Erro ao finalizar pedido. Tente novamente.')
