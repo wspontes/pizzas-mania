@@ -2,6 +2,7 @@ import { X, ShoppingCart, Star } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { useToast } from '@/contexts/ToastContext'
 import { formatCurrency } from '@/utils'
+import { resolveImageUrl } from '@/utils/resolveImageUrl'
 import { Button } from '@/components/ui'
 import type { Product } from '@/types'
 
@@ -42,7 +43,7 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
 
         {product.image ? (
           <img
-            src={product.image}
+            src={resolveImageUrl(product.image)}
             alt={product.name}
             className="h-56 w-full object-cover"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}

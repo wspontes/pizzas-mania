@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Plus, Pencil, Trash2, Copy, Search } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { productsService, categoriesService } from '@/services'
+import { resolveImageUrl } from '@/utils/resolveImageUrl'
 import type { Product, Category } from '@/types'
 import { formatCurrency } from '@/utils'
 
@@ -116,7 +117,7 @@ export default function Products() {
             <div key={product.id} className="rounded-xl border border-border bg-surface p-3.5 md:p-4">
               <div className="flex items-start gap-3">
                 {product.image && (
-                  <img src={product.image} alt="" className="h-12 w-12 md:h-14 md:w-14 shrink-0 rounded-lg object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                  <img src={resolveImageUrl(product.image)} alt="" className="h-12 w-12 md:h-14 md:w-14 shrink-0 rounded-lg object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">

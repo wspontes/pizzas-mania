@@ -3,6 +3,7 @@ import { ArrowRight, ChefHat, Clock, Bike, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { ProductCard, ProductCardSkeleton } from '@/components/shared'
 import { useFeaturedProducts, useSettings } from '@/hooks'
+import { resolveImageUrl } from '@/utils/resolveImageUrl'
 import { formatCurrency } from '@/utils'
 
 const benefitIcons = [ChefHat, Clock, Bike]
@@ -37,7 +38,7 @@ export default function Home() {
           <>
             <div className="absolute right-0 top-0 h-48 w-48 md:h-64 md:w-64 translate-x-12 -translate-y-12 rounded-full bg-accent/10 blur-3xl" />
             {banner?.image && (
-              <img src={banner.image} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+              <img src={resolveImageUrl(banner.image)} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
             )}
             <div className={`relative z-10 ${banner?.align === 'center' ? '' : 'max-w-xl'}`}>
               <div className="inline-flex items-center gap-1.5 rounded-full bg-accent/20 px-2.5 py-0.5 text-[10px] md:text-xs font-medium text-accent mb-3">

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ShoppingCart, Star } from 'lucide-react'
 import { cn, formatCurrency } from '@/utils'
+import { resolveImageUrl } from '@/utils/resolveImageUrl'
 import { Button } from '@/components/ui'
 import { useCart } from '@/contexts/CartContext'
 import { useToast } from '@/contexts/ToastContext'
@@ -43,7 +44,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
           <div className="aspect-square bg-surface-hover">
             {product.image ? (
               <img
-                src={product.image}
+                src={resolveImageUrl(product.image)}
                 alt={product.name}
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"

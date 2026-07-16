@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Clock, MapPin, DollarSign, CreditCard, Image, Plus, QrCode, Phone, Trash2, Sparkles } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { settingsService, type BusinessSettings } from '@/services/settings'
+import { resolveImageUrl } from '@/utils/resolveImageUrl'
 
 export default function Settings() {
   const [saving, setSaving] = useState(false)
@@ -143,7 +144,7 @@ export default function Settings() {
               <div className="space-y-4">
                 <Input label="Título" value={bannerTitle} onChange={(e) => setBannerTitle(e.target.value)} />
                 <Input label="Subtítulo" value={bannerSubtitle} onChange={(e) => setBannerSubtitle(e.target.value)} />
-                <Input label="URL da imagem (opcional)" placeholder="https://..." value={bannerImage} onChange={(e) => setBannerImage(e.target.value)} />
+                <Input label="URL da imagem (opcional)" placeholder="Cole link do Google Drive ou URL" value={bannerImage} onChange={(e) => setBannerImage(e.target.value)} />
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-white">Alinhamento do texto</label>
                   <div className="flex gap-2">
@@ -171,7 +172,7 @@ export default function Settings() {
                   <div className="absolute right-0 top-0 h-40 w-40 translate-x-8 -translate-y-8 rounded-full bg-accent/10 blur-3xl" />
                 )}
                 {bannerImage && (
-                  <img src={bannerImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                  <img src={resolveImageUrl(bannerImage)} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                 )}
                 <div className={`relative z-10 ${bannerAlign === 'center' ? '' : 'max-w-xs'}`}>
                   <p className="text-lg font-bold text-white">{bannerTitle || 'Título do banner'}</p>
@@ -224,10 +225,10 @@ export default function Settings() {
           <div className="space-y-4">
             <div className="space-y-3">
               <Input label="Chave PIX" placeholder="CNPJ, CPF, email ou telefone" value={pixKey} onChange={(e) => setPixKey(e.target.value)} />
-              <Input label="URL do QR Code PIX (opcional)" placeholder="https://..." value={pixQrCode} onChange={(e) => setPixQrCode(e.target.value)} icon={<QrCode size={16} />} />
+              <Input label="URL do QR Code PIX (opcional)" placeholder="Cole link do Google Drive ou URL" value={pixQrCode} onChange={(e) => setPixQrCode(e.target.value)} icon={<QrCode size={16} />} />
               {pixQrCode && (
                 <div className="flex justify-center">
-                  <img src={pixQrCode} alt="QR Code PIX" className="h-32 w-32 rounded-xl border border-border object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                  <img src={resolveImageUrl(pixQrCode)} alt="QR Code PIX" className="h-32 w-32 rounded-xl border border-border object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                 </div>
               )}
             </div>
