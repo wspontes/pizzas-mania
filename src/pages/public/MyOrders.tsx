@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase/config'
 import { ArrowLeft, ShoppingBag, Clock, CheckCircle, Bike, ChefHat, QrCode, LogIn, LogOut, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui'
@@ -28,16 +28,36 @@ export default function MyOrders() {
 
   useEffect(() => {
     if (!isLoggedIn || !customer) { setLoading(false); return }
-    const q = query(
+
+    const phoneQuery = query(
       collection(db, 'orders'),
       where('customerPhone', '==', customer.phone),
-      orderBy('createdAt', 'desc')
     )
-    const unsub = onSnapshot(q, (snap) => {
-      setOrders(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Order)))
+
+    const nameQuery = query(
+      collection(db, 'orders'),
+      where('customerName', '==', customer.name),
+    )
+
+    const allOrders = new Map<string, Order>()
+
+    const unsub1 = onSnapshot(phoneQuery, (snap) => {
+      snap.docs.forEach((d) => {
+        allOrders.set(d.id, { id: d.id, ...d.data() } as Order)
+      })
+      setOrders([...allOrders.values()].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
       setLoading(false)
-    }, () => setLoading(false))
-    return () => unsub()
+    })
+
+    const unsub2 = onSnapshot(nameQuery, (snap) => {
+      snap.docs.forEach((d) => {
+        allOrders.set(d.id, { id: d.id, ...d.data() } as Order)
+      })
+      setOrders([...allOrders.values()].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
+      setLoading(false)
+    })
+
+    return () => { unsub1(); unsub2() }
   }, [customer, isLoggedIn])
 
   if (!isLoggedIn) {
