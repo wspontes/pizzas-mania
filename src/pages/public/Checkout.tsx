@@ -37,7 +37,7 @@ export default function Checkout() {
   const [error, setError] = useState('')
   const [form, setForm] = useState({
     name: customer?.name || '',
-    whatsappDigits: customer?.phone ? customer.phone.replace(/^55/, '') : '',
+    whatsappDigits: customer?.phone ? customer.phone.replace(/^\+?55/, '') : '',
     street: '',
     number: '',
     complement: '',
@@ -114,7 +114,7 @@ export default function Checkout() {
       const saved = await ordersService.create(firestoreData)
 
       if (!isLoggedIn && form.name && form.whatsappDigits) {
-        login(form.name, '+55' + form.whatsappDigits)
+        login(form.name, form.whatsappDigits)
       }
 
       if (state.couponCode) {
