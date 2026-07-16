@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase/config'
-import { ArrowLeft, ShoppingBag, Clock, CheckCircle, Bike, ChefHat, QrCode, LogIn, LogOut, RotateCcw } from 'lucide-react'
+import { ArrowLeft, ShoppingBag, CheckCircle, Bike, ChefHat, QrCode, LogIn, LogOut, RotateCcw, Banknote, CreditCard, Bell } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { useCustomer } from '@/contexts/CustomerContext'
 import { useCart } from '@/contexts/CartContext'
@@ -20,11 +20,43 @@ const statusMap: Record<string, { label: string; color: string; icon: typeof Che
   cancelled: { label: 'Cancelado', color: 'text-red-400', icon: CheckCircle },
 }
 
+const paymentLabels: Record<string, string> = {
+  pix: 'PIX',
+  credit: 'Cartão de Crédito',
+  debit: 'Cartão de Débito',
+  cash: 'Dinheiro',
+  delivery: 'Pagar na Entrega',
+}
+
+function playStatusBeep() {
+  try {
+    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.frequency.value = 600
+    osc.type = 'sine'
+    gain.gain.setValueAtTime(0.25, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3)
+    osc.start(ctx.currentTime)
+    osc.stop(ctx.currentTime + 0.3)
+  } catch { /* Audio not available */ }
+}
+
 export default function MyOrders() {
   const { customer, isLoggedIn, logout } = useCustomer()
   const [showLogin, setShowLogin] = useState(false)
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const [toast, setToast] = useState<string | null>(null)
+  const prevStatuses = useRef<Map<string, string>>(new Map())
+
+  const showNotification = useCallback((msg: string) => {
+    setToast(msg)
+    playStatusBeep()
+    setTimeout(() => setToast(null), 5000)
+  }, [])
 
   useEffect(() => {
     if (!isLoggedIn || !customer) { setLoading(false); return }
@@ -41,24 +73,43 @@ export default function MyOrders() {
 
     const allOrders = new Map<string, Order>()
 
+    const merge = () => {
+      const list = [...allOrders.values()].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      list.forEach((order) => {
+        const prev = prevStatuses.current.get(order.id)
+        if (prev && prev !== order.status) {
+          const label = statusMap[order.status]?.label || order.status
+          showNotification(`Pedido #${order.id.slice(0, 6)}: ${label}`)
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Pizzas Mania', { body: `Pedido #${order.id.slice(0, 6)}: ${label}` })
+          }
+        }
+        prevStatuses.current.set(order.id, order.status)
+      })
+      setOrders(list)
+      setLoading(false)
+    }
+
     const unsub1 = onSnapshot(phoneQuery, (snap) => {
       snap.docs.forEach((d) => {
         allOrders.set(d.id, { id: d.id, ...d.data() } as Order)
       })
-      setOrders([...allOrders.values()].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
-      setLoading(false)
+      merge()
     })
 
     const unsub2 = onSnapshot(nameQuery, (snap) => {
       snap.docs.forEach((d) => {
         allOrders.set(d.id, { id: d.id, ...d.data() } as Order)
       })
-      setOrders([...allOrders.values()].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
-      setLoading(false)
+      merge()
     })
 
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+
     return () => { unsub1(); unsub2() }
-  }, [customer, isLoggedIn])
+  }, [customer, isLoggedIn, showNotification])
 
   if (!isLoggedIn) {
     return (
@@ -84,6 +135,15 @@ export default function MyOrders() {
 
   return (
     <div className="container mx-auto px-4 py-6">
+      {toast && (
+        <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 animate-[fadeIn_0.2s_ease-out]">
+          <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-4 py-3 shadow-lg backdrop-blur-sm">
+            <Bell size={16} className="text-accent shrink-0" />
+            <span className="text-sm font-medium text-white">{toast}</span>
+          </div>
+        </div>
+      )}
+
       <div className="mb-6 flex items-center gap-3">
         <Link to="/" className="text-muted transition-colors hover:text-white">
           <ArrowLeft size={20} />
@@ -148,6 +208,10 @@ function OrderItem({ order }: { order: Order }) {
   const dateStr = created.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
   const timeStr = created.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
   const isCompleted = order.status === 'delivered' || order.status === 'cancelled'
+  const payLabel = paymentLabels[order.paymentMethod] || order.paymentMethod
+  const PayIcon = order.paymentMethod === 'pix' ? QrCode
+    : order.paymentMethod === 'credit' || order.paymentMethod === 'debit' ? CreditCard
+    : Banknote
 
   const reorder = () => {
     order.items.forEach((item) => {
@@ -175,20 +239,19 @@ function OrderItem({ order }: { order: Order }) {
           <p key={i} className="text-sm text-muted">{item.quantity}x {item.productName}</p>
         ))}
       </div>
-      <div className="flex items-center justify-between border-t border-border pt-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted">#{order.id.slice(0, 8)}</span>
-          {isCompleted && (
-            <button
-              onClick={reorder}
-              className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-accent transition-colors hover:bg-accent/10"
-            >
-              <RotateCcw size={11} />
-              Pedir novamente
-            </button>
-          )}
-        </div>
-        <span className="text-sm font-semibold text-white">{formatCurrency(order.total)}</span>
+      <div className="flex items-center gap-3 border-t border-border pt-2 text-xs text-muted">
+        <span className="flex items-center gap-1"><PayIcon size={11} />{payLabel}</span>
+        <span className="flex items-center gap-1">#{order.id.slice(0, 8)}</span>
+        {isCompleted && (
+          <button
+            onClick={reorder}
+            className="flex items-center gap-1 ml-auto rounded-md px-2 py-1 font-medium text-accent transition-colors hover:bg-accent/10"
+          >
+            <RotateCcw size={11} />
+            Pedir novamente
+          </button>
+        )}
+        <span className="text-sm font-semibold text-white ml-auto">{formatCurrency(order.total)}</span>
       </div>
     </div>
   )

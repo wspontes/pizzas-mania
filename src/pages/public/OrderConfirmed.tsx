@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useLocation, Link } from 'react-router-dom'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase/config'
-import { CheckCircle, Clock, Bike, ChefHat, ShoppingBag, QrCode, AlertTriangle, Copy } from 'lucide-react'
+import { CheckCircle, Clock, Bike, ChefHat, ShoppingBag, QrCode, AlertTriangle, Copy, Bell } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { useSettings } from '@/hooks'
 import { formatCurrency } from '@/utils'
@@ -15,25 +15,63 @@ const allSteps = [
   { key: 'delivered', icon: Clock, label: 'Entregue' },
 ]
 
-const doneStatuses = ['received', 'preparing', 'outForDelivery', 'delivered']
-
 const stepOrder = ['waitingPayment', 'received', 'preparing', 'outForDelivery', 'delivered']
+
+function playStatusBeep() {
+  try {
+    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.frequency.value = 600
+    osc.type = 'sine'
+    gain.gain.setValueAtTime(0.25, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3)
+    osc.start(ctx.currentTime)
+    osc.stop(ctx.currentTime + 0.3)
+  } catch { /* Audio not available */ }
+}
 
 export default function OrderConfirmed() {
   const location = useLocation()
   const { settings } = useSettings()
   const initialOrder = (location.state as { order?: Record<string, unknown> })?.order
   const [order, setOrder] = useState<Record<string, unknown> | null>(initialOrder || null)
+  const [toast, setToast] = useState<string | null>(null)
+  const prevStatus = useRef<string>((initialOrder?.status as string) || '')
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg)
+    playStatusBeep()
+    setTimeout(() => setToast(null), 5000)
+  }, [])
 
   useEffect(() => {
     if (!order?.id) return
     const unsub = onSnapshot(doc(db, 'orders', order.id as string), (snap) => {
       if (snap.exists()) {
-        setOrder({ id: snap.id, ...snap.data() })
+        const data = { id: snap.id, ...snap.data() } as Record<string, unknown>
+        const newStatus = (data.status as string) || ''
+        if (prevStatus.current && prevStatus.current !== newStatus) {
+          const statusLabels: Record<string, string> = {
+            received: 'Recebido',
+            preparing: 'Saiu para produção',
+            outForDelivery: 'Saiu para entrega',
+            delivered: 'Entregue',
+            cancelled: 'Cancelado',
+          }
+          showToast(statusLabels[newStatus] || newStatus)
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Pizzas Mania', { body: `Seu pedido: ${statusLabels[newStatus] || newStatus}` })
+          }
+        }
+        prevStatus.current = newStatus
+        setOrder(data as Record<string, unknown>)
       }
     })
     return () => unsub()
-  }, [initialOrder?.id])
+  }, [initialOrder?.id, showToast])
 
   if (!order) {
     return (
@@ -59,8 +97,22 @@ export default function OrderConfirmed() {
     : currentStatus === 'delivered' ? 'Entregue'
     : currentStatus === 'cancelled' ? 'Cancelado' : ''
 
+  const paymentLabels: Record<string, string> = {
+    pix: 'PIX', credit: 'Cartão de Crédito', debit: 'Cartão de Débito',
+    cash: 'Dinheiro', delivery: 'Pagar na Entrega',
+  }
+
   return (
     <div className="container mx-auto px-4 py-6">
+      {toast && (
+        <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 animate-[fadeIn_0.2s_ease-out]">
+          <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-4 py-3 shadow-lg backdrop-blur-sm">
+            <Bell size={16} className="text-accent shrink-0" />
+            <span className="text-sm font-medium text-white">{toast}</span>
+          </div>
+        </div>
+      )}
+
       <div className="mx-auto max-w-lg text-center">
         <div className={`mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full ${isPaidOrNotPix ? 'bg-green-500/10' : 'bg-yellow-500/10'}`}>
           {isPaidOrNotPix ? <CheckCircle size={48} className="text-green-500" /> : <QrCode size={48} className="text-yellow-500" />}
@@ -144,11 +196,8 @@ export default function OrderConfirmed() {
           <div className="space-y-1 text-sm">
             <p className="flex justify-between text-muted"><span>Cliente</span><span className="text-white">{order.customerName as string}</span></p>
             <p className="flex justify-between text-muted"><span>Total</span><span className="text-accent font-semibold">{formatCurrency(order.total as number)}</span></p>
-            <p className="flex justify-between text-muted"><span>Pagamento</span><span className="text-white capitalize">
-              {(order.paymentMethod as string) === 'pix' ? 'PIX' :
-               (order.paymentMethod as string) === 'credit' ? 'Cartão de Crédito' :
-               (order.paymentMethod as string) === 'debit' ? 'Cartão de Débito' :
-               (order.paymentMethod as string) === 'cash' ? 'Dinheiro' : 'Pagar na Entrega'}
+            <p className="flex justify-between text-muted"><span>Pagamento</span><span className="text-white">
+              {paymentLabels[order.paymentMethod as string] || (order.paymentMethod as string)}
             </span></p>
           </div>
         </div>
