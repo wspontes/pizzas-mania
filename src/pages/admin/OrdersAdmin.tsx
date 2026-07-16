@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { ChefHat, XCircle, ArrowLeft, MessageSquare, CheckCircle, Search, User as UserIcon, Clock, Banknote, Bell } from 'lucide-react'
+import { ChefHat, XCircle, ArrowLeft, MessageSquare, CheckCircle, Search, User as UserIcon, Clock, Banknote, Bell, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { ordersService } from '@/services'
 import { onSnapshot, collection, query, orderBy } from 'firebase/firestore'
@@ -11,7 +11,6 @@ import { useToast } from '@/contexts/ToastContext'
 const statusConfig: Record<string, { label: string; color: string }> = {
   waitingPayment: { label: 'Aguard. Pagamento', color: 'bg-yellow-500/10 text-yellow-400' },
   received: { label: 'Recebido', color: 'bg-blue-500/10 text-blue-400' },
-  analyzing: { label: 'Em análise', color: 'bg-yellow-500/10 text-yellow-400' },
   accepted: { label: 'Aceito', color: 'bg-green-500/10 text-green-400' },
   preparing: { label: 'Preparando', color: 'bg-orange-500/10 text-orange-400' },
   outForDelivery: { label: 'Saiu para entrega', color: 'bg-purple-500/10 text-purple-400' },
@@ -19,9 +18,9 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   cancelled: { label: 'Cancelado', color: 'bg-red-500/10 text-red-400' },
 }
 
-const statuses = ['waitingPayment', 'received', 'analyzing', 'accepted', 'preparing', 'outForDelivery', 'delivered'] as const
+const statuses = ['waitingPayment', 'received', 'accepted', 'preparing', 'outForDelivery', 'delivered'] as const
 
-const sectionOrder = ['waitingPayment', 'received', 'analyzing', 'accepted', 'preparing', 'outForDelivery'] as const
+const sectionOrder = ['waitingPayment', 'received', 'accepted', 'preparing', 'outForDelivery'] as const
 const doneStatus = 'delivered'
 const cancelledStatus = 'cancelled'
 
@@ -49,6 +48,7 @@ export default function OrdersAdmin() {
   const [search, setSearch] = useState('')
   const [whatsappModal, setWhatsappModal] = useState<{ phone: string; name: string; message: string } | null>(null)
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  const [cancelConfirm, setCancelConfirm] = useState<string | null>(null)
   const prevIds = useRef<Set<string>>(new Set())
   const { showToast } = useToast()
 
@@ -103,6 +103,7 @@ export default function OrdersAdmin() {
   }
 
   const cancelOrder = async (orderId: string) => {
+    setCancelConfirm(null)
     await ordersService.update(orderId, { status: 'cancelled' } as Partial<Order>)
   }
 
@@ -163,11 +164,11 @@ export default function OrdersAdmin() {
               <button onClick={() => toggleSection('ativos')} className="mb-3 flex items-center gap-2 text-sm font-semibold text-white hover:text-accent transition-colors">
                 <Bell size={14} />
                 Em Andamento ({activeOrders.length})
-                <span className="text-muted ml-1">{collapsed.has('ativos') ? '[mostrar]' : '[ocultar]'}</span>
+                {collapsed.has('ativos') ? <ChevronDown size={14} className="text-muted" /> : <ChevronUp size={14} className="text-muted" />}
               </button>
               {!collapsed.has('ativos') && (
                 <div className="space-y-3">
-                  {activeOrders.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder, setWhatsappModal, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
+                  {activeOrders.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: (id: string) => setCancelConfirm(id), setWhatsappModal, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
                 </div>
               )}
             </div>
@@ -178,11 +179,11 @@ export default function OrdersAdmin() {
               <button onClick={() => toggleSection('entregues')} className="mb-3 flex items-center gap-2 text-sm font-semibold text-green-400 hover:text-green-300 transition-colors">
                 <CheckCircle size={14} />
                 Entregues ({doneOnes.length})
-                <span className="text-muted ml-1">{collapsed.has('entregues') ? '[mostrar]' : '[ocultar]'}</span>
+                {collapsed.has('entregues') ? <ChevronDown size={14} className="text-muted" /> : <ChevronUp size={14} className="text-muted" />}
               </button>
               {!collapsed.has('entregues') && (
                 <div className="space-y-3">
-                  {doneOnes.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder, setWhatsappModal, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
+                  {doneOnes.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: () => {}, setWhatsappModal, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
                 </div>
               )}
             </div>
@@ -193,11 +194,11 @@ export default function OrdersAdmin() {
               <button onClick={() => toggleSection('cancelados')} className="mb-3 flex items-center gap-2 text-sm font-semibold text-red-400 hover:text-red-300 transition-colors">
                 <XCircle size={14} />
                 Cancelados ({cancelledOnes.length})
-                <span className="text-muted ml-1">{collapsed.has('cancelados') ? '[mostrar]' : '[ocultar]'}</span>
+                {collapsed.has('cancelados') ? <ChevronDown size={14} className="text-muted" /> : <ChevronUp size={14} className="text-muted" />}
               </button>
               {!collapsed.has('cancelados') && (
                 <div className="space-y-3">
-                  {cancelledOnes.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder, setWhatsappModal, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
+                  {cancelledOnes.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: () => {}, setWhatsappModal, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
                 </div>
               )}
             </div>
@@ -225,6 +226,29 @@ export default function OrdersAdmin() {
                 Enviar via WhatsApp
               </Button>
               <Button variant="ghost" className="text-sm h-10" onClick={() => setWhatsappModal(null)}>Cancelar</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cancelConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setCancelConfirm(null)}>
+          <div className="w-full max-w-sm rounded-xl border border-border bg-surface p-5 md:p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10">
+                <XCircle size={28} className="text-red-400" />
+              </div>
+            </div>
+            <h3 className="mb-2 text-center text-base font-semibold text-white">Cancelar pedido?</h3>
+            <p className="mb-5 text-center text-sm text-muted">Tem certeza que deseja cancelar este pedido? Esta ação não pode ser desfeita.</p>
+            <div className="flex gap-2">
+              <Button variant="ghost" className="flex-1 text-sm h-10" onClick={() => setCancelConfirm(null)}>
+                Voltar
+              </Button>
+              <Button className="flex-1 text-sm h-10 bg-red-600 hover:bg-red-700" onClick={() => cancelOrder(cancelConfirm)}>
+                <XCircle size={15} />
+                Sim, cancelar
+              </Button>
             </div>
           </div>
         </div>

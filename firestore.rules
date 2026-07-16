@@ -15,6 +15,12 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Coupons: readable by anyone (guests need to validate), writable by admins
+    match /coupons/{doc} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
     // Users: readable for username-based login
     match /users/{userId} {
       allow read: if true;

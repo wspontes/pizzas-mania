@@ -23,7 +23,7 @@ class OrdersService extends FirestoreService<Order> {
 
   async getPending() {
     return this.getAll([
-      where('status', 'in', ['received', 'analyzing', 'accepted']),
+      where('status', 'in', ['received', 'accepted']),
       orderBy('createdAt', 'asc'),
     ])
   }

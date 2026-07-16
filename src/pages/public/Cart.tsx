@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft, Ticket, AlertTriangle } from 'lucide-react'
 import { useState } from 'react'
+import { Timestamp } from 'firebase/firestore'
 import { Button, Input } from '@/components/ui'
 import { useCart } from '@/contexts/CartContext'
 import { useSettings } from '@/hooks'
@@ -13,25 +14,30 @@ export default function Cart() {
   const [couponInput, setCouponInput] = useState('')
   const [couponApplied, setCouponApplied] = useState(false)
   const [couponError, setCouponError] = useState('')
+  const [couponLoading, setCouponLoading] = useState(false)
 
   const minOrder = settings?.minOrder ?? 25
   const belowMin = subtotal > 0 && subtotal < minOrder
 
   const handleApplyCoupon = async () => {
     setCouponError('')
-    if (!couponInput.trim()) return
+    setCouponLoading(true)
     try {
       const all = await couponsService.getAll()
       const coupon = all.find((c) => c.code === couponInput.trim().toUpperCase() && c.active)
-      if (!coupon) { setCouponError('Cupom inválido ou expirado'); return }
-      if (new Date(coupon.expiresAt) < new Date()) { setCouponError('Cupom expirado'); return }
-      if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) { setCouponError('Cupom já atingiu o limite de usos'); return }
-      if (coupon.minOrder && subtotal < coupon.minOrder) { setCouponError(`Valor mínimo de R$ ${coupon.minOrder.toFixed(2)} para este cupom`); return }
-      const discount = coupon.type === 'percentage' ? (subtotal * coupon.value) / 100 : coupon.value
-      applyCoupon(coupon.code, discount)
+      if (!coupon) { setCouponError('Cupom inválido ou expirado'); setCouponLoading(false); return }
+
+      const expiry = coupon.expiresAt instanceof Timestamp ? coupon.expiresAt.toDate() : coupon.expiresAt instanceof Date ? coupon.expiresAt : new Date(String(coupon.expiresAt))
+      if (expiry < new Date()) { setCouponError('Cupom expirado'); setCouponLoading(false); return }
+      if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) { setCouponError('Cupom já atingiu o limite de usos'); setCouponLoading(false); return }
+      if (coupon.minOrder && subtotal < coupon.minOrder) { setCouponError(`Valor mínimo de R$ ${coupon.minOrder.toFixed(2)} para este cupom`); setCouponLoading(false); return }
+
+      applyCoupon(coupon.code, coupon.type, coupon.value)
       setCouponApplied(true)
     } catch {
       setCouponError('Erro ao validar cupom')
+    } finally {
+      setCouponLoading(false)
     }
   }
 
@@ -96,11 +102,18 @@ export default function Cart() {
         <div className="space-y-4">
           <div className="rounded-xl border border-border bg-surface p-4">
             <h3 className="mb-3 font-semibold text-white text-sm">Cupom de desconto</h3>
-            <div className="flex gap-2">
-              <Input placeholder="Digite o cupom" value={couponInput} onChange={(e) => setCouponInput(e.target.value)} icon={<Ticket size={16} />} />
-              <Button variant="outline" size="md" onClick={handleApplyCoupon}>Aplicar</Button>
-            </div>
-            {couponApplied && <p className="mt-2 text-xs text-green-400">Cupom aplicado com sucesso!</p>}
+            {couponApplied ? (
+              <div className="flex items-center gap-2 rounded-lg bg-green-500/10 px-3 py-2.5">
+                <Ticket size={16} className="text-green-400 shrink-0" />
+                <span className="text-sm text-green-400 font-medium">{state.couponCode}</span>
+                <span className="text-xs text-green-400/70 ml-auto">Aplicado</span>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Input placeholder="Digite o cupom" value={couponInput} onChange={(e) => setCouponInput(e.target.value)} icon={<Ticket size={16} />} disabled={couponLoading} />
+                <Button variant="outline" size="md" onClick={handleApplyCoupon} loading={couponLoading}>Aplicar</Button>
+              </div>
+            )}
             {couponError && <p className="mt-2 text-xs text-red-400">{couponError}</p>}
           </div>
 

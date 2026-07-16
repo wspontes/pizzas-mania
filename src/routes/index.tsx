@@ -10,6 +10,7 @@ const Register = lazy(() => import('@/pages/public/Register'))
 const Cart = lazy(() => import('@/pages/public/Cart'))
 const Checkout = lazy(() => import('@/pages/public/Checkout'))
 const OrderConfirmed = lazy(() => import('@/pages/public/OrderConfirmed'))
+const MyOrders = lazy(() => import('@/pages/public/MyOrders'))
 const AdminDashboard = lazy(() => import('@/pages/admin/Dashboard'))
 const AdminProducts = lazy(() => import('@/pages/admin/Products'))
 const AdminProductForm = lazy(() => import('@/pages/admin/ProductForm'))
@@ -28,6 +29,16 @@ function PageLoader() {
   )
 }
 
+function ChunkError() {
+  setTimeout(() => window.location.reload(), 2000)
+  return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+      <div className="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      <p className="text-sm text-muted">Atualizando... Nova versão disponível</p>
+    </div>
+  )
+}
+
 function ProtectedAdmin({ children }: { children: React.ReactNode }) {
   return <ProtectedRoute roles={['admin', 'manager', 'attendant']}>{children}</ProtectedRoute>
 }
@@ -40,17 +51,20 @@ export const router = createBrowserRouter([
   {
     path: '/',
     element: <PublicLayout />,
+    errorElement: <ChunkError />,
     children: [
       { index: true, element: <Suspense fallback={<PageLoader />}><Home /></Suspense> },
       { path: 'cardapio', element: <Suspense fallback={<PageLoader />}><Menu /></Suspense> },
       { path: 'carrinho', element: <Suspense fallback={<PageLoader />}><Cart /></Suspense> },
       { path: 'checkout', element: <Suspense fallback={<PageLoader />}><Checkout /></Suspense> },
       { path: 'pedido/confirmacao', element: <Suspense fallback={<PageLoader />}><OrderConfirmed /></Suspense> },
+      { path: 'meus-pedidos', element: <Suspense fallback={<PageLoader />}><MyOrders /></Suspense> },
     ],
   },
   {
     path: '/auth',
     element: <AuthLayout />,
+    errorElement: <ChunkError />,
     children: [
       { path: 'login', element: <Suspense fallback={<PageLoader />}><Login /></Suspense> },
       { path: 'register', element: <Suspense fallback={<PageLoader />}><Register /></Suspense> },
@@ -59,6 +73,7 @@ export const router = createBrowserRouter([
   {
     path: '/admin',
     element: <ProtectedAdmin><AdminLayout /></ProtectedAdmin>,
+    errorElement: <ChunkError />,
     children: [
       { index: true, element: <Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense> },
       { path: 'pedidos', element: <Suspense fallback={<PageLoader />}><AdminOrders /></Suspense> },
@@ -73,6 +88,7 @@ export const router = createBrowserRouter([
   {
     path: '/cozinha',
     element: <ProtectedKitchen><KitchenLayout /></ProtectedKitchen>,
+    errorElement: <ChunkError />,
     children: [
       { index: true, element: <Suspense fallback={<PageLoader />}><KitchenDashboard /></Suspense> },
     ],

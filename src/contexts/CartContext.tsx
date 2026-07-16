@@ -5,6 +5,8 @@ interface CartState {
   items: OrderItem[]
   couponCode?: string
   couponDiscount: number
+  couponType?: 'percentage' | 'fixed'
+  couponValue?: number
   deliveryFee: number
 }
 
@@ -12,7 +14,7 @@ type CartAction =
   | { type: 'ADD_ITEM'; payload: OrderItem }
   | { type: 'REMOVE_ITEM'; payload: { productId: string } }
   | { type: 'UPDATE_QUANTITY'; payload: { productId: string; quantity: number } }
-  | { type: 'APPLY_COUPON'; payload: { code: string; discount: number } }
+  | { type: 'APPLY_COUPON'; payload: { code: string; type: 'percentage' | 'fixed'; value: number } }
   | { type: 'SET_DELIVERY_FEE'; payload: number }
   | { type: 'CLEAR_CART' }
 
@@ -21,7 +23,7 @@ interface CartContextType {
   addItem: (item: OrderItem) => void
   removeItem: (productId: string) => void
   updateQuantity: (productId: string, quantity: number) => void
-  applyCoupon: (code: string, discount: number) => void
+  applyCoupon: (code: string, type: 'percentage' | 'fixed', value: number) => void
   setDeliveryFee: (fee: number) => void
   clearCart: () => void
   subtotal: number
@@ -48,11 +50,11 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       }
       return { ...state, items: [...state.items, action.payload] }
     }
-    case 'REMOVE_ITEM':
-      return {
-        ...state,
-        items: state.items.filter((i) => i.productId !== action.payload.productId),
-      }
+    case 'REMOVE_ITEM': {
+      const newItems = state.items.filter((i) => i.productId !== action.payload.productId)
+      if (newItems.length === 0) return { items: [], couponDiscount: 0, couponType: undefined, couponValue: undefined, couponCode: undefined, deliveryFee: 0 }
+      return { ...state, items: newItems }
+    }
     case 'UPDATE_QUANTITY':
       return {
         ...state,
@@ -66,7 +68,9 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       return {
         ...state,
         couponCode: action.payload.code,
-        couponDiscount: action.payload.discount,
+        couponType: action.payload.type,
+        couponValue: action.payload.value,
+        couponDiscount: action.payload.type === 'percentage' ? 0 : action.payload.value,
       }
     case 'SET_DELIVERY_FEE':
       return { ...state, deliveryFee: action.payload }
@@ -88,7 +92,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     (acc, item) => acc + item.price * item.quantity,
     0
   )
-  const total = subtotal - state.couponDiscount + state.deliveryFee
+
+  let calculatedDiscount = 0
+  if (state.couponCode && state.couponType && state.couponValue !== undefined) {
+    calculatedDiscount = state.couponType === 'percentage'
+      ? (subtotal * state.couponValue) / 100
+      : state.couponValue
+  }
+
+  const total = subtotal - calculatedDiscount + state.deliveryFee
 
   const addItem = (item: OrderItem) =>
     dispatch({ type: 'ADD_ITEM', payload: item })
@@ -96,8 +108,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'REMOVE_ITEM', payload: { productId } })
   const updateQuantity = (productId: string, quantity: number) =>
     dispatch({ type: 'UPDATE_QUANTITY', payload: { productId, quantity } })
-  const applyCoupon = (code: string, discount: number) =>
-    dispatch({ type: 'APPLY_COUPON', payload: { code, discount } })
+  const applyCoupon = (code: string, type: 'percentage' | 'fixed', value: number) =>
+    dispatch({ type: 'APPLY_COUPON', payload: { code, type, value } })
   const setDeliveryFee = (fee: number) =>
     dispatch({ type: 'SET_DELIVERY_FEE', payload: fee })
   const clearCart = () => dispatch({ type: 'CLEAR_CART' })

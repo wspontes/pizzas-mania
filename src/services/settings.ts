@@ -24,12 +24,15 @@ export interface BusinessSettings {
     delivery?: { enabled: boolean }
   }
   whatsapp?: string
+  instagram?: string
+  phone?: string
   banner?: {
     title: string
     subtitle: string
     image?: string
     active: boolean
     align?: 'left' | 'center' | 'right'
+    benefits?: string[]
   }
 }
 

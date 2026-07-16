@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { ShoppingBag, DollarSign, TrendingUp, Clock } from 'lucide-react'
 import { ordersService } from '@/services'
 import type { Order } from '@/types'
-import { formatCurrency } from '@/utils'
+import { formatCurrency, formatTime, formatDate } from '@/utils'
 
 export default function Dashboard() {
   const [orders, setOrders] = useState<Order[]>([])
@@ -142,7 +142,7 @@ export default function Dashboard() {
                 <div className="min-w-0 flex-1 mr-3">
                   <p className="text-sm font-medium text-white truncate">{order.customerName}</p>
                   <p className="text-xs text-muted">
-                    {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    {formatDate(new Date(order.createdAt))} • {formatTime(new Date(order.createdAt))}
                     {' • '}{order.items.reduce((s, i) => s + i.quantity, 0)} itens
                   </p>
                 </div>

@@ -1,6 +1,54 @@
-import { UtensilsCrossed } from 'lucide-react'
+import { UtensilsCrossed, Phone } from 'lucide-react'
+import { useSettings } from '@/hooks'
+
+const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+
+function formatHourRange(hours: { dayOfWeek: number; open: string; close: string; closed: boolean }[]) {
+  const open = hours.filter((h) => !h.closed && h.open && h.close)
+  if (open.length === 0) return ['Horário não disponível']
+
+  const groups: { dayOfWeek: number; open: string; close: string; closed: boolean }[][] = []
+  let current = [open[0]]
+  for (let i = 1; i < open.length; i++) {
+    const prev = open[i - 1]
+    const curr = open[i]
+    if (prev.close === curr.open && curr.dayOfWeek === prev.dayOfWeek + 1) {
+      current.push(curr)
+    } else {
+      groups.push(current)
+      current = [curr]
+    }
+  }
+  groups.push(current)
+
+  return groups.map((g) => {
+    const first = g[0]
+    const last = g[g.length - 1]
+    const prefix = first.dayOfWeek === last.dayOfWeek ? dayLabels[first.dayOfWeek] : `${dayLabels[first.dayOfWeek]} - ${dayLabels[last.dayOfWeek]}`
+    return `${prefix}: ${first.open.slice(0, 5)} às ${last.close.slice(0, 5)}`
+  })
+}
+
+function InstagramIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  )
+}
 
 export function Footer() {
+  const { settings, loading } = useSettings()
+
+  const hours = settings?.businessHours
+  const phone = settings?.phone
+  const instagram = settings?.instagram
+  const whatsapp = settings?.whatsapp
+
+  const hourLines = hours ? formatHourRange(hours) : []
+
   return (
     <footer className="mt-auto border-t border-border bg-surface">
       <div className="container mx-auto px-4 py-8">
@@ -18,17 +66,33 @@ export function Footer() {
           <div>
             <h4 className="mb-3 text-sm font-semibold text-white">Horários</h4>
             <div className="space-y-1 text-sm text-muted">
-              <p>Seg - Qui: 18h às 23h</p>
-              <p>Sex - Sáb: 18h às 00h</p>
-              <p>Dom: 18h às 22h</p>
+              {loading ? (
+                <p>Carregando...</p>
+              ) : hourLines.length > 0 ? (
+                hourLines.map((line, i) => (
+                  <p key={i}>{line}</p>
+                ))
+              ) : (
+                <p>Horários não disponíveis</p>
+              )}
             </div>
           </div>
 
           <div>
             <h4 className="mb-3 text-sm font-semibold text-white">Contato</h4>
             <div className="space-y-1 text-sm text-muted">
-              <p>WhatsApp: (11) 99999-9999</p>
-              <p>contato@pizzasmania.com.br</p>
+              {phone && <p className="flex items-center gap-2"><Phone size={14} /> {phone}</p>}
+              {whatsapp && <p>WhatsApp: {whatsapp.replace(/^55/, '').replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')}</p>}
+              {instagram && (
+                <a
+                  href={instagram.startsWith('http') ? instagram : `https://instagram.com/${instagram.replace('@', '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-accent hover:text-red-400 transition-colors"
+                >
+                  <InstagramIcon size={14} /> Instagram
+                </a>
+              )}
             </div>
           </div>
         </div>

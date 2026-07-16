@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Clock, MapPin, DollarSign, CreditCard, Image, Plus, QrCode } from 'lucide-react'
+import { Clock, MapPin, DollarSign, CreditCard, Image, Plus, QrCode, Phone, Trash2, Sparkles } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { settingsService, type BusinessSettings } from '@/services/settings'
 
@@ -34,6 +34,9 @@ export default function Settings() {
   const [bannerActive, setBannerActive] = useState(true)
   const [bannerAlign, setBannerAlign] = useState<'left' | 'center' | 'right'>('left')
   const [whatsapp, setWhatsapp] = useState('')
+  const [instagram, setInstagram] = useState('')
+  const [phone, setPhone] = useState('')
+  const [bannerBenefits, setBannerBenefits] = useState(['Ingredientes selecionados', 'Pronto em até 30 min', 'Entrega gratuita*'])
 
   useEffect(() => {
     settingsService.get().then((data) => {
@@ -64,8 +67,11 @@ export default function Settings() {
           setBannerImage(data.banner.image || '')
           setBannerActive(data.banner.active ?? true)
           setBannerAlign(data.banner.align || 'left')
+          if (data.banner.benefits?.length) setBannerBenefits(data.banner.benefits)
         }
         if (data.whatsapp) setWhatsapp(data.whatsapp)
+        if (data.instagram) setInstagram(data.instagram)
+        if (data.phone) setPhone(data.phone)
       }
     }).catch(() => {})
   }, [])
@@ -95,8 +101,11 @@ export default function Settings() {
         image: bannerImage,
         active: bannerActive,
         align: bannerAlign,
+        benefits: bannerBenefits,
       },
       whatsapp,
+      instagram,
+      phone,
     }
     await settingsService.save(data)
     setSaving(false)
@@ -175,6 +184,40 @@ export default function Settings() {
 
         <div className="rounded-xl border border-border bg-surface p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
+            <Sparkles size={18} className="text-accent" />
+            Textos do Banner (Benefícios)
+          </h2>
+          <p className="mb-3 text-xs text-muted">Textos que aparecem abaixo do banner na página inicial</p>
+          <div className="space-y-3">
+            {bannerBenefits.map((benefit, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={benefit}
+                  onChange={(e) => {
+                    const updated = [...bannerBenefits]
+                    updated[i] = e.target.value
+                    setBannerBenefits(updated)
+                  }}
+                  className="flex-1 rounded-lg border border-border bg-surface-hover px-3 py-2.5 text-sm text-white placeholder:text-muted transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                />
+                <button
+                  onClick={() => setBannerBenefits(bannerBenefits.filter((_, idx) => idx !== i))}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            ))}
+            <Button variant="ghost" size="sm" onClick={() => setBannerBenefits([...bannerBenefits, ''])}>
+              <Plus size={14} />
+              Adicionar texto
+            </Button>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
             <CreditCard size={18} className="text-accent" />
             Métodos de Pagamento
           </h2>
@@ -240,11 +283,15 @@ export default function Settings() {
 
         <div className="rounded-xl border border-border bg-surface p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
-            <DollarSign size={18} className="text-accent" />
-            WhatsApp da Pizzaria
+            <Phone size={18} className="text-accent" />
+            Contato da Pizzaria
           </h2>
-          <p className="mb-3 text-xs text-muted">Número usado para enviar confirmações aos clientes</p>
-          <Input label="WhatsApp" placeholder="5511999999999" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, ''))} />
+          <div className="space-y-4">
+            <Input label="WhatsApp" placeholder="5511999999999" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, ''))} />
+            <Input label="Telefone" placeholder="(11) 99999-9999" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <Input label="Instagram" placeholder="@pizzamania" value={instagram} onChange={(e) => setInstagram(e.target.value)} />
+            <p className="text-xs text-muted">URL ou @ do Instagram que aparece no rodapé do site</p>
+          </div>
         </div>
 
         <div className="rounded-xl border border-border bg-surface p-6">

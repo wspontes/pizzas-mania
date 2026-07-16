@@ -2,26 +2,26 @@ import { useState, useEffect } from 'react'
 import { useLocation, Link } from 'react-router-dom'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase/config'
-import { CheckCircle, Clock, Bike, ChefHat, ShoppingBag, QrCode, AlertTriangle } from 'lucide-react'
+import { CheckCircle, Clock, Bike, ChefHat, ShoppingBag, QrCode, AlertTriangle, Copy } from 'lucide-react'
 import { Button } from '@/components/ui'
+import { useSettings } from '@/hooks'
 import { formatCurrency } from '@/utils'
 
 const allSteps = [
   { key: 'waitingPayment', icon: QrCode, label: 'Aguardando pagamento' },
   { key: 'received', icon: CheckCircle, label: 'Pedido recebido' },
-  { key: 'analyzing', icon: ChefHat, label: 'Em análise' },
-  { key: 'accepted', icon: ChefHat, label: 'Aceito' },
   { key: 'preparing', icon: ChefHat, label: 'Preparando' },
   { key: 'outForDelivery', icon: Bike, label: 'Saiu para entrega' },
   { key: 'delivered', icon: Clock, label: 'Entregue' },
 ]
 
-const doneStatuses = ['received', 'analyzing', 'accepted', 'preparing', 'outForDelivery', 'delivered']
+const doneStatuses = ['received', 'preparing', 'outForDelivery', 'delivered']
 
-const stepOrder = ['waitingPayment', 'received', 'analyzing', 'accepted', 'preparing', 'outForDelivery', 'delivered']
+const stepOrder = ['waitingPayment', 'received', 'preparing', 'outForDelivery', 'delivered']
 
 export default function OrderConfirmed() {
   const location = useLocation()
+  const { settings } = useSettings()
   const initialOrder = (location.state as { order?: Record<string, unknown> })?.order
   const [order, setOrder] = useState<Record<string, unknown> | null>(initialOrder || null)
 
@@ -54,8 +54,6 @@ export default function OrderConfirmed() {
 
   const statusLabel = currentStatus === 'waitingPayment' ? 'Aguardando pagamento'
     : currentStatus === 'received' ? 'Recebido'
-    : currentStatus === 'analyzing' ? 'Em análise'
-    : currentStatus === 'accepted' ? 'Aceito'
     : currentStatus === 'preparing' ? 'Preparando'
     : currentStatus === 'outForDelivery' ? 'Saiu para entrega'
     : currentStatus === 'delivered' ? 'Entregue'
@@ -81,6 +79,37 @@ export default function OrderConfirmed() {
           <div className="mt-4 flex items-start gap-2 rounded-lg bg-yellow-500/10 p-3 text-sm text-yellow-400 text-left">
             <AlertTriangle size={16} className="mt-0.5 shrink-0" />
             <span>Pendente de pagamento. O pedido entra em produção assim que o pagamento for confirmado.</span>
+          </div>
+        )}
+
+        {isPix && currentStatus === 'waitingPayment' && settings?.paymentMethods?.pix && (
+          <div className="mt-4 rounded-xl border border-green-500/30 bg-green-500/5 p-4 text-left">
+            <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-green-400">
+              <QrCode size={16} />
+              Pagamento PIX
+            </h4>
+            {settings.paymentMethods.pix.qrCode && (
+              <div className="mb-3 flex justify-center">
+                <img
+                  src={settings.paymentMethods.pix.qrCode}
+                  alt="QR Code PIX"
+                  className="h-48 w-48 rounded-xl border border-border object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                />
+              </div>
+            )}
+            <p className="mb-2 text-xs text-muted">Faça o PIX para a chave abaixo:</p>
+            <div className="flex items-center gap-2 rounded-lg bg-surface-hover px-3 py-2">
+              <p className="flex-1 text-sm font-mono text-white select-all break-all">{settings?.paymentMethods?.pix?.key}</p>
+              <button
+                onClick={() => navigator.clipboard.writeText(settings?.paymentMethods?.pix?.key || '')}
+                className="shrink-0 rounded-lg p-2 text-muted hover:bg-surface hover:text-white transition-colors"
+                title="Copiar chave"
+              >
+                <Copy size={14} />
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-muted">O pedido será processado assim que o pagamento for confirmado.</p>
           </div>
         )}
 

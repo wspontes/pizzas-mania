@@ -3,8 +3,9 @@ import { useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, CreditCard, Banknote, QrCode, Bike, MapPin, User, AlertTriangle, Coins } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { useCart } from '@/contexts/CartContext'
+import { useCustomer } from '@/contexts/CustomerContext'
 import { useSettings } from '@/hooks'
-import { ordersService } from '@/services'
+import { ordersService, couponsService } from '@/services'
 import { formatCurrency } from '@/utils'
 
 const paymentIcons = {
@@ -27,6 +28,7 @@ export default function Checkout() {
   const navigate = useNavigate()
   const { state, subtotal, total, clearCart } = useCart()
   const { settings } = useSettings()
+  const { customer, isLoggedIn, login } = useCustomer()
   const [paymentMethod, setPaymentMethod] = useState<string>('')
   const [changeNeeded, setChangeNeeded] = useState(false)
   const [changeFor, setChangeFor] = useState('')
@@ -34,8 +36,8 @@ export default function Checkout() {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
-    name: '',
-    whatsappDigits: '',
+    name: customer?.name || '',
+    whatsappDigits: customer?.phone ? customer.phone.replace(/^55/, '') : '',
     street: '',
     number: '',
     complement: '',
@@ -110,6 +112,21 @@ export default function Checkout() {
       if (state.couponCode) firestoreData.couponCode = state.couponCode
 
       const saved = await ordersService.create(firestoreData)
+
+      if (!isLoggedIn && form.name && form.whatsappDigits) {
+        login(form.name, '+55' + form.whatsappDigits)
+      }
+
+      if (state.couponCode) {
+        try {
+          const allCoupons = await couponsService.getAll()
+          const coupon = allCoupons.find((c) => c.code === state.couponCode)
+          if (coupon) {
+            await couponsService.update(coupon.id, { usedCount: (coupon.usedCount || 0) + 1 })
+          }
+        } catch { /* silent */ }
+      }
+
       clearCart()
       navigate('/pedido/confirmacao', { state: { order: { ...orderData, couponCode: state.couponCode, id: saved.id } } })
     } catch (err) {

@@ -1,15 +1,34 @@
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, Search, Ticket } from 'lucide-react'
+import { Plus, Trash2, Search, Ticket, Pencil } from 'lucide-react'
+import { Timestamp } from 'firebase/firestore'
 import { Button, Input } from '@/components/ui'
 import { couponsService } from '@/services'
 import type { Coupon } from '@/types'
+
+function toDate(value: Date | Timestamp | undefined): Date {
+  if (!value) return new Date()
+  if (value instanceof Timestamp) return value.toDate()
+  return new Date(value)
+}
+
+interface FormState {
+  code: string
+  type: 'percentage' | 'fixed'
+  value: string
+  minOrder: string
+  maxUses: string
+  expiresAt: string
+}
+
+const emptyForm: FormState = { code: '', type: 'percentage', value: '', minOrder: '', maxUses: '', expiresAt: '' }
 
 export default function CouponsAdmin() {
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ code: '', type: 'percentage' as 'percentage' | 'fixed', value: '', minOrder: '', maxUses: '', expiresAt: '' })
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [form, setForm] = useState<FormState>(emptyForm)
   const [formError, setFormError] = useState('')
 
   const load = async () => {
@@ -25,7 +44,28 @@ export default function CouponsAdmin() {
 
   useEffect(() => { load() }, [])
 
-  const handleCreate = async () => {
+  const openNew = () => {
+    setEditingId(null)
+    setForm(emptyForm)
+    setFormError('')
+    setShowForm(true)
+  }
+
+  const openEdit = (coupon: Coupon) => {
+    setEditingId(coupon.id)
+    setForm({
+      code: coupon.code,
+      type: coupon.type,
+      value: String(coupon.value),
+      minOrder: coupon.minOrder ? String(coupon.minOrder) : '',
+      maxUses: coupon.maxUses ? String(coupon.maxUses) : '',
+      expiresAt: toDate(coupon.expiresAt).toISOString().split('T')[0],
+    })
+    setFormError('')
+    setShowForm(true)
+  }
+
+  const handleSave = async () => {
     setFormError('')
     if (!form.code.trim() || !form.value || !form.expiresAt) {
       setFormError('Preencha código, valor e data de expiração')
@@ -36,18 +76,22 @@ export default function CouponsAdmin() {
         code: form.code.toUpperCase(),
         type: form.type,
         value: Number(form.value),
-        usedCount: 0,
         expiresAt: new Date(form.expiresAt),
-        active: true,
       }
       if (form.minOrder) couponData.minOrder = Number(form.minOrder)
       if (form.maxUses) couponData.maxUses = Number(form.maxUses)
-      const created = await couponsService.create(couponData as unknown as Coupon)
-      setCoupons((prev) => [...prev, created])
-      setForm({ code: '', type: 'percentage', value: '', minOrder: '', maxUses: '', expiresAt: '' })
+
+      if (editingId) {
+        await couponsService.update(editingId, couponData as Partial<Coupon>)
+        setCoupons((prev) => prev.map((c) => (c.id === editingId ? { ...c, ...couponData } as Coupon : c)))
+      } else {
+        const created = await couponsService.create({ ...couponData, usedCount: 0, active: true } as unknown as Coupon)
+        setCoupons((prev) => [...prev, created])
+      }
       setShowForm(false)
+      setEditingId(null)
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Erro ao criar cupom')
+      setFormError(err instanceof Error ? err.message : 'Erro ao salvar cupom')
     }
   }
 
@@ -80,7 +124,7 @@ export default function CouponsAdmin() {
           <h1 className="text-xl md:text-2xl font-bold text-white">Cupons</h1>
           <p className="text-xs md:text-sm text-muted mt-0.5">{coupons.length} cupons cadastrados</p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)}>
+        <Button onClick={openNew}>
           <Plus size={16} />
           Novo Cupom
         </Button>
@@ -88,7 +132,7 @@ export default function CouponsAdmin() {
 
       {showForm && (
         <div className="mb-6 rounded-xl border border-border bg-surface p-4 md:p-6">
-          <h2 className="mb-4 text-base font-semibold text-white">Criar Cupom</h2>
+          <h2 className="mb-4 text-base font-semibold text-white">{editingId ? 'Editar Cupom' : 'Criar Cupom'}</h2>
           <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <Input label="Código" placeholder="Ex: PROMO10" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} />
@@ -106,8 +150,8 @@ export default function CouponsAdmin() {
             </div>
             {formError && <p className="text-sm text-red-400">{formError}</p>}
             <div className="flex gap-2">
-              <Button onClick={handleCreate}>Criar Cupom</Button>
-              <Button variant="ghost" onClick={() => { setShowForm(false); setFormError('') }}>Cancelar</Button>
+              <Button onClick={handleSave}>{editingId ? 'Salvar' : 'Criar Cupom'}</Button>
+              <Button variant="ghost" onClick={() => { setShowForm(false); setEditingId(null); setFormError('') }}>Cancelar</Button>
             </div>
           </div>
         </div>
@@ -137,7 +181,7 @@ export default function CouponsAdmin() {
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-white">{coupon.code}</p>
                       <p className="text-xs text-muted mt-0.5">
-                        {coupon.type === 'percentage' ? `${coupon.value}% de desconto` : `${coupon.value.toFixed(2)} de desconto`}
+                        {coupon.type === 'percentage' ? `${coupon.value}% de desconto` : `R$ ${coupon.value.toFixed(2)} de desconto`}
                         {coupon.minOrder ? ` | Mín: R$ ${coupon.minOrder.toFixed(2)}` : ''}
                       </p>
                     </div>
@@ -148,10 +192,13 @@ export default function CouponsAdmin() {
                       <span className="text-[10px] text-muted">{coupon.usedCount}/{coupon.maxUses || '∞'} usos</span>
                     </div>
                   </div>
-                  <p className="mt-1 text-[10px] text-muted">Expira em {new Date(coupon.expiresAt).toLocaleDateString('pt-BR')}</p>
+                  <p className="mt-1 text-[10px] text-muted">Expira em {toDate(coupon.expiresAt).toLocaleDateString('pt-BR')}</p>
                 </div>
               </div>
               <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
+                <button onClick={() => openEdit(coupon)} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors" title="Editar">
+                  <Pencil size={15} />
+                </button>
                 <button onClick={() => handleToggleActive(coupon)} className="flex h-9 w-9 items-center justify-center rounded-lg text-xs font-medium text-muted hover:bg-surface-hover hover:text-white transition-colors" title={coupon.active ? 'Desativar' : 'Ativar'}>
                   {coupon.active ? 'Desat.' : 'Ativar'}
                 </button>

@@ -3,6 +3,8 @@ import { ThemeProvider } from '@/contexts/ThemeContext'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { CartProvider } from '@/contexts/CartContext'
 import { ToastProvider } from '@/contexts/ToastContext'
+import { CustomerProvider } from '@/contexts/CustomerContext'
+import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { router } from '@/routes'
 
 export default function App() {
@@ -10,9 +12,13 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <CartProvider>
-          <ToastProvider>
-            <RouterProvider router={router} />
-          </ToastProvider>
+          <CustomerProvider>
+            <ToastProvider>
+              <ErrorBoundary>
+                <RouterProvider router={router} />
+              </ErrorBoundary>
+            </ToastProvider>
+          </CustomerProvider>
         </CartProvider>
       </AuthProvider>
     </ThemeProvider>
