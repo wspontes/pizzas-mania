@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, CreditCard, Banknote, QrCode, Bike, MapPin, User, AlertTriangle, Coins } from 'lucide-react'
+import { ArrowLeft, CreditCard, Banknote, QrCode, MapPin, User, AlertTriangle, Coins } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { useCart } from '@/contexts/CartContext'
 import { useCustomer } from '@/contexts/CustomerContext'
@@ -10,18 +10,14 @@ import { formatCurrency } from '@/utils'
 
 const paymentIcons = {
   pix: QrCode,
-  credit: CreditCard,
-  debit: CreditCard,
+  card: CreditCard,
   cash: Banknote,
-  delivery: Bike,
 } as const
 
 const paymentDescriptions: Record<string, string> = {
   pix: 'Pagamento via QR Code',
-  credit: 'Pagamento com cartão de crédito',
-  debit: 'Pagamento com cartão de débito',
+  card: 'Pague com cartão na entrega',
   cash: 'Pague com dinheiro',
-  delivery: 'Pague ao receber',
 }
 
 export default function Checkout() {
@@ -58,19 +54,15 @@ export default function Checkout() {
 
   const availableMethods = [
     pm?.pix?.enabled && { id: 'pix', label: 'PIX', desc: pm.pix.key ? `Chave: ${pm.pix.key}` : paymentDescriptions.pix } as const,
-    pm?.credit?.enabled && { id: 'credit', label: 'Cartão de Crédito', desc: `Parcelamos em até ${pm.credit?.installments || 12}x` } as const,
-    pm?.debit?.enabled && { id: 'debit', label: 'Cartão de Débito', desc: paymentDescriptions.debit } as const,
+    pm?.cash?.enabled && { id: 'card', label: 'Cartão na Entrega', desc: paymentDescriptions.card } as const,
     pm?.cash?.enabled && { id: 'cash', label: 'Dinheiro', desc: paymentDescriptions.cash } as const,
-    pm?.delivery?.enabled && { id: 'delivery', label: 'Pagar na Entrega', desc: paymentDescriptions.delivery } as const,
   ].filter(Boolean) as { id: string; label: string; desc: string }[]
 
   if (availableMethods.length === 0) {
     availableMethods.push(
       { id: 'pix', label: 'PIX', desc: paymentDescriptions.pix },
-      { id: 'credit', label: 'Cartão de Crédito', desc: 'Parcelamos em até 12x' },
-      { id: 'debit', label: 'Cartão de Débito', desc: paymentDescriptions.debit },
+      { id: 'card', label: 'Cartão na Entrega', desc: paymentDescriptions.card },
       { id: 'cash', label: 'Dinheiro', desc: paymentDescriptions.cash },
-      { id: 'delivery', label: 'Pagar na Entrega', desc: paymentDescriptions.delivery },
     )
   }
 
@@ -98,14 +90,14 @@ export default function Checkout() {
         deliveryFee: state.deliveryFee,
         discount: state.couponDiscount,
         total,
-        paymentMethod: paymentMethod as 'pix' | 'credit' | 'debit' | 'cash' | 'delivery',
+        paymentMethod: paymentMethod as 'pix' | 'card' | 'cash',
         paymentStatus: paymentMethod === 'pix' ? 'pending' as const : 'paid' as const,
         status: paymentMethod === 'pix' ? 'waitingPayment' as const : 'received' as const,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
       const firestoreData: Record<string, unknown> = { ...orderData }
-      if (paymentMethod === 'cash' || paymentMethod === 'delivery') {
+      if (paymentMethod === 'cash') {
         firestoreData.changeNeeded = changeNeeded
         if (changeNeeded && changeFor) firestoreData.changeFor = parseFloat(changeFor)
       }
@@ -203,7 +195,7 @@ export default function Checkout() {
                 )}
               </div>
 
-              {(paymentMethod === 'cash' || paymentMethod === 'delivery') && (
+              {paymentMethod === 'cash' && (
                 <div className="mt-4 rounded-xl border border-border bg-surface-hover p-4">
                   <div className="flex items-center gap-3">
                     <Coins size={20} className="text-muted" />

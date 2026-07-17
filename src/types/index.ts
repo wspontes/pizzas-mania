@@ -138,7 +138,7 @@ export interface OrderItem {
   notes?: string
 }
 
-export type PaymentMethod = 'pix' | 'credit' | 'debit' | 'cash' | 'delivery'
+export type PaymentMethod = 'pix' | 'card' | 'cash' | 'credit' | 'debit' | 'delivery'
 export type PaymentStatus = 'pending' | 'paid' | 'approved' | 'rejected' | 'refunded'
 
 export interface Coupon {

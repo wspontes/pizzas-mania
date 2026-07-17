@@ -45,7 +45,7 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
           <img
             src={resolveImageUrl(product.image)}
             alt={product.name}
-            className="h-56 w-full object-cover"
+            className="w-full max-h-[350px] object-contain bg-surface-hover"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
           />
         ) : (

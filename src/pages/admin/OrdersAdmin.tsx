@@ -109,9 +109,10 @@ export default function OrdersAdmin() {
 
   const getPaymentLabel = (method: string) => {
     if (method === 'pix') return 'PIX'
+    if (method === 'card') return 'Cartão na Entrega'
+    if (method === 'cash') return 'Dinheiro'
     if (method === 'credit') return 'Cartão Crédito'
     if (method === 'debit') return 'Cartão Débito'
-    if (method === 'cash') return 'Dinheiro'
     if (method === 'delivery') return 'Pagar na Entrega'
     return method
   }

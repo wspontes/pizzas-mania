@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useLocation, Link } from 'react-router-dom'
-import { doc, onSnapshot } from 'firebase/firestore'
+import { doc, onSnapshot, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase/config'
 import { CheckCircle, Clock, Bike, ChefHat, ShoppingBag, QrCode, AlertTriangle, Copy, Bell } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { useSettings } from '@/hooks'
 import { formatCurrency } from '@/utils'
+import { resolveImageUrl } from '@/utils/resolveImageUrl'
 
 const allSteps = [
   { key: 'waitingPayment', icon: QrCode, label: 'Aguardando pagamento' },
@@ -16,6 +17,8 @@ const allSteps = [
 ]
 
 const stepOrder = ['waitingPayment', 'received', 'preparing', 'outForDelivery', 'delivered']
+
+const ORDER_ID_KEY = 'pizzasmania_lastOrderId'
 
 function playStatusBeep() {
   try {
@@ -40,6 +43,7 @@ export default function OrderConfirmed() {
   const [order, setOrder] = useState<Record<string, unknown> | null>(initialOrder || null)
   const [toast, setToast] = useState<string | null>(null)
   const prevStatus = useRef<string>((initialOrder?.status as string) || '')
+  const orderIdRef = useRef<string>((initialOrder?.id as string) || sessionStorage.getItem(ORDER_ID_KEY) || '')
 
   const showToast = useCallback((msg: string) => {
     setToast(msg)
@@ -48,8 +52,17 @@ export default function OrderConfirmed() {
   }, [])
 
   useEffect(() => {
-    if (!order?.id) return
-    const unsub = onSnapshot(doc(db, 'orders', order.id as string), (snap) => {
+    if (initialOrder?.id) {
+      orderIdRef.current = initialOrder.id as string
+      sessionStorage.setItem(ORDER_ID_KEY, initialOrder.id as string)
+    }
+  }, [initialOrder?.id])
+
+  useEffect(() => {
+    const oid = orderIdRef.current
+    if (!oid) return
+
+    const unsub = onSnapshot(doc(db, 'orders', oid), (snap) => {
       if (snap.exists()) {
         const data = { id: snap.id, ...snap.data() } as Record<string, unknown>
         const newStatus = (data.status as string) || ''
@@ -70,8 +83,23 @@ export default function OrderConfirmed() {
         setOrder(data as Record<string, unknown>)
       }
     })
+
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+
     return () => unsub()
-  }, [initialOrder?.id, showToast])
+  }, [showToast])
+
+  useEffect(() => {
+    if (!order && orderIdRef.current) {
+      getDoc(doc(db, 'orders', orderIdRef.current)).then((snap) => {
+        if (snap.exists()) {
+          setOrder({ id: snap.id, ...snap.data() } as Record<string, unknown>)
+        }
+      }).catch(() => {})
+    }
+  }, [order])
 
   if (!order) {
     return (
@@ -98,8 +126,8 @@ export default function OrderConfirmed() {
     : currentStatus === 'cancelled' ? 'Cancelado' : ''
 
   const paymentLabels: Record<string, string> = {
-    pix: 'PIX', credit: 'Cartão de Crédito', debit: 'Cartão de Débito',
-    cash: 'Dinheiro', delivery: 'Pagar na Entrega',
+    pix: 'PIX', card: 'Cartão na Entrega', cash: 'Dinheiro',
+    credit: 'Cartão de Crédito', debit: 'Cartão de Débito', delivery: 'Pagar na Entrega',
   }
 
   return (
@@ -143,7 +171,7 @@ export default function OrderConfirmed() {
             {settings.paymentMethods.pix.qrCode && (
               <div className="mb-3 flex justify-center">
                 <img
-                  src={settings.paymentMethods.pix.qrCode}
+                  src={resolveImageUrl(settings.paymentMethods.pix.qrCode)}
                   alt="QR Code PIX"
                   className="h-48 w-48 rounded-xl border border-border object-cover"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}

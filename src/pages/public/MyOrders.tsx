@@ -22,9 +22,10 @@ const statusMap: Record<string, { label: string; color: string; icon: typeof Che
 
 const paymentLabels: Record<string, string> = {
   pix: 'PIX',
+  card: 'Cartão na Entrega',
+  cash: 'Dinheiro',
   credit: 'Cartão de Crédito',
   debit: 'Cartão de Débito',
-  cash: 'Dinheiro',
   delivery: 'Pagar na Entrega',
 }
 
@@ -210,7 +211,7 @@ function OrderItem({ order }: { order: Order }) {
   const isCompleted = order.status === 'delivered' || order.status === 'cancelled'
   const payLabel = paymentLabels[order.paymentMethod] || order.paymentMethod
   const PayIcon = order.paymentMethod === 'pix' ? QrCode
-    : order.paymentMethod === 'credit' || order.paymentMethod === 'debit' ? CreditCard
+    : order.paymentMethod === 'credit' || order.paymentMethod === 'debit' || order.paymentMethod === 'card' ? CreditCard
     : Banknote
 
   const reorder = () => {

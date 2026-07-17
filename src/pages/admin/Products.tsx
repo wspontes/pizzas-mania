@@ -4,16 +4,19 @@ import { Plus, Pencil, Trash2, Copy, Search } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { productsService, categoriesService } from '@/services'
 import { resolveImageUrl } from '@/utils/resolveImageUrl'
+import { useToast } from '@/contexts/ToastContext'
 import type { Product, Category } from '@/types'
 import { formatCurrency } from '@/utils'
 
 export default function Products() {
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [filterCat, setFilterCat] = useState<string>('all')
   const [search, setSearch] = useState('')
+  const [cloneConfirm, setCloneConfirm] = useState<Product | null>(null)
 
   const load = async () => {
     try {
@@ -39,7 +42,9 @@ export default function Products() {
     }
   }
 
-  const handleClone = async (product: Product) => {
+  const confirmClone = async () => {
+    if (!cloneConfirm) return
+    const product = cloneConfirm
     const cloned = await productsService.create({
       name: `${product.name} (cópia)`,
       slug: `${product.slug}-copia`,
@@ -54,6 +59,9 @@ export default function Products() {
       customizable: product.customizable,
     })
     setProducts((prev) => [...prev, cloned])
+    setCloneConfirm(null)
+    showToast('Produto clonado! Editando a cópia...')
+    navigate(`/admin/produtos/${cloned.id}/editar`)
   }
 
   const base = filterCat === 'all'
@@ -139,7 +147,7 @@ export default function Products() {
                 <button onClick={() => navigate(`/admin/produtos/${product.id}/editar`)} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors" title="Editar">
                   <Pencil size={15} />
                 </button>
-                <button onClick={() => handleClone(product)} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors" title="Clonar">
+                <button onClick={() => setCloneConfirm(product)} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors" title="Clonar">
                   <Copy size={15} />
                 </button>
                 <button onClick={() => handleDelete(product.id, product.name)} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-400 transition-colors" title="Excluir">
@@ -149,6 +157,33 @@ export default function Products() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {cloneConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setCloneConfirm(null)}>
+          <div className="w-full max-w-sm rounded-xl border border-border bg-surface p-5 md:p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/10">
+                <Copy size={28} className="text-accent" />
+              </div>
+            </div>
+            <h3 className="mb-2 text-center text-base font-semibold text-white">Clonar produto?</h3>
+            <div className="mb-4 rounded-lg bg-surface-hover p-3 text-center">
+              <p className="text-sm font-medium text-white">{cloneConfirm.name}</p>
+              <p className="text-lg font-bold text-accent mt-1">{formatCurrency((cloneConfirm.discountPrice ?? 0) > 0 ? (cloneConfirm.discountPrice as number) : cloneConfirm.price)}</p>
+            </div>
+            <p className="mb-4 text-center text-sm text-muted">Uma cópia será criada e você será redirecionado para editá-la.</p>
+            <div className="flex gap-2">
+              <Button variant="ghost" className="flex-1 text-sm h-10" onClick={() => setCloneConfirm(null)}>
+                Cancelar
+              </Button>
+              <Button className="flex-1 text-sm h-10" onClick={confirmClone}>
+                <Copy size={15} />
+                Clonar
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Clock, MapPin, DollarSign, CreditCard, Image, Plus, QrCode, Phone, Trash2, Sparkles } from 'lucide-react'
+import { Clock, MapPin, CreditCard, Image, Plus, QrCode, Phone, Trash2, Sparkles } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { settingsService, type BusinessSettings } from '@/services/settings'
 import { resolveImageUrl } from '@/utils/resolveImageUrl'
@@ -19,21 +19,18 @@ export default function Settings() {
   const [neighborhoods, setNeighborhoods] = useState([
     { name: 'Centro', fee: 5.00, estimatedTime: 25, active: true },
   ])
-  const [minOrder, setMinOrder] = useState('25.00')
-  const [freeDelivery, setFreeDelivery] = useState('80.00')
   const [newNb, setNewNb] = useState({ name: '', fee: '', time: '' })
   const [pixKey, setPixKey] = useState('')
   const [pixQrCode, setPixQrCode] = useState('')
-  const [acceptCredit, setAcceptCredit] = useState(true)
-  const [acceptDebit, setAcceptDebit] = useState(true)
+  const [acceptCard, setAcceptCard] = useState(true)
   const [acceptCash, setAcceptCash] = useState(true)
-  const [acceptDelivery, setAcceptDelivery] = useState(true)
-  const [installments, setInstallments] = useState('12')
   const [bannerTitle, setBannerTitle] = useState('A melhor pizza da cidade')
   const [bannerSubtitle, setBannerSubtitle] = useState('Massa artesanal, ingredientes frescos e o sabor que só a Pizzas Mania tem.')
   const [bannerImage, setBannerImage] = useState('')
   const [bannerActive, setBannerActive] = useState(true)
   const [bannerAlign, setBannerAlign] = useState<'left' | 'center' | 'right'>('left')
+  const [bannerOpacity, setBannerOpacity] = useState(20)
+  const [bannerImagePos, setBannerImagePos] = useState<'left' | 'center' | 'right'>('center')
   const [whatsapp, setWhatsapp] = useState('')
   const [instagram, setInstagram] = useState('')
   const [phone, setPhone] = useState('')
@@ -42,8 +39,6 @@ export default function Settings() {
   useEffect(() => {
     settingsService.get().then((data) => {
       if (data) {
-        setMinOrder(String(data.minOrder || 25))
-        setFreeDelivery(String(data.freeDeliveryFrom || 80))
         if (data.neighborhoods?.length) setNeighborhoods(data.neighborhoods)
         if (data.businessHours?.length) {
           const dayNames = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo']
@@ -57,10 +52,8 @@ export default function Settings() {
         if (data.paymentMethods) {
           const pm = data.paymentMethods
           if (pm.pix) { setPixKey(pm.pix.key || ''); setPixQrCode(pm.pix.qrCode || '') }
-          if (pm.credit) { setAcceptCredit(pm.credit.enabled); setInstallments(String(pm.credit.installments || 12)) }
-          if (pm.debit) setAcceptDebit(pm.debit.enabled)
           if (pm.cash) setAcceptCash(pm.cash.enabled)
-          if (pm.delivery) setAcceptDelivery(pm.delivery.enabled)
+          setAcceptCard(true)
         }
         if (data.banner) {
           setBannerTitle(data.banner.title || 'A melhor pizza da cidade')
@@ -68,6 +61,8 @@ export default function Settings() {
           setBannerImage(data.banner.image || '')
           setBannerActive(data.banner.active ?? true)
           setBannerAlign(data.banner.align || 'left')
+          setBannerOpacity(data.banner.opacity ?? 20)
+          setBannerImagePos(data.banner.imagePosition || 'center')
           if (data.banner.benefits?.length) setBannerBenefits(data.banner.benefits)
         }
         if (data.whatsapp) setWhatsapp(data.whatsapp)
@@ -86,15 +81,10 @@ export default function Settings() {
         close: h.close,
         closed: h.closed,
       })),
-      minOrder: Number(minOrder),
-      freeDeliveryFrom: Number(freeDelivery),
       neighborhoods,
       paymentMethods: {
         pix: { enabled: true, key: pixKey, qrCode: pixQrCode },
-        credit: { enabled: acceptCredit, installments: Number(installments) },
-        debit: { enabled: acceptDebit },
         cash: { enabled: acceptCash },
-        delivery: { enabled: acceptDelivery },
       },
       banner: {
         title: bannerTitle,
@@ -103,6 +93,8 @@ export default function Settings() {
         active: bannerActive,
         align: bannerAlign,
         benefits: bannerBenefits,
+        opacity: bannerOpacity,
+        imagePosition: bannerImagePos,
       },
       whatsapp,
       instagram,
@@ -166,14 +158,51 @@ export default function Settings() {
                   <input type="checkbox" checked={bannerActive} onChange={(e) => setBannerActive(e.target.checked)} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
                   <span className="text-sm text-white">Banner ativo na página inicial</span>
                 </label>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-white">Opacidade da imagem: {bannerOpacity}%</label>
+                  <input type="range" min="5" max="60" value={bannerOpacity} onChange={(e) => setBannerOpacity(Number(e.target.value))} className="w-full accent-accent" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-white">Posição da imagem</label>
+                  <div className="flex gap-2">
+                    {(['left', 'center', 'right'] as const).map((pos) => (
+                      <button
+                        key={pos}
+                        type="button"
+                        onClick={() => setBannerImagePos(pos)}
+                        className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+                          bannerImagePos === pos ? 'border-accent bg-accent/10 text-accent' : 'border-border bg-surface-hover text-muted hover:text-white'
+                        }`}
+                      >
+                        {pos === 'left' ? 'Esquerda' : pos === 'center' ? 'Centro' : 'Direita'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
               <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br from-accent/20 via-surface to-surface p-6 md:p-8 min-h-[180px] flex flex-col items-${bannerAlign === 'center' ? 'center' : bannerAlign === 'right' ? 'end' : 'start'} justify-center`}>
                 {bannerActive && (
                   <div className="absolute right-0 top-0 h-40 w-40 translate-x-8 -translate-y-8 rounded-full bg-accent/10 blur-3xl" />
                 )}
-                {bannerImage && (
-                  <img src={resolveImageUrl(bannerImage)} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                )}
+                {bannerImage && (() => {
+                  const maskGradient = bannerImagePos === 'left'
+                    ? `linear-gradient(to right, black 0%, black ${bannerOpacity}%, transparent 100%)`
+                    : bannerImagePos === 'right'
+                      ? `linear-gradient(to left, black 0%, black ${bannerOpacity}%, transparent 100%)`
+                      : `linear-gradient(to right, transparent 0%, black ${50 - bannerOpacity / 2}%, black ${50 + bannerOpacity / 2}%, transparent 100%)`
+                  return (
+                    <img
+                      src={resolveImageUrl(bannerImage)}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover"
+                      style={{
+                        WebkitMaskImage: maskGradient,
+                        maskImage: maskGradient,
+                      }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    />
+                  )
+                })()}
                 <div className={`relative z-10 ${bannerAlign === 'center' ? '' : 'max-w-xs'}`}>
                   <p className="text-lg font-bold text-white">{bannerTitle || 'Título do banner'}</p>
                   <p className="text-sm text-muted mt-1">{bannerSubtitle || 'Subtítulo do banner'}</p>
@@ -234,25 +263,14 @@ export default function Settings() {
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="flex items-center gap-2 cursor-pointer rounded-lg border border-border bg-surface-hover p-3">
-                <input type="checkbox" checked={acceptCredit} onChange={(e) => setAcceptCredit(e.target.checked)} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
-                <span className="text-sm text-white">Cartão de Crédito</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer rounded-lg border border-border bg-surface-hover p-3">
-                <input type="checkbox" checked={acceptDebit} onChange={(e) => setAcceptDebit(e.target.checked)} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
-                <span className="text-sm text-white">Cartão de Débito</span>
+                <input type="checkbox" checked={acceptCard} onChange={(e) => setAcceptCard(e.target.checked)} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
+                <span className="text-sm text-white">Cartão na Entrega</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer rounded-lg border border-border bg-surface-hover p-3">
                 <input type="checkbox" checked={acceptCash} onChange={(e) => setAcceptCash(e.target.checked)} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
                 <span className="text-sm text-white">Dinheiro</span>
               </label>
-              <label className="flex items-center gap-2 cursor-pointer rounded-lg border border-border bg-surface-hover p-3">
-                <input type="checkbox" checked={acceptDelivery} onChange={(e) => setAcceptDelivery(e.target.checked)} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
-                <span className="text-sm text-white">Pagar na Entrega</span>
-              </label>
             </div>
-            {acceptCredit && (
-              <Input label="Parcelamento máximo" type="number" value={installments} onChange={(e) => setInstallments(e.target.value)} />
-            )}
           </div>
         </div>
 
@@ -292,17 +310,6 @@ export default function Settings() {
             <Input label="Telefone" placeholder="(11) 99999-9999" value={phone} onChange={(e) => setPhone(e.target.value)} />
             <Input label="Instagram" placeholder="@pizzamania" value={instagram} onChange={(e) => setInstagram(e.target.value)} />
             <p className="text-xs text-muted">URL ou @ do Instagram que aparece no rodapé do site</p>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-border bg-surface p-6">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
-            <DollarSign size={18} className="text-accent" />
-            Valores
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Input label="Pedido mínimo (R$)" value={minOrder} onChange={(e) => setMinOrder(e.target.value)} />
-            <Input label="Frete grátis acima de (R$)" value={freeDelivery} onChange={(e) => setFreeDelivery(e.target.value)} />
           </div>
         </div>
 

@@ -8,8 +8,8 @@ export interface BusinessSettings {
     close: string
     closed: boolean
   }[]
-  minOrder: number
-  freeDeliveryFrom: number
+  minOrder?: number
+  freeDeliveryFrom?: number
   neighborhoods: {
     name: string
     fee: number
@@ -33,6 +33,8 @@ export interface BusinessSettings {
     active: boolean
     align?: 'left' | 'center' | 'right'
     benefits?: string[]
+    opacity?: number
+    imagePosition?: 'left' | 'center' | 'right'
   }
 }
 
