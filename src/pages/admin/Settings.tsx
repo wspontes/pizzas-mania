@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Clock, MapPin, CreditCard, Image, Plus, QrCode, Phone, Trash2, Sparkles } from 'lucide-react'
+import { Clock, MapPin, CreditCard, Image, Plus, Phone, Trash2, Sparkles } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
+import { ImageUpload } from '@/components/shared'
 import { settingsService, type BusinessSettings } from '@/services/settings'
 import { resolveImageUrl } from '@/utils/resolveImageUrl'
 
@@ -136,7 +137,8 @@ export default function Settings() {
               <div className="space-y-4">
                 <Input label="Título" value={bannerTitle} onChange={(e) => setBannerTitle(e.target.value)} />
                 <Input label="Subtítulo" value={bannerSubtitle} onChange={(e) => setBannerSubtitle(e.target.value)} />
-                <Input label="URL da imagem (opcional)" placeholder="Cole link do Google Drive ou URL" value={bannerImage} onChange={(e) => setBannerImage(e.target.value)} />
+                <ImageUpload value={bannerImage} onChange={setBannerImage} label="Imagem do banner (opcional)" />
+                <Input label="Ou cole uma URL" placeholder="Google Drive ou outro link" value={bannerImage.startsWith('data:') ? '' : bannerImage} onChange={(e) => setBannerImage(e.target.value)} />
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-white">Alinhamento do texto</label>
                   <div className="flex gap-2">
@@ -254,12 +256,8 @@ export default function Settings() {
           <div className="space-y-4">
             <div className="space-y-3">
               <Input label="Chave PIX" placeholder="CNPJ, CPF, email ou telefone" value={pixKey} onChange={(e) => setPixKey(e.target.value)} />
-              <Input label="URL do QR Code PIX (opcional)" placeholder="Cole link do Google Drive ou URL" value={pixQrCode} onChange={(e) => setPixQrCode(e.target.value)} icon={<QrCode size={16} />} />
-              {pixQrCode && (
-                <div className="flex justify-center">
-                  <img src={resolveImageUrl(pixQrCode)} alt="QR Code PIX" className="h-32 w-32 rounded-xl border border-border object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                </div>
-              )}
+              <ImageUpload value={pixQrCode} onChange={setPixQrCode} label="QR Code PIX (opcional)" />
+              <Input label="Ou cole uma URL" placeholder="Google Drive ou outro link" value={pixQrCode.startsWith('data:') ? '' : pixQrCode} onChange={(e) => setPixQrCode(e.target.value)} />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="flex items-center gap-2 cursor-pointer rounded-lg border border-border bg-surface-hover p-3">

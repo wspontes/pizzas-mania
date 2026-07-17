@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ImageIcon } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
+import { ImageUpload } from '@/components/shared'
 import { productsService, categoriesService } from '@/services'
 import { resolveImageUrl } from '@/utils/resolveImageUrl'
 import type { Product, Category } from '@/types'
@@ -103,22 +104,12 @@ export default function ProductForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 rounded-xl border border-border bg-surface p-6">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-4">
-            <Input label="Nome do produto" placeholder="Ex: Pizza Margherita" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-            <Input label="URL da Imagem" placeholder="Cole o link do Google Drive ou URL da imagem" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} icon={<ImageIcon size={16} />} />
-            <div className="grid grid-cols-2 gap-3">
-              <Input label="Preço" type="number" step="0.01" placeholder="39.90" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
-              <Input label="Preço promocional" type="number" step="0.01" placeholder="29.90" value={form.discountPrice} onChange={(e) => setForm({ ...form, discountPrice: e.target.value })} />
-            </div>
-          </div>
-          <div className="flex items-center justify-center">
-            {form.image ? (
-              <img src={resolveImageUrl(form.image)} alt="Preview" className="max-h-40 rounded-xl object-cover border border-border" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-            ) : (
-              <div className="flex h-40 w-full items-center justify-center rounded-xl bg-surface-hover text-sm text-muted">Prévia da imagem</div>
-            )}
-          </div>
+        <Input label="Nome do produto" placeholder="Ex: Pizza Margherita" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+        <ImageUpload value={form.image} onChange={(v) => setForm({ ...form, image: v })} label="Imagem do produto" />
+        <Input label="URL da Imagem (alternativa)" placeholder="Ou cole um link" value={form.image.startsWith('data:') ? '' : form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} />
+        <div className="grid grid-cols-2 gap-3">
+          <Input label="Preço" type="number" step="0.01" placeholder="39.90" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
+          <Input label="Preço promocional" type="number" step="0.01" placeholder="29.90" value={form.discountPrice} onChange={(e) => setForm({ ...form, discountPrice: e.target.value })} />
         </div>
 
         <div>
