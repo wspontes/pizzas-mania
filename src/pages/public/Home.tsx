@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, ChefHat, Clock, Bike, Sparkles } from 'lucide-react'
+import { ArrowRight, ChefHat, Clock, Bike } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { ProductCard, ProductCardSkeleton } from '@/components/shared'
 import { useFeaturedProducts, useSettings } from '@/hooks'
@@ -13,7 +13,6 @@ export default function Home() {
   const { settings, loading: settingsLoading } = useSettings()
 
   const banner = settings?.banner
-  const minOrder = settings?.minOrder ?? 25
   const alignClass = banner?.align === 'center' ? 'items-center text-center' : banner?.align === 'right' ? 'items-end text-right' : 'items-start text-left'
 
   const benefits = banner?.benefits?.length
@@ -59,10 +58,6 @@ export default function Home() {
               )
             })()}
             <div className={`relative z-10 ${banner?.align === 'center' ? '' : 'max-w-xl'}`}>
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-accent/20 px-2.5 py-0.5 text-[10px] md:text-xs font-medium text-accent mb-3">
-                <Sparkles size={12} />
-                Pedido mínimo {formatCurrency(minOrder)}
-              </div>
               <h1 className="text-xl md:text-5xl font-bold leading-tight text-white">
                 {banner?.title || 'A melhor pizza\nda cidade'}
               </h1>

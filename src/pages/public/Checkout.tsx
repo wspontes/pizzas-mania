@@ -48,8 +48,6 @@ export default function Checkout() {
   }
 
   const pixKey = settings?.paymentMethods?.pix?.key
-  const minOrder = settings?.minOrder ?? 25
-  const belowMin = subtotal > 0 && subtotal < minOrder
   const pm = settings?.paymentMethods
 
   const availableMethods = [
@@ -249,13 +247,7 @@ export default function Checkout() {
                 <span>{error}</span>
               </div>
             )}
-            {belowMin && (
-              <div className="flex items-start gap-2 rounded-lg bg-yellow-500/10 p-3 text-sm text-yellow-400">
-                <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-                <span>Pedido mínimo de {formatCurrency(minOrder)}. Adicione mais {formatCurrency(minOrder - subtotal)} em produtos.</span>
-              </div>
-            )}
-            <Button type="submit" className="w-full" size="lg" disabled={belowMin || !paymentMethod || !form.name || form.whatsappDigits.length < 10 || !form.street || !form.number || !form.neighborhood} loading={submitting}>
+            <Button type="submit" className="w-full" size="lg" disabled={!paymentMethod || !form.name || form.whatsappDigits.length < 10 || !form.street || !form.number || !form.neighborhood} loading={submitting}>
               {submitting ? 'Finalizando...' : `Confirmar Pedido - ${formatCurrency(total)}`}
             </Button>
           </div>

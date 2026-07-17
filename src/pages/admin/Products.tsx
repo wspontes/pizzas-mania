@@ -45,23 +45,27 @@ export default function Products() {
   const confirmClone = async () => {
     if (!cloneConfirm) return
     const product = cloneConfirm
-    const cloned = await productsService.create({
-      name: `${product.name} (cópia)`,
-      slug: `${product.slug}-copia`,
-      description: product.description,
-      categoryId: product.categoryId,
-      price: product.price,
-      discountPrice: product.discountPrice,
-      image: product.image,
-      order: products.length + 1,
-      active: false,
-      featured: false,
-      customizable: product.customizable,
-    })
-    setProducts((prev) => [...prev, cloned])
-    setCloneConfirm(null)
-    showToast('Produto clonado! Editando a cópia...')
-    navigate(`/admin/produtos/${cloned.id}/editar`)
+    try {
+      const cloned = await productsService.create({
+        name: `${product.name} (cópia)`,
+        slug: `${product.slug}-copia-${Date.now()}`,
+        description: product.description,
+        categoryId: product.categoryId,
+        price: product.price,
+        discountPrice: product.discountPrice,
+        image: product.image,
+        order: products.length + 1,
+        active: false,
+        featured: false,
+        customizable: product.customizable,
+      })
+      setCloneConfirm(null)
+      showToast('Produto clonado! Editando a cópia...')
+      navigate(`/admin/produtos/${cloned.id}/editar`)
+    } catch {
+      showToast('Erro ao clonar produto')
+      setCloneConfirm(null)
+    }
   }
 
   const base = filterCat === 'all'
