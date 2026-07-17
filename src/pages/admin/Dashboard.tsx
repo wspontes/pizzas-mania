@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ShoppingBag, DollarSign, TrendingUp, Clock } from 'lucide-react'
+import { ShoppingBag, DollarSign, TrendingUp, TrendingDown, Trophy } from 'lucide-react'
 import { ordersService } from '@/services'
 import type { Order } from '@/types'
 import { formatCurrency, formatTime, formatDate } from '@/utils'
@@ -8,6 +8,7 @@ export default function Dashboard() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month'>('today')
+  const [topRange, setTopRange] = useState<'today' | 'week' | 'month'>('today')
 
   useEffect(() => {
     const load = async () => {
@@ -29,6 +30,7 @@ export default function Dashboard() {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
   const filterStart = dateRange === 'today' ? startOfDay : dateRange === 'week' ? startOfWeek : startOfMonth
+  const topFilterStart = topRange === 'today' ? startOfDay : topRange === 'week' ? startOfWeek : startOfMonth
 
   const filteredOrders = orders.filter((o) => o.createdAt >= filterStart && o.status !== 'cancelled')
   const deliveredOrders = filteredOrders.filter((o) => o.status === 'delivered')
@@ -36,15 +38,6 @@ export default function Dashboard() {
   const totalOrders = filteredOrders.length
   const totalRevenue = deliveredOrders.reduce((sum, o) => sum + o.total, 0)
   const avgOrder = totalOrders > 0 ? totalRevenue / totalOrders : 0
-  const avgTime = deliveredOrders.length > 0
-    ? Math.round(
-        deliveredOrders.reduce((sum, o) => {
-          const created = new Date(o.createdAt).getTime()
-          const updated = new Date(o.updatedAt).getTime()
-          return sum + (updated - created)
-        }, 0) / deliveredOrders.length / 60000
-      )
-    : 0
 
   const stats = [
     {
@@ -60,18 +53,26 @@ export default function Dashboard() {
       sub: `${filteredOrders.filter((o) => o.status === 'preparing').length} em preparo`,
     },
     {
-      label: 'Pedido Médio',
+      label: 'Ticket Médio',
       value: formatCurrency(avgOrder),
       icon: TrendingUp,
       sub: 'por pedido',
     },
-    {
-      label: 'Tempo Médio',
-      value: `${avgTime} min`,
-      icon: Clock,
-      sub: 'do pedido à entrega',
-    },
   ]
+
+  const topOrders = orders.filter((o) => o.createdAt >= topFilterStart && o.status !== 'cancelled')
+  const productCount: Record<string, { name: string; qty: number; revenue: number }> = {}
+  for (const order of topOrders) {
+    for (const item of order.items) {
+      const key = item.productId
+      if (!productCount[key]) productCount[key] = { name: item.productName, qty: 0, revenue: 0 }
+      productCount[key].qty += item.quantity
+      productCount[key].revenue += item.price * item.quantity
+    }
+  }
+  const topProducts = Object.values(productCount)
+    .sort((a, b) => b.qty - a.qty)
+    .slice(0, 8)
 
   const recentOrders = [...filteredOrders]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -111,7 +112,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="mb-8 grid gap-3 grid-cols-2 lg:grid-cols-4">
+      <div className="mb-8 grid gap-3 grid-cols-2 lg:grid-cols-3">
         {stats.map((stat) => {
           const Icon = stat.icon
           return (
@@ -127,6 +128,54 @@ export default function Dashboard() {
             </div>
           )
         })}
+      </div>
+
+      <div className="mb-6 rounded-xl border border-border bg-surface">
+        <div className="flex items-center justify-between border-b border-border p-3 md:p-4">
+          <div className="flex items-center gap-2">
+            <Trophy size={16} className="text-accent" />
+            <h2 className="text-sm md:text-base font-semibold text-white">Mais Pedidos</h2>
+          </div>
+          <div className="flex gap-1 rounded-lg border border-border bg-surface-hover p-0.5">
+            {([
+              { key: 'today', label: 'Hoje' },
+              { key: 'week', label: 'Semana' },
+              { key: 'month', label: 'Mês' },
+            ] as const).map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => setTopRange(opt.key)}
+                className={`rounded-md px-2.5 py-1 text-[10px] md:text-xs font-medium transition-colors ${
+                  topRange === opt.key ? 'bg-accent text-white' : 'text-muted hover:text-white'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {topProducts.length === 0 ? (
+          <div className="p-8 text-center text-xs md:text-sm text-muted">Nenhum pedido neste período</div>
+        ) : (
+          <div className="divide-y divide-border">
+            {topProducts.map((item, i) => (
+              <div key={i} className="flex items-center gap-3 p-3 md:p-4 hover:bg-surface-hover transition-colors">
+                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${
+                  i === 0 ? 'bg-yellow-500/15 text-yellow-400' : i === 1 ? 'bg-gray-300/10 text-gray-300' : i === 2 ? 'bg-orange-500/10 text-orange-400' : 'bg-surface-hover text-muted'
+                }`}>
+                  {i + 1}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-white truncate">{item.name}</p>
+                  <p className="text-xs text-muted">{item.qty} un. vendidas</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-medium text-white">{formatCurrency(item.revenue)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="rounded-xl border border-border bg-surface">
