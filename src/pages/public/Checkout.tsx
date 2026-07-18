@@ -130,7 +130,22 @@ export default function Checkout() {
       }
       if (state.couponCode) firestoreData.couponCode = state.couponCode
 
-      const saved = await ordersService.create(firestoreData)
+      const cleanUndefined = (obj: Record<string, unknown>): Record<string, unknown> => {
+        const clean: Record<string, unknown> = {}
+        for (const [k, v] of Object.entries(obj)) {
+          if (v === undefined) continue
+          if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+            clean[k] = cleanUndefined(v as Record<string, unknown>)
+          } else if (Array.isArray(v)) {
+            clean[k] = v.map((item) => typeof item === 'object' && item !== null ? cleanUndefined(item as Record<string, unknown>) : item)
+          } else {
+            clean[k] = v
+          }
+        }
+        return clean
+      }
+
+      const saved = await ordersService.create(cleanUndefined(firestoreData))
 
       if (!isLoggedIn && form.name && form.whatsappDigits) {
         login(form.name, form.whatsappDigits)
