@@ -62,6 +62,8 @@ export default function Checkout() {
         const match = settings?.neighborhoods?.find((n) => n.name.toLowerCase() === (data.bairro || '').toLowerCase())
         if (match) {
           setDeliveryFee(match.fee)
+        } else if (settings?.defaultDeliveryFee !== undefined) {
+          setDeliveryFee(settings.defaultDeliveryFee)
         }
       }
     } catch { /* silent */ } finally {

@@ -16,6 +16,7 @@ export interface BusinessSettings {
     estimatedTime: number
     active: boolean
   }[]
+  defaultDeliveryFee?: number
   paymentMethods?: {
     pix?: { enabled: boolean; key?: string; qrCode?: string }
     credit?: { enabled: boolean; installments?: number }

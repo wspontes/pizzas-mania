@@ -24,6 +24,7 @@ export default function Settings() {
   const [newNb, setNewNb] = useState({ name: '', fee: '', time: '' })
   const [nbCepLoading, setNbCepLoading] = useState(false)
   const [nbZipForLookup, setNbZipForLookup] = useState('')
+  const [defaultDeliveryFee, setDefaultDeliveryFee] = useState('')
   const [pixKey, setPixKey] = useState('')
   const [pixQrCode, setPixQrCode] = useState('')
   const [acceptCard, setAcceptCard] = useState(true)
@@ -79,6 +80,7 @@ export default function Settings() {
         if (data.phone) setPhone(data.phone)
         if (data.address) setAddress(data.address)
         if (data.crustOptions?.length) setCrustOptions(data.crustOptions)
+        if (data.defaultDeliveryFee !== undefined) setDefaultDeliveryFee(String(data.defaultDeliveryFee))
       }
     }).catch(() => {})
   }, [])
@@ -93,6 +95,7 @@ export default function Settings() {
         closed: h.closed,
       })),
       neighborhoods,
+      defaultDeliveryFee: defaultDeliveryFee !== '' ? Number(defaultDeliveryFee) : undefined,
       paymentMethods: {
         pix: { enabled: true, key: pixKey, qrCode: pixQrCode },
         credit: { enabled: acceptCard },
@@ -355,6 +358,10 @@ export default function Settings() {
             <MapPin size={18} className="text-accent" />
             Bairros Atendidos
           </h2>
+          <div className="mb-4 rounded-lg bg-surface-hover p-3">
+            <Input label="Taxa padrão (bairros não cadastrados)" placeholder="R$ 0,00" type="number" step="0.50" value={defaultDeliveryFee} onChange={(e) => setDefaultDeliveryFee(e.target.value)} />
+            <p className="mt-1 text-[11px] text-muted">Valor cobrado quando o bairro do cliente não está na lista acima</p>
+          </div>
           <div className="mb-4 grid gap-3 grid-cols-2 sm:grid-cols-4">
             <Input placeholder="Bairro" value={newNb.name} onChange={(e) => setNewNb({ ...newNb, name: e.target.value })} className="col-span-2 sm:col-span-1" />
             <div className="relative">
