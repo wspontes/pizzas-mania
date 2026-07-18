@@ -12,7 +12,7 @@ export default function Cart() {
   const { state, removeItem, updateQuantity, updateBorder, applyCoupon, subtotal, discount, total } = useCart()
   const { settings } = useSettings()
   const [couponInput, setCouponInput] = useState('')
-  const [couponApplied, setCouponApplied] = useState(false)
+  const couponApplied = !!state.couponCode
   const [couponError, setCouponError] = useState('')
   const [couponLoading, setCouponLoading] = useState(false)
 
@@ -30,7 +30,6 @@ export default function Cart() {
       if (coupon.minOrder && subtotal < coupon.minOrder) { setCouponError(`Valor mínimo de R$ ${coupon.minOrder.toFixed(2)} para este cupom`); setCouponLoading(false); return }
 
       applyCoupon(coupon.code, coupon.type, coupon.value)
-      setCouponApplied(true)
     } catch {
       setCouponError('Erro ao validar cupom')
     } finally {
