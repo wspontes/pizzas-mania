@@ -72,11 +72,35 @@ export default function Cart() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-3">
           {state.items.map((item) => (
-            <div key={item.productId} className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3 md:p-4">
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-white text-sm md:text-base truncate">{item.productName}</h3>
-                {item.size && <p className="text-xs md:text-sm text-muted">Tamanho: {item.size}</p>}
-                {item.hasCrust && crustOptions.length > 0 && (
+            <div key={item.productId} className="rounded-xl border border-border bg-surface p-3 md:p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-white text-sm md:text-base truncate">{item.productName}</h3>
+                  {item.size && <p className="text-xs text-muted mt-0.5">Tamanho: {item.size}</p>}
+                  {!item.hasCrust && item.border && <p className="text-xs text-accent mt-0.5">Borda: {item.border}{item.borderPrice ? ` (+${formatCurrency(item.borderPrice)})` : ''}</p>}
+                  <p className="mt-1.5 font-semibold text-accent text-sm">{formatCurrency(item.price)}</p>
+                </div>
+
+                <div className="flex items-center gap-1 md:gap-2">
+                  <button onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1))} className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-lg border border-border text-muted hover:bg-surface-hover hover:text-white transition-colors">
+                    <Minus size={12} />
+                  </button>
+                  <span className="w-6 md:w-8 text-center text-sm font-medium text-white">{item.quantity}</span>
+                  <button onClick={() => updateQuantity(item.productId, item.quantity + 1)} className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-lg border border-border text-muted hover:bg-surface-hover hover:text-white transition-colors">
+                    <Plus size={12} />
+                  </button>
+                </div>
+
+                <p className="w-16 md:w-20 text-right font-medium text-white text-sm shrink-0">{formatCurrency((item.price + (item.borderPrice || 0)) * item.quantity)}</p>
+
+                <button onClick={() => removeItem(item.productId)} className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-400 transition-colors shrink-0">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+
+              {item.hasCrust && crustOptions.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-border/50">
+                  <label className="text-[11px] text-muted font-medium uppercase tracking-wider mb-1.5 block">Borda recheada</label>
                   <select
                     value={item.border || ''}
                     onChange={(e) => {
@@ -84,33 +108,15 @@ export default function Cart() {
                       const opt = crustOptions.find((c) => c.name === val)
                       updateBorder(item.productId, val, opt?.price)
                     }}
-                    className="mt-1 w-full rounded-lg border border-border bg-surface-hover px-2 py-1 text-xs text-white focus:border-accent focus:outline-none"
+                    className="w-full rounded-lg border border-border bg-surface-hover px-3 py-2 text-sm text-white focus:border-accent focus:outline-none transition-colors"
                   >
                     <option value="">Sem borda recheada</option>
                     {crustOptions.map((c) => (
-                      <option key={c.name} value={c.name}>{c.name} ({formatCurrency(c.price)})</option>
+                      <option key={c.name} value={c.name}>{c.name} — {formatCurrency(c.price)}</option>
                     ))}
                   </select>
-                )}
-                {!item.hasCrust && item.border && <p className="text-xs md:text-sm text-accent">Borda: {item.border}{item.borderPrice ? ` (+${formatCurrency(item.borderPrice)})` : ''}</p>}
-                <p className="mt-1 font-semibold text-accent text-sm">{formatCurrency(item.price)}</p>
-              </div>
-
-              <div className="flex items-center gap-1 md:gap-2">
-                <button onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1))} className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-lg border border-border text-muted hover:bg-surface-hover hover:text-white transition-colors">
-                  <Minus size={12} />
-                </button>
-                <span className="w-6 md:w-8 text-center text-sm font-medium text-white">{item.quantity}</span>
-                <button onClick={() => updateQuantity(item.productId, item.quantity + 1)} className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-lg border border-border text-muted hover:bg-surface-hover hover:text-white transition-colors">
-                  <Plus size={12} />
-                </button>
-              </div>
-
-              <p className="w-16 md:w-20 text-right font-medium text-white text-sm">{formatCurrency((item.price + (item.borderPrice || 0)) * item.quantity)}</p>
-
-              <button onClick={() => removeItem(item.productId)} className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-400 transition-colors shrink-0">
-                <Trash2 size={14} />
-              </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
