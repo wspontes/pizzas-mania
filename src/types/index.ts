@@ -49,6 +49,7 @@ export interface Product {
   active: boolean
   featured: boolean
   customizable: boolean
+  hasCrust?: boolean
   order?: number
   sizes?: Size[]
   ingredients?: ProductIngredient[]
@@ -133,6 +134,8 @@ export interface OrderItem {
   size?: string
   flavors?: string[]
   border?: string
+  borderPrice?: number
+  hasCrust?: boolean
   extras?: string[]
   removedIngredients?: string[]
   notes?: string

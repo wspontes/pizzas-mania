@@ -13,6 +13,9 @@ export default function Home() {
   const { settings, loading: settingsLoading } = useSettings()
 
   const banner = settings?.banner
+  const showBanner = settingsLoading || (banner?.active ?? true)
+  const textColor = banner?.textColor || '#ffffff'
+  const hasImage = !!banner?.image
   const alignClass = banner?.align === 'center' ? 'items-center text-center' : banner?.align === 'right' ? 'items-end text-right' : 'items-start text-left'
 
   const benefits = banner?.benefits?.length
@@ -25,6 +28,7 @@ export default function Home() {
 
   return (
     <div className="container mx-auto px-4 py-6">
+      {showBanner && (
       <section className={`relative mb-10 overflow-hidden rounded-2xl bg-gradient-to-br from-accent/20 via-surface to-surface p-6 md:p-12 flex flex-col ${settingsLoading ? '' : alignClass}`}>
         {settingsLoading ? (
           <div className="relative z-10 min-h-[200px] animate-pulse">
@@ -58,16 +62,16 @@ export default function Home() {
               )
             })()}
             <div className={`relative z-10 ${banner?.align === 'center' ? '' : 'max-w-xl'}`}>
-              <h1 className="text-xl md:text-5xl font-bold leading-tight text-white">
+              <h1 className="text-xl md:text-5xl font-bold leading-tight" style={{ color: textColor, textShadow: hasImage ? '0 2px 8px rgba(0,0,0,0.7), 0 1px 2px rgba(0,0,0,0.5)' : 'none' }}>
                 {banner?.title || 'A melhor pizza\nda cidade'}
               </h1>
-              <p className="mt-2 md:mt-4 text-sm md:text-lg text-muted">
+              <p className="mt-2 md:mt-4 text-sm md:text-lg" style={{ color: textColor, opacity: 0.8, textShadow: hasImage ? '0 1px 4px rgba(0,0,0,0.6)' : 'none' }}>
                 {banner?.subtitle || 'Massa artesanal, ingredientes frescos e o sabor que só a Pizzas Mania tem.'}
               </p>
             </div>
             <div className={`mt-6 md:mt-8 flex gap-4 md:gap-6 ${banner?.align === 'center' ? 'justify-center' : banner?.align === 'right' ? 'justify-end' : ''}`}>
               {benefits.map((benefit) => (
-                <div key={benefit.text} className="flex items-center gap-1.5 text-xs md:text-sm text-muted">
+                <div key={benefit.text} className="flex items-center gap-1.5 text-xs md:text-sm" style={{ color: textColor, opacity: 0.7, textShadow: hasImage ? '0 1px 3px rgba(0,0,0,0.5)' : 'none' }}>
                   <benefit.icon size={14} className="text-accent" />
                   {benefit.text}
                 </div>
@@ -76,6 +80,7 @@ export default function Home() {
           </>
         )}
       </section>
+      )}
 
       <section className="mb-12">
         <div className="mb-4 flex items-center justify-between">

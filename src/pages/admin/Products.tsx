@@ -57,6 +57,7 @@ export default function Products() {
         order: products.length + 1,
         active: false,
         featured: false,
+        hasCrust: product.hasCrust ?? false,
         customizable: product.customizable,
       })
       setCloneConfirm(null)

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Clock, MapPin, CreditCard, Image, Plus, Phone, Trash2, Sparkles } from 'lucide-react'
+import { Clock, MapPin, CreditCard, Image, Plus, Phone, Trash2, Sparkles, CircleDot } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { ImageUpload } from '@/components/shared'
 import { settingsService, type BusinessSettings } from '@/services/settings'
 import { resolveImageUrl } from '@/utils/resolveImageUrl'
+import { formatCurrency } from '@/utils'
 
 export default function Settings() {
   const [saving, setSaving] = useState(false)
@@ -17,10 +18,12 @@ export default function Settings() {
     { day: 'Domingo', open: '18:00', close: '22:00', closed: false },
   ])
 
-  const [neighborhoods, setNeighborhoods] = useState([
+  const [neighborhoods, setNeighborhoods] = useState<{ name: string; fee: number; estimatedTime: number; active: boolean }[]>([
     { name: 'Centro', fee: 5.00, estimatedTime: 25, active: true },
   ])
   const [newNb, setNewNb] = useState({ name: '', fee: '', time: '' })
+  const [nbCepLoading, setNbCepLoading] = useState(false)
+  const [nbZipForLookup, setNbZipForLookup] = useState('')
   const [pixKey, setPixKey] = useState('')
   const [pixQrCode, setPixQrCode] = useState('')
   const [acceptCard, setAcceptCard] = useState(true)
@@ -32,10 +35,14 @@ export default function Settings() {
   const [bannerAlign, setBannerAlign] = useState<'left' | 'center' | 'right'>('left')
   const [bannerOpacity, setBannerOpacity] = useState(20)
   const [bannerImagePos, setBannerImagePos] = useState<'left' | 'center' | 'right'>('center')
+  const [bannerTextColor, setBannerTextColor] = useState('#ffffff')
   const [whatsapp, setWhatsapp] = useState('')
   const [instagram, setInstagram] = useState('')
   const [phone, setPhone] = useState('')
+  const [address, setAddress] = useState('')
   const [bannerBenefits, setBannerBenefits] = useState(['Ingredientes selecionados', 'Pronto em até 30 min', 'Entrega gratuita*'])
+  const [crustOptions, setCrustOptions] = useState<{ name: string; price: number }[]>([])
+  const [newCrust, setNewCrust] = useState({ name: '', price: '' })
 
   useEffect(() => {
     settingsService.get().then((data) => {
@@ -53,8 +60,8 @@ export default function Settings() {
         if (data.paymentMethods) {
           const pm = data.paymentMethods
           if (pm.pix) { setPixKey(pm.pix.key || ''); setPixQrCode(pm.pix.qrCode || '') }
+          if (pm.credit) setAcceptCard(pm.credit.enabled)
           if (pm.cash) setAcceptCash(pm.cash.enabled)
-          setAcceptCard(true)
         }
         if (data.banner) {
           setBannerTitle(data.banner.title || 'A melhor pizza da cidade')
@@ -64,11 +71,14 @@ export default function Settings() {
           setBannerAlign(data.banner.align || 'left')
           setBannerOpacity(data.banner.opacity ?? 20)
           setBannerImagePos(data.banner.imagePosition || 'center')
+          setBannerTextColor(data.banner.textColor || '#ffffff')
           if (data.banner.benefits?.length) setBannerBenefits(data.banner.benefits)
         }
         if (data.whatsapp) setWhatsapp(data.whatsapp)
         if (data.instagram) setInstagram(data.instagram)
         if (data.phone) setPhone(data.phone)
+        if (data.address) setAddress(data.address)
+        if (data.crustOptions?.length) setCrustOptions(data.crustOptions)
       }
     }).catch(() => {})
   }, [])
@@ -85,6 +95,7 @@ export default function Settings() {
       neighborhoods,
       paymentMethods: {
         pix: { enabled: true, key: pixKey, qrCode: pixQrCode },
+        credit: { enabled: acceptCard },
         cash: { enabled: acceptCash },
       },
       banner: {
@@ -96,10 +107,13 @@ export default function Settings() {
         benefits: bannerBenefits,
         opacity: bannerOpacity,
         imagePosition: bannerImagePos,
+        textColor: bannerTextColor,
       },
+      crustOptions,
       whatsapp,
       instagram,
       phone,
+      address,
     }
     await settingsService.save(data)
     setSaving(false)
@@ -113,6 +127,23 @@ export default function Settings() {
     if (!newNb.name.trim() || !newNb.fee || !newNb.time) return
     setNeighborhoods((prev) => [...prev, { name: newNb.name, fee: Number(newNb.fee), estimatedTime: Number(newNb.time), active: true }])
     setNewNb({ name: '', fee: '', time: '' })
+    setNbZipForLookup('')
+  }
+
+  const handleNbCepLookup = async (cep: string) => {
+    const clean = cep.replace(/\D/g, '')
+    setNbZipForLookup(cep)
+    if (clean.length !== 8) return
+    setNbCepLoading(true)
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`)
+      const data = await res.json()
+      if (!data.erro && data.bairro) {
+        setNewNb((prev) => ({ ...prev, name: data.bairro }))
+      }
+    } catch { /* silent */ } finally {
+      setNbCepLoading(false)
+    }
   }
 
   const removeNeighborhood = (index: number) => {
@@ -161,6 +192,13 @@ export default function Settings() {
                   <span className="text-sm text-white">Banner ativo na página inicial</span>
                 </label>
                 <div>
+                  <label className="mb-1.5 block text-sm font-medium text-white">Cor do texto</label>
+                  <div className="flex items-center gap-2">
+                    <input type="color" value={bannerTextColor} onChange={(e) => setBannerTextColor(e.target.value)} className="h-9 w-9 cursor-pointer rounded-lg border border-border bg-transparent" />
+                    <span className="text-xs text-muted">{bannerTextColor}</span>
+                  </div>
+                </div>
+                <div>
                   <label className="mb-1.5 block text-sm font-medium text-white">Opacidade da imagem: {bannerOpacity}%</label>
                   <input type="range" min="5" max="60" value={bannerOpacity} onChange={(e) => setBannerOpacity(Number(e.target.value))} className="w-full accent-accent" />
                 </div>
@@ -206,8 +244,8 @@ export default function Settings() {
                   )
                 })()}
                 <div className={`relative z-10 ${bannerAlign === 'center' ? '' : 'max-w-xs'}`}>
-                  <p className="text-lg font-bold text-white">{bannerTitle || 'Título do banner'}</p>
-                  <p className="text-sm text-muted mt-1">{bannerSubtitle || 'Subtítulo do banner'}</p>
+                  <p className="text-lg font-bold" style={{ color: bannerTextColor, textShadow: bannerImage ? '0 1px 4px rgba(0,0,0,0.6)' : 'none' }}>{bannerTitle || 'Título do banner'}</p>
+                  <p className="text-sm mt-1" style={{ color: bannerTextColor, opacity: 0.7, textShadow: bannerImage ? '0 1px 3px rgba(0,0,0,0.5)' : 'none' }}>{bannerSubtitle || 'Subtítulo do banner'}</p>
                 </div>
               </div>
             </div>
@@ -308,6 +346,7 @@ export default function Settings() {
             <Input label="Telefone" placeholder="(11) 99999-9999" value={phone} onChange={(e) => setPhone(e.target.value)} />
             <Input label="Instagram" placeholder="@pizzamania" value={instagram} onChange={(e) => setInstagram(e.target.value)} />
             <p className="text-xs text-muted">URL ou @ do Instagram que aparece no rodapé do site</p>
+            <Input label="Endereço" placeholder="Rua, número - Bairro, Cidade" value={address} onChange={(e) => setAddress(e.target.value)} />
           </div>
         </div>
 
@@ -318,6 +357,10 @@ export default function Settings() {
           </h2>
           <div className="mb-4 grid gap-3 grid-cols-2 sm:grid-cols-4">
             <Input placeholder="Bairro" value={newNb.name} onChange={(e) => setNewNb({ ...newNb, name: e.target.value })} className="col-span-2 sm:col-span-1" />
+            <div className="relative">
+              <Input placeholder="CEP (auto-preenche bairro)" value={nbZipForLookup} onChange={(e) => handleNbCepLookup(e.target.value)} />
+              {nbCepLoading && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-amber-400 animate-pulse">...</span>}
+            </div>
             <Input placeholder="Taxa R$" type="number" value={newNb.fee} onChange={(e) => setNewNb({ ...newNb, fee: e.target.value })} />
             <Input placeholder="Tempo (min)" type="number" value={newNb.time} onChange={(e) => setNewNb({ ...newNb, time: e.target.value })} />
             <Button onClick={addNeighborhood} className="col-span-2 sm:col-span-1"><Plus size={16} />Adicionar</Button>
@@ -325,7 +368,9 @@ export default function Settings() {
           <div className="space-y-2">
             {neighborhoods.map((n, index) => (
               <div key={index} className="flex items-center justify-between gap-2 rounded-lg bg-surface-hover px-3 md:px-4 py-2.5">
-                <span className="text-sm text-white font-medium truncate min-w-0">{n.name}</span>
+                <div className="min-w-0">
+                  <span className="text-sm text-white font-medium truncate block">{n.name}</span>
+                </div>
                 <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-muted shrink-0">
                   <span>R$ {n.fee.toFixed(2)}</span>
                   <span>~{n.estimatedTime}min</span>
@@ -333,6 +378,34 @@ export default function Settings() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
+            <CircleDot size={18} className="text-accent" />
+            Bordas da Pizza
+          </h2>
+          <p className="mb-3 text-xs text-muted">Opções de borda recheada que o cliente pode escolher ao pedir</p>
+          <div className="space-y-3">
+            {crustOptions.map((opt, i) => (
+              <div key={i} className="flex items-center gap-2 rounded-lg bg-surface-hover px-3 py-2.5">
+                <span className="flex-1 text-sm text-white font-medium">{opt.name}</span>
+                <span className="text-sm text-accent font-semibold">{formatCurrency(opt.price)}</span>
+                <button onClick={() => setCrustOptions(crustOptions.filter((_, idx) => idx !== i))} className="ml-2 text-muted hover:text-red-400 transition-colors">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+            <div className="flex gap-2">
+              <Input placeholder="Nome da borda" value={newCrust.name} onChange={(e) => setNewCrust({ ...newCrust, name: e.target.value })} />
+              <Input placeholder="Preço R$" type="number" step="0.01" value={newCrust.price} onChange={(e) => setNewCrust({ ...newCrust, price: e.target.value })} />
+              <Button onClick={() => {
+                if (!newCrust.name.trim() || !newCrust.price) return
+                setCrustOptions([...crustOptions, { name: newCrust.name.trim(), price: Number(newCrust.price) }])
+                setNewCrust({ name: '', price: '' })
+              }}><Plus size={16} /></Button>
+            </div>
           </div>
         </div>
 

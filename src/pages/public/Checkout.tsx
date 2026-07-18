@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, CreditCard, Banknote, QrCode, MapPin, User, AlertTriangle, Coins } from 'lucide-react'
+import { ArrowLeft, CreditCard, Banknote, QrCode, MapPin, User, AlertTriangle, Coins, Hash } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { useCart } from '@/contexts/CartContext'
 import { useCustomer } from '@/contexts/CustomerContext'
@@ -22,7 +22,7 @@ const paymentDescriptions: Record<string, string> = {
 
 export default function Checkout() {
   const navigate = useNavigate()
-  const { state, subtotal, total, clearCart } = useCart()
+  const { state, subtotal, total, clearCart, setDeliveryFee } = useCart()
   const { settings } = useSettings()
   const { customer, isLoggedIn, login } = useCustomer()
   const [paymentMethod, setPaymentMethod] = useState<string>('')
@@ -34,6 +34,7 @@ export default function Checkout() {
   const [form, setForm] = useState({
     name: customer?.name || '',
     whatsappDigits: customer?.phone ? customer.phone.replace(/^\+?55/, '') : '',
+    zipCode: '',
     street: '',
     number: '',
     complement: '',
@@ -41,6 +42,32 @@ export default function Checkout() {
     city: 'São Paulo',
     reference: '',
   })
+  const [cepLoading, setCepLoading] = useState(false)
+
+  const handleCepLookup = async (cep: string) => {
+    const clean = cep.replace(/\D/g, '')
+    setForm((prev) => ({ ...prev, zipCode: cep }))
+    if (clean.length !== 8) return
+    setCepLoading(true)
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`)
+      const data = await res.json()
+      if (!data.erro) {
+        setForm((prev) => ({
+          ...prev,
+          street: data.logradouro || prev.street,
+          neighborhood: data.bairro || prev.neighborhood,
+          city: data.localidade || prev.city,
+        }))
+        const match = settings?.neighborhoods?.find((n) => n.name.toLowerCase() === (data.bairro || '').toLowerCase())
+        if (match) {
+          setDeliveryFee(match.fee)
+        }
+      }
+    } catch { /* silent */ } finally {
+      setCepLoading(false)
+    }
+  }
 
   if (state.items.length === 0 && !submitted) {
     navigate('/carrinho', { replace: true })
@@ -52,7 +79,7 @@ export default function Checkout() {
 
   const availableMethods = [
     pm?.pix?.enabled && { id: 'pix', label: 'PIX', desc: pm.pix.key ? `Chave: ${pm.pix.key}` : paymentDescriptions.pix } as const,
-    pm?.cash?.enabled && { id: 'card', label: 'Cartão na Entrega', desc: paymentDescriptions.card } as const,
+    pm?.credit?.enabled && { id: 'card', label: 'Cartão na Entrega', desc: paymentDescriptions.card } as const,
     pm?.cash?.enabled && { id: 'cash', label: 'Dinheiro', desc: paymentDescriptions.cash } as const,
   ].filter(Boolean) as { id: string; label: string; desc: string }[]
 
@@ -155,6 +182,10 @@ export default function Checkout() {
                 Endereço de Entrega
               </h2>
               <div className="space-y-4">
+                <div className="relative">
+                  <Input label="CEP" name="zipCode" placeholder="00000-000" value={form.zipCode} onChange={(e) => handleCepLookup(e.target.value)} icon={<Hash size={16} />} />
+                  {cepLoading && <span className="absolute right-3 top-9 text-xs text-amber-400 animate-pulse">Buscando...</span>}
+                </div>
                 <div className="grid gap-4">
                   <Input label="Rua" name="street" placeholder="Nome da rua" value={form.street} onChange={(e) => setForm({ ...form, street: e.target.value })} required />
                   <Input label="Número" name="number" placeholder="N°" value={form.number} onChange={(e) => setForm({ ...form, number: e.target.value })} required />
@@ -218,15 +249,15 @@ export default function Checkout() {
               <div className="mb-3 max-h-48 space-y-2 overflow-y-auto scrollbar-thin">
                 {state.items.map((item) => (
                   <div key={`${item.productId}-${item.size}`} className="flex justify-between text-sm">
-                    <span className="text-muted truncate mr-2">{item.quantity}x {item.productName}</span>
-                    <span className="text-white shrink-0">{formatCurrency(item.price * item.quantity)}</span>
+                    <span className="text-muted truncate mr-2">{item.quantity}x {item.productName}{item.border ? ` (${item.border})` : ''}</span>
+                    <span className="text-white shrink-0">{formatCurrency((item.price + (item.borderPrice || 0)) * item.quantity)}</span>
                   </div>
                 ))}
               </div>
               <div className="space-y-2 border-t border-border pt-3 text-sm">
                 <div className="flex justify-between text-muted"><span>Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
                 {state.couponDiscount > 0 && <div className="flex justify-between text-green-400"><span>Desconto</span><span>-{formatCurrency(state.couponDiscount)}</span></div>}
-                <div className="flex justify-between text-muted"><span>Entrega</span><span>{formatCurrency(state.deliveryFee)}</span></div>
+                {state.deliveryFee > 0 && <div className="flex justify-between text-muted"><span>Entrega</span><span>{formatCurrency(state.deliveryFee)}</span></div>}
                 <div className="flex justify-between font-semibold text-white pt-2 border-t border-border"><span>Total</span><span>{formatCurrency(total)}</span></div>
               </div>
             </div>

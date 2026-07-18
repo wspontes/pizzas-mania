@@ -26,6 +26,8 @@ export interface BusinessSettings {
   whatsapp?: string
   instagram?: string
   phone?: string
+  address?: string
+  crustOptions?: { name: string; price: number }[]
   banner?: {
     title: string
     subtitle: string
@@ -35,6 +37,7 @@ export interface BusinessSettings {
     benefits?: string[]
     opacity?: number
     imagePosition?: 'left' | 'center' | 'right'
+    textColor?: string
   }
 }
 

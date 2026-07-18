@@ -23,6 +23,7 @@ export default function ProductForm() {
     order: '',
     active: true,
     featured: false,
+    hasCrust: false,
   })
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export default function ProductForm() {
             order: product.order ? String(product.order) : '',
             active: product.active,
             featured: product.featured ?? false,
+            hasCrust: product.hasCrust ?? false,
           })
         }
       }).catch(() => {})
@@ -77,6 +79,7 @@ export default function ProductForm() {
       order: newOrder || 0,
       active: form.active,
       featured: form.featured,
+      hasCrust: form.hasCrust,
     }
 
     try {
@@ -131,7 +134,7 @@ export default function ProductForm() {
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex flex-wrap items-center gap-6">
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
             <span className="text-sm text-white">Ativo</span>
@@ -139,6 +142,10 @@ export default function ProductForm() {
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
             <span className="text-sm text-white">Destaque (Home)</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={form.hasCrust} onChange={(e) => setForm({ ...form, hasCrust: e.target.checked })} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
+            <span className="text-sm text-white">Opção de borda</span>
           </label>
         </div>
 

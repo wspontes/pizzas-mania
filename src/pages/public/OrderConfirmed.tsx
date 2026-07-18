@@ -223,7 +223,15 @@ export default function OrderConfirmed() {
           <h3 className="mb-3 font-semibold text-white text-sm">Detalhes do Pedido</h3>
           <div className="space-y-1 text-sm">
             <p className="flex justify-between text-muted"><span>Cliente</span><span className="text-white">{order.customerName as string}</span></p>
-            <p className="flex justify-between text-muted"><span>Total</span><span className="text-accent font-semibold">{formatCurrency(order.total as number)}</span></p>
+            {(order.items as Array<{ quantity: number; productName: string; price: number }>)?.map((item, i) => (
+              <p key={i} className="flex justify-between text-muted"><span>{item.quantity}x {item.productName}</span><span className="text-white">{formatCurrency(item.price * item.quantity)}</span></p>
+            ))}
+            <div className="border-t border-border mt-2 pt-2 space-y-1">
+              <p className="flex justify-between text-muted"><span>Subtotal</span><span className="text-white">{formatCurrency(order.subtotal as number)}</span></p>
+              {(order.discount as number) > 0 && <p className="flex justify-between text-green-400"><span>Desconto</span><span>-{formatCurrency(order.discount as number)}</span></p>}
+              {(order.deliveryFee as number) > 0 && <p className="flex justify-between text-muted"><span>Entrega</span><span className="text-white">{formatCurrency(order.deliveryFee as number)}</span></p>}
+              <p className="flex justify-between font-semibold text-white pt-1 border-t border-border"><span>Total</span><span className="text-accent">{formatCurrency(order.total as number)}</span></p>
+            </div>
             <p className="flex justify-between text-muted"><span>Pagamento</span><span className="text-white">
               {paymentLabels[order.paymentMethod as string] || (order.paymentMethod as string)}
             </span></p>

@@ -4,11 +4,13 @@ import { useState } from 'react'
 import { Timestamp } from 'firebase/firestore'
 import { Button, Input } from '@/components/ui'
 import { useCart } from '@/contexts/CartContext'
+import { useSettings } from '@/hooks'
 import { couponsService } from '@/services'
 import { formatCurrency } from '@/utils'
 
 export default function Cart() {
-  const { state, removeItem, updateQuantity, applyCoupon, subtotal, total } = useCart()
+  const { state, removeItem, updateQuantity, updateBorder, applyCoupon, subtotal, total } = useCart()
+  const { settings } = useSettings()
   const [couponInput, setCouponInput] = useState('')
   const [couponApplied, setCouponApplied] = useState(false)
   const [couponError, setCouponError] = useState('')
@@ -35,6 +37,8 @@ export default function Cart() {
       setCouponLoading(false)
     }
   }
+
+  const crustOptions = settings?.crustOptions || []
 
   if (state.items.length === 0) {
     return (
@@ -72,6 +76,23 @@ export default function Cart() {
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-white text-sm md:text-base truncate">{item.productName}</h3>
                 {item.size && <p className="text-xs md:text-sm text-muted">Tamanho: {item.size}</p>}
+                {item.hasCrust && crustOptions.length > 0 && (
+                  <select
+                    value={item.border || ''}
+                    onChange={(e) => {
+                      const val = e.target.value || undefined
+                      const opt = crustOptions.find((c) => c.name === val)
+                      updateBorder(item.productId, val, opt?.price)
+                    }}
+                    className="mt-1 w-full rounded-lg border border-border bg-surface-hover px-2 py-1 text-xs text-white focus:border-accent focus:outline-none"
+                  >
+                    <option value="">Sem borda recheada</option>
+                    {crustOptions.map((c) => (
+                      <option key={c.name} value={c.name}>{c.name} ({formatCurrency(c.price)})</option>
+                    ))}
+                  </select>
+                )}
+                {!item.hasCrust && item.border && <p className="text-xs md:text-sm text-accent">Borda: {item.border}{item.borderPrice ? ` (+${formatCurrency(item.borderPrice)})` : ''}</p>}
                 <p className="mt-1 font-semibold text-accent text-sm">{formatCurrency(item.price)}</p>
               </div>
 
@@ -85,7 +106,7 @@ export default function Cart() {
                 </button>
               </div>
 
-              <p className="w-16 md:w-20 text-right font-medium text-white text-sm">{formatCurrency(item.price * item.quantity)}</p>
+              <p className="w-16 md:w-20 text-right font-medium text-white text-sm">{formatCurrency((item.price + (item.borderPrice || 0)) * item.quantity)}</p>
 
               <button onClick={() => removeItem(item.productId)} className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-400 transition-colors shrink-0">
                 <Trash2 size={14} />
@@ -117,7 +138,7 @@ export default function Cart() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-muted"><span>Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
               {state.couponDiscount > 0 && <div className="flex justify-between text-green-400"><span>Desconto</span><span>-{formatCurrency(state.couponDiscount)}</span></div>}
-              <div className="flex justify-between text-muted"><span>Entrega</span><span>{formatCurrency(state.deliveryFee)}</span></div>
+              {state.deliveryFee > 0 && <div className="flex justify-between text-muted"><span>Entrega</span><span>{formatCurrency(state.deliveryFee)}</span></div>}
               <div className="border-t border-border pt-2"><div className="flex justify-between font-semibold text-white"><span>Total</span><span>{formatCurrency(total)}</span></div></div>
             </div>
 

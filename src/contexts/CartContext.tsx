@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer, type ReactNode } from 'react'
+import { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react'
 import type { OrderItem } from '@/types'
 
 interface CartState {
@@ -14,6 +14,7 @@ type CartAction =
   | { type: 'ADD_ITEM'; payload: OrderItem }
   | { type: 'REMOVE_ITEM'; payload: { productId: string } }
   | { type: 'UPDATE_QUANTITY'; payload: { productId: string; quantity: number } }
+  | { type: 'UPDATE_BORDER'; payload: { productId: string; border?: string; borderPrice?: number } }
   | { type: 'APPLY_COUPON'; payload: { code: string; type: 'percentage' | 'fixed'; value: number } }
   | { type: 'SET_DELIVERY_FEE'; payload: number }
   | { type: 'CLEAR_CART' }
@@ -23,11 +24,22 @@ interface CartContextType {
   addItem: (item: OrderItem) => void
   removeItem: (productId: string) => void
   updateQuantity: (productId: string, quantity: number) => void
+  updateBorder: (productId: string, border?: string, borderPrice?: number) => void
   applyCoupon: (code: string, type: 'percentage' | 'fixed', value: number) => void
   setDeliveryFee: (fee: number) => void
   clearCart: () => void
   subtotal: number
   total: number
+}
+
+const STORAGE_KEY = 'pizzamania_cart'
+
+function loadCart(): CartState {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch { /* silent */ }
+  return { items: [], couponDiscount: 0, deliveryFee: 0 }
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -64,6 +76,15 @@ function cartReducer(state: CartState, action: CartAction): CartState {
             : i
         ),
       }
+    case 'UPDATE_BORDER':
+      return {
+        ...state,
+        items: state.items.map((i) =>
+          i.productId === action.payload.productId
+            ? { ...i, border: action.payload.border, borderPrice: action.payload.borderPrice }
+            : i
+        ),
+      }
     case 'APPLY_COUPON':
       return {
         ...state,
@@ -82,14 +103,14 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(cartReducer, {
-    items: [],
-    couponDiscount: 0,
-    deliveryFee: 0,
-  })
+  const [state, dispatch] = useReducer(cartReducer, undefined, loadCart)
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  }, [state])
 
   const subtotal = state.items.reduce(
-    (acc, item) => acc + item.price * item.quantity,
+    (acc, item) => acc + (item.price + (item.borderPrice || 0)) * item.quantity,
     0
   )
 
@@ -108,6 +129,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'REMOVE_ITEM', payload: { productId } })
   const updateQuantity = (productId: string, quantity: number) =>
     dispatch({ type: 'UPDATE_QUANTITY', payload: { productId, quantity } })
+  const updateBorder = (productId: string, border?: string, borderPrice?: number) =>
+    dispatch({ type: 'UPDATE_BORDER', payload: { productId, border, borderPrice } })
   const applyCoupon = (code: string, type: 'percentage' | 'fixed', value: number) =>
     dispatch({ type: 'APPLY_COUPON', payload: { code, type, value } })
   const setDeliveryFee = (fee: number) =>
@@ -121,6 +144,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         addItem,
         removeItem,
         updateQuantity,
+        updateBorder,
         applyCoupon,
         setDeliveryFee,
         clearCart,
