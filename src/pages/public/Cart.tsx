@@ -9,7 +9,7 @@ import { couponsService } from '@/services'
 import { formatCurrency } from '@/utils'
 
 export default function Cart() {
-  const { state, removeItem, updateQuantity, updateBorder, applyCoupon, subtotal, total } = useCart()
+  const { state, removeItem, updateQuantity, updateBorder, applyCoupon, subtotal, discount, total } = useCart()
   const { settings } = useSettings()
   const [couponInput, setCouponInput] = useState('')
   const [couponApplied, setCouponApplied] = useState(false)
@@ -143,8 +143,7 @@ export default function Cart() {
             <h3 className="mb-3 font-semibold text-white text-sm">Resumo</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-muted"><span>Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
-              {state.couponDiscount > 0 && <div className="flex justify-between text-green-400"><span>Desconto</span><span>-{formatCurrency(state.couponDiscount)}</span></div>}
-              {state.deliveryFee > 0 && <div className="flex justify-between text-muted"><span>Entrega</span><span>{formatCurrency(state.deliveryFee)}</span></div>}
+              {discount > 0 && <div className="flex justify-between text-green-400"><span>Desconto</span><span>-{formatCurrency(discount)}</span></div>}
               <div className="border-t border-border pt-2"><div className="flex justify-between font-semibold text-white"><span>Total</span><span>{formatCurrency(total)}</span></div></div>
             </div>
 

@@ -29,6 +29,7 @@ interface CartContextType {
   setDeliveryFee: (fee: number) => void
   clearCart: () => void
   subtotal: number
+  discount: number
   total: number
 }
 
@@ -149,6 +150,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setDeliveryFee,
         clearCart,
         subtotal,
+        discount: calculatedDiscount,
         total,
       }}
     >

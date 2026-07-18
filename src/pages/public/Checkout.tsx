@@ -22,7 +22,7 @@ const paymentDescriptions: Record<string, string> = {
 
 export default function Checkout() {
   const navigate = useNavigate()
-  const { state, subtotal, total, clearCart, setDeliveryFee } = useCart()
+  const { state, subtotal, discount, total, clearCart, setDeliveryFee } = useCart()
   const { settings } = useSettings()
   const { customer, isLoggedIn, login } = useCustomer()
   const [paymentMethod, setPaymentMethod] = useState<string>('')
@@ -115,7 +115,7 @@ export default function Checkout() {
         items: state.items,
         subtotal,
         deliveryFee: state.deliveryFee,
-        discount: state.couponDiscount,
+        discount,
         total,
         paymentMethod: paymentMethod as 'pix' | 'card' | 'cash',
         paymentStatus: paymentMethod === 'pix' ? 'pending' as const : 'paid' as const,
@@ -258,7 +258,7 @@ export default function Checkout() {
               </div>
               <div className="space-y-2 border-t border-border pt-3 text-sm">
                 <div className="flex justify-between text-muted"><span>Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
-                {state.couponDiscount > 0 && <div className="flex justify-between text-green-400"><span>Desconto</span><span>-{formatCurrency(state.couponDiscount)}</span></div>}
+                {discount > 0 && <div className="flex justify-between text-green-400"><span>Desconto</span><span>-{formatCurrency(discount)}</span></div>}
                 {state.deliveryFee > 0 && <div className="flex justify-between text-muted"><span>Entrega</span><span>{formatCurrency(state.deliveryFee)}</span></div>}
                 <div className="flex justify-between font-semibold text-white pt-2 border-t border-border"><span>Total</span><span>{formatCurrency(total)}</span></div>
               </div>
