@@ -27,7 +27,7 @@ export default function Home() {
       ]
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto px-4 py-6 pb-6">
       {showBanner && (
       <section className={`relative mb-10 overflow-hidden rounded-2xl bg-gradient-to-br from-accent/20 via-surface to-surface p-6 md:p-12 flex flex-col ${settingsLoading ? '' : alignClass}`}>
         {settingsLoading ? (
@@ -83,14 +83,16 @@ export default function Home() {
       )}
 
       <section className="mb-12">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg md:text-xl font-bold text-white">Mais Pedidos</h2>
-          <Link to="/cardapio">
-            <Button size="sm">
-              Ver Cardápio
-              <ArrowRight size={14} />
-            </Button>
-          </Link>
+        <div className="sticky top-16 z-30 -mx-4 bg-brand-black px-4 py-4 border-b border-border/50">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg md:text-xl font-bold text-white">Mais Pedidos</h2>
+            <Link to="/cardapio">
+              <Button size="sm">
+                Ver Cardápio
+                <ArrowRight size={14} />
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {featuredLoading ? (

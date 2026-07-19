@@ -31,30 +31,32 @@ export default function Menu() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">Cardápio</h1>
-        <p className="mt-1 text-sm text-muted">Escolha seu sabor favorito</p>
-      </div>
+      <div className="sticky top-16 z-30 -mx-4 bg-brand-black px-4 pt-8 pb-4 border-b border-border/50">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-white">Cardápio</h1>
+          <p className="mt-1 text-sm text-muted">Escolha seu sabor favorito</p>
+        </div>
 
-      <div className="mb-6">
-        <SearchBar value={search} onChange={setSearch} />
-      </div>
+        <div className="mb-4">
+          <SearchBar value={search} onChange={setSearch} />
+        </div>
 
-      <div className="mb-8">
-        {catLoading ? (
-          <CategorySkeleton />
-        ) : categories.length > 0 ? (
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
-            {categories.map((category) => (
-              <CategoryCard
-                key={category.id}
-                category={category}
-                active={activeCategory === category.id}
-                onClick={handleCategoryClick}
-              />
-            ))}
-          </div>
-        ) : null}
+        <div>
+          {catLoading ? (
+            <CategorySkeleton />
+          ) : categories.length > 0 ? (
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+              {categories.map((category) => (
+                <CategoryCard
+                  key={category.id}
+                  category={category}
+                  active={activeCategory === category.id}
+                  onClick={handleCategoryClick}
+                />
+              ))}
+            </div>
+          ) : null}
+        </div>
       </div>
 
       {prodLoading ? (

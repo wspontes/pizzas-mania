@@ -21,7 +21,7 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-border bg-brand-black/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 bg-brand-black">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2 text-xl font-bold text-white">
             <UtensilsCrossed className="text-accent" size={24} />
