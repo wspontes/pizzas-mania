@@ -22,7 +22,7 @@ const statusMap: Record<string, { label: string; color: string; icon: typeof Che
 
 const paymentLabels: Record<string, string> = {
   pix: 'PIX',
-  card: 'Cartão na Entrega',
+  card: 'Cartão crédito/débito na entrega/retirada',
   cash: 'Dinheiro',
   credit: 'Cartão de Crédito',
   debit: 'Cartão de Débito',
@@ -79,7 +79,10 @@ export default function MyOrders() {
       list.forEach((order) => {
         const prev = prevStatuses.current.get(order.id)
         if (prev && prev !== order.status) {
-          const label = statusMap[order.status]?.label || order.status
+          const baseLabel = statusMap[order.status]?.label || order.status
+          const label = order.deliveryType === 'pickup' && order.status === 'outForDelivery' ? 'Pronto para retirada'
+            : order.deliveryType === 'pickup' && order.status === 'delivered' ? 'Retirado'
+            : baseLabel
           showNotification(`Pedido #${order.id.slice(0, 6)}: ${label}`)
           if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('Pizzas Mania', { body: `Pedido #${order.id.slice(0, 6)}: ${label}` })
@@ -203,7 +206,11 @@ export default function MyOrders() {
 function OrderItem({ order }: { order: Order }) {
   const { addItem } = useCart()
   const navigate = useNavigate()
+  const isPickup = order.deliveryType === 'pickup'
   const st = statusMap[order.status] || statusMap.received
+  const label = isPickup && order.status === 'outForDelivery' ? 'Pronto para retirada'
+    : isPickup && order.status === 'delivered' ? 'Retirado'
+    : st.label
   const Icon = st.icon
   const created = new Date(order.createdAt)
   const dateStr = created.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
@@ -231,7 +238,7 @@ function OrderItem({ order }: { order: Order }) {
       <div className="flex items-center justify-between mb-2">
         <span className={`flex items-center gap-1.5 text-xs font-medium ${st.color}`}>
           <Icon size={13} />
-          {st.label}
+          {label}
         </span>
         <span className="text-xs text-muted">{dateStr} • {timeStr}</span>
       </div>

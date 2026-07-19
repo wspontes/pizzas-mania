@@ -120,6 +120,7 @@ export interface Order {
   couponCode?: string
   changeNeeded?: boolean
   changeFor?: number
+  deliveryType?: 'delivery' | 'pickup'
   preparationTime?: number
   deliveryTime?: number
   createdAt: string

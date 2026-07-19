@@ -303,7 +303,7 @@ export default function Settings() {
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="flex items-center gap-2 cursor-pointer rounded-lg border border-border bg-surface-hover p-3">
                 <input type="checkbox" checked={acceptCard} onChange={(e) => setAcceptCard(e.target.checked)} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />
-                <span className="text-sm text-white">Cartão na Entrega</span>
+                <span className="text-sm text-white">Cartão crédito/débito na entrega/retirada</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer rounded-lg border border-border bg-surface-hover p-3">
                 <input type="checkbox" checked={acceptCash} onChange={(e) => setAcceptCash(e.target.checked)} className="h-4 w-4 rounded border-border bg-surface text-accent focus:ring-accent" />

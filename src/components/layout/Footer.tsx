@@ -1,4 +1,4 @@
-import { UtensilsCrossed, Phone } from 'lucide-react'
+import { UtensilsCrossed, Phone, MapPin } from 'lucide-react'
 import { useSettings } from '@/hooks'
 
 const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
@@ -46,6 +46,7 @@ export function Footer() {
   const phone = settings?.phone
   const instagram = settings?.instagram
   const whatsapp = settings?.whatsapp
+  const address = settings?.address
 
   const hourLines = hours ? formatHourRange(hours) : []
 
@@ -81,6 +82,7 @@ export function Footer() {
           <div>
             <h4 className="mb-3 text-sm font-semibold text-white">Contato</h4>
             <div className="space-y-1 text-sm text-muted">
+              {address && <p className="flex items-center gap-2"><MapPin size={14} /> {address}</p>}
               {phone && <p className="flex items-center gap-2"><Phone size={14} /> {phone}</p>}
               {whatsapp && <p>WhatsApp: {whatsapp.replace(/^55/, '').replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')}</p>}
               {instagram && (

@@ -8,13 +8,15 @@ import { useSettings } from '@/hooks'
 import { formatCurrency } from '@/utils'
 import { resolveImageUrl } from '@/utils/resolveImageUrl'
 
-const allSteps = [
-  { key: 'waitingPayment', icon: QrCode, label: 'Aguardando pagamento' },
-  { key: 'received', icon: CheckCircle, label: 'Pedido recebido' },
-  { key: 'preparing', icon: ChefHat, label: 'Preparando' },
-  { key: 'outForDelivery', icon: Bike, label: 'Saiu para entrega' },
-  { key: 'delivered', icon: Clock, label: 'Entregue' },
-]
+  const isPickup = (order.deliveryType as string) === 'pickup'
+
+  const allSteps = [
+    { key: 'waitingPayment', icon: QrCode, label: 'Aguardando pagamento' },
+    { key: 'received', icon: CheckCircle, label: 'Pedido recebido' },
+    { key: 'preparing', icon: ChefHat, label: 'Preparando' },
+    { key: 'outForDelivery', icon: Bike, label: isPickup ? 'Pronto para retirada' : 'Saiu para entrega' },
+    { key: 'delivered', icon: Clock, label: isPickup ? 'Retirado' : 'Entregue' },
+  ]
 
 const stepOrder = ['waitingPayment', 'received', 'preparing', 'outForDelivery', 'delivered']
 
@@ -67,13 +69,13 @@ export default function OrderConfirmed() {
         const data = { id: snap.id, ...snap.data() } as Record<string, unknown>
         const newStatus = (data.status as string) || ''
         if (prevStatus.current && prevStatus.current !== newStatus) {
-          const statusLabels: Record<string, string> = {
-            received: 'Recebido',
-            preparing: 'Saiu para produção',
-            outForDelivery: 'Saiu para entrega',
-            delivered: 'Entregue',
-            cancelled: 'Cancelado',
-          }
+  const statusLabels: Record<string, string> = {
+    received: 'Recebido',
+    preparing: 'Saiu para produção',
+    outForDelivery: isPickup ? 'Pronto para retirada' : 'Saiu para entrega',
+    delivered: isPickup ? 'Retirado' : 'Entregue',
+    cancelled: 'Cancelado',
+  }
           showToast(statusLabels[newStatus] || newStatus)
           if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('Pizzas Mania', { body: `Seu pedido: ${statusLabels[newStatus] || newStatus}` })
@@ -121,12 +123,12 @@ export default function OrderConfirmed() {
   const statusLabel = currentStatus === 'waitingPayment' ? 'Aguardando pagamento'
     : currentStatus === 'received' ? 'Recebido'
     : currentStatus === 'preparing' ? 'Preparando'
-    : currentStatus === 'outForDelivery' ? 'Saiu para entrega'
-    : currentStatus === 'delivered' ? 'Entregue'
+    : currentStatus === 'outForDelivery' ? (isPickup ? 'Pronto para retirada' : 'Saiu para entrega')
+    : currentStatus === 'delivered' ? (isPickup ? 'Retirado' : 'Entregue')
     : currentStatus === 'cancelled' ? 'Cancelado' : ''
 
   const paymentLabels: Record<string, string> = {
-    pix: 'PIX', card: 'Cartão na Entrega', cash: 'Dinheiro',
+    pix: 'PIX', card: 'Cartão crédito/débito na entrega/retirada', cash: 'Dinheiro',
     credit: 'Cartão de Crédito', debit: 'Cartão de Débito', delivery: 'Pagar na Entrega',
   }
 

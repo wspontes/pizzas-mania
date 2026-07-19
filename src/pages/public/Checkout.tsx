@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, CreditCard, Banknote, QrCode, MapPin, User, AlertTriangle, Coins, Hash } from 'lucide-react'
+import { ArrowLeft, CreditCard, Banknote, QrCode, MapPin, User, AlertTriangle, Coins, Hash, Truck, Store } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { useCart } from '@/contexts/CartContext'
 import { useCustomer } from '@/contexts/CustomerContext'
@@ -26,6 +26,7 @@ export default function Checkout() {
   const { settings } = useSettings()
   const { customer, isLoggedIn, login } = useCustomer()
   const [paymentMethod, setPaymentMethod] = useState<string>('')
+  const [deliveryType, setDeliveryType] = useState<'delivery' | 'pickup'>('delivery')
   const [changeNeeded, setChangeNeeded] = useState(false)
   const [changeFor, setChangeFor] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -78,17 +79,18 @@ export default function Checkout() {
 
   const pixKey = settings?.paymentMethods?.pix?.key
   const pm = settings?.paymentMethods
+  const orderTotal = deliveryType === 'pickup' ? subtotal - discount : total
 
   const availableMethods = [
     pm?.pix?.enabled && { id: 'pix', label: 'PIX', desc: pm.pix.key ? `Chave: ${pm.pix.key}` : paymentDescriptions.pix } as const,
-    pm?.credit?.enabled && { id: 'card', label: 'Cartão na Entrega', desc: paymentDescriptions.card } as const,
+    pm?.credit?.enabled && { id: 'card', label: 'Cartão crédito/débito na entrega/retirada', desc: paymentDescriptions.card } as const,
     pm?.cash?.enabled && { id: 'cash', label: 'Dinheiro', desc: paymentDescriptions.cash } as const,
   ].filter(Boolean) as { id: string; label: string; desc: string }[]
 
   if (availableMethods.length === 0) {
     availableMethods.push(
       { id: 'pix', label: 'PIX', desc: paymentDescriptions.pix },
-      { id: 'card', label: 'Cartão na Entrega', desc: paymentDescriptions.card },
+      { id: 'card', label: 'Cartão crédito/débito na entrega/retirada', desc: paymentDescriptions.card },
       { id: 'cash', label: 'Dinheiro', desc: paymentDescriptions.cash },
     )
   }
@@ -104,19 +106,20 @@ export default function Checkout() {
       const orderData = {
         customerName: form.name,
         customerPhone: '+55' + form.whatsappDigits,
-        deliveryAddress: {
+        deliveryType,
+        deliveryAddress: deliveryType === 'delivery' ? {
           street: form.street,
           number: form.number,
           complement: form.complement || '',
           neighborhood: form.neighborhood,
           city: form.city,
           reference: form.reference || '',
-        },
+        } : undefined,
         items: state.items,
         subtotal,
-        deliveryFee: state.deliveryFee,
+        deliveryFee: deliveryType === 'pickup' ? 0 : state.deliveryFee,
         discount,
-        total,
+        total: deliveryType === 'pickup' ? subtotal - discount : total,
         paymentMethod: paymentMethod as 'pix' | 'card' | 'cash',
         paymentStatus: paymentMethod === 'pix' ? 'pending' as const : 'paid' as const,
         status: paymentMethod === 'pix' ? 'waitingPayment' as const : 'received' as const,
@@ -195,26 +198,66 @@ export default function Checkout() {
 
             <div className="rounded-xl border border-border bg-surface p-4 md:p-6">
               <h2 className="mb-4 flex items-center gap-2 text-base md:text-lg font-semibold text-white">
-                <MapPin size={18} className="text-accent" />
-                Endereço de Entrega
+                <Truck size={18} className="text-accent" />
+                Tipo de Pedido
               </h2>
-              <div className="space-y-4">
-                <div className="relative">
-                  <Input label="CEP" name="zipCode" placeholder="00000-000" value={form.zipCode} onChange={(e) => handleCepLookup(e.target.value)} icon={<Hash size={16} />} />
-                  {cepLoading && <span className="absolute right-3 top-9 text-xs text-amber-400 animate-pulse">Buscando...</span>}
-                </div>
-                <div className="grid gap-4">
-                  <Input label="Rua" name="street" placeholder="Nome da rua" value={form.street} onChange={(e) => setForm({ ...form, street: e.target.value })} required />
-                  <Input label="Número" name="number" placeholder="N°" value={form.number} onChange={(e) => setForm({ ...form, number: e.target.value })} required />
-                </div>
-                <div className="grid gap-4">
-                  <Input label="Complemento" name="complement" placeholder="Apto, Bloco..." value={form.complement} onChange={(e) => setForm({ ...form, complement: e.target.value })} />
-                  <Input label="Bairro" name="neighborhood" placeholder="Seu bairro" value={form.neighborhood} onChange={(e) => setForm({ ...form, neighborhood: e.target.value })} required />
-                  <Input label="Cidade" name="city" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} required />
-                </div>
-                <Input label="Ponto de referência" name="reference" placeholder="Próximo a..." value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
+              <div className="grid grid-cols-2 gap-3">
+                <button type="button" onClick={() => setDeliveryType('delivery')} className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${deliveryType === 'delivery' ? 'border-accent bg-accent/10' : 'border-border bg-surface-hover hover:border-accent/50'}`}>
+                  <Truck size={22} className={deliveryType === 'delivery' ? 'text-accent' : 'text-muted'} />
+                  <div>
+                    <p className={`text-sm font-medium ${deliveryType === 'delivery' ? 'text-white' : 'text-muted'}`}>Entrega</p>
+                    <p className="text-xs text-muted">Receba em casa</p>
+                  </div>
+                </button>
+                <button type="button" onClick={() => { setDeliveryType('pickup'); setDeliveryFee(0) }} className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${deliveryType === 'pickup' ? 'border-accent bg-accent/10' : 'border-border bg-surface-hover hover:border-accent/50'}`}>
+                  <Store size={22} className={deliveryType === 'pickup' ? 'text-accent' : 'text-muted'} />
+                  <div>
+                    <p className={`text-sm font-medium ${deliveryType === 'pickup' ? 'text-white' : 'text-muted'}`}>Retirada</p>
+                    <p className="text-xs text-muted">Retire na pizzaria</p>
+                  </div>
+                </button>
               </div>
             </div>
+
+            {deliveryType === 'delivery' ? (
+              <div className="rounded-xl border border-border bg-surface p-4 md:p-6">
+                <h2 className="mb-4 flex items-center gap-2 text-base md:text-lg font-semibold text-white">
+                  <MapPin size={18} className="text-accent" />
+                  Endereço de Entrega
+                </h2>
+                <div className="space-y-4">
+                  <div className="relative">
+                    <Input label="CEP" name="zipCode" placeholder="00000-000" value={form.zipCode} onChange={(e) => handleCepLookup(e.target.value)} icon={<Hash size={16} />} />
+                    {cepLoading && <span className="absolute right-3 top-9 text-xs text-amber-400 animate-pulse">Buscando...</span>}
+                  </div>
+                  <div className="grid gap-4">
+                    <Input label="Rua" name="street" placeholder="Nome da rua" value={form.street} onChange={(e) => setForm({ ...form, street: e.target.value })} required />
+                    <Input label="Número" name="number" placeholder="N°" value={form.number} onChange={(e) => setForm({ ...form, number: e.target.value })} required />
+                  </div>
+                  <div className="grid gap-4">
+                    <Input label="Complemento" name="complement" placeholder="Apto, Bloco..." value={form.complement} onChange={(e) => setForm({ ...form, complement: e.target.value })} />
+                    <Input label="Bairro" name="neighborhood" placeholder="Seu bairro" value={form.neighborhood} onChange={(e) => setForm({ ...form, neighborhood: e.target.value })} required />
+                    <Input label="Cidade" name="city" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} required />
+                  </div>
+                  <Input label="Ponto de referência" name="reference" placeholder="Próximo a..." value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-border bg-surface p-4 md:p-6">
+                <h2 className="mb-4 flex items-center gap-2 text-base md:text-lg font-semibold text-white">
+                  <Store size={18} className="text-accent" />
+                  Retirada no Local
+                </h2>
+                {settings?.address ? (
+                  <div className="rounded-lg bg-surface-hover p-4">
+                    <p className="text-sm font-medium text-white">{settings.address}</p>
+                    <p className="mt-1 text-xs text-muted">Retire seu pedido neste endereço</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted">Endereço não configurado. Entre em contato após o pedido.</p>
+                )}
+              </div>
+            )}
 
             <div className="rounded-xl border border-border bg-surface p-4 md:p-6">
               <h2 className="mb-4 flex items-center gap-2 text-base md:text-lg font-semibold text-white">
@@ -275,7 +318,7 @@ export default function Checkout() {
                 <div className="flex justify-between text-muted"><span>Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
                 {discount > 0 && <div className="flex justify-between text-green-400"><span>Desconto</span><span>-{formatCurrency(discount)}</span></div>}
                 {state.deliveryFee > 0 && <div className="flex justify-between text-muted"><span>Entrega</span><span>{formatCurrency(state.deliveryFee)}</span></div>}
-                <div className="flex justify-between font-semibold text-white pt-2 border-t border-border"><span>Total</span><span>{formatCurrency(total)}</span></div>
+                <div className="flex justify-between font-semibold text-white pt-2 border-t border-border"><span>Total</span><span>{formatCurrency(orderTotal)}</span></div>
               </div>
             </div>
 
@@ -295,8 +338,8 @@ export default function Checkout() {
                 <span>{error}</span>
               </div>
             )}
-            <Button type="submit" className="w-full" size="lg" disabled={!paymentMethod || !form.name || form.whatsappDigits.length < 10 || !form.street || !form.number || !form.neighborhood} loading={submitting}>
-              {submitting ? 'Finalizando...' : `Confirmar Pedido - ${formatCurrency(total)}`}
+            <Button type="submit" className="w-full" size="lg" disabled={!paymentMethod || !form.name || form.whatsappDigits.length < 10 || (deliveryType === 'delivery' && (!form.street || !form.number || !form.neighborhood))} loading={submitting}>
+              {submitting ? 'Finalizando...' : `Confirmar Pedido - ${formatCurrency(orderTotal)}`}
             </Button>
           </div>
         </div>

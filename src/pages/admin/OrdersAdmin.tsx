@@ -85,7 +85,14 @@ export default function OrdersAdmin() {
     if (nextStatus === 'accepted') {
       setWhatsappModal({ phone: order.customerPhone, name: order.customerName, message: `Olá ${order.customerName}! Seu pedido foi ACEITO e já está em preparação. Obrigado por escolher a Pizzas Mania! 🍕` })
     } else if (nextStatus === 'outForDelivery') {
-      setWhatsappModal({ phone: order.customerPhone, name: order.customerName, message: `Olá ${order.customerName}! Seu pedido SAIU PARA ENTREGA. Fique atento ao seu celular! 🛵🍕` })
+      const isPickup = order.deliveryType === 'pickup'
+      setWhatsappModal({
+        phone: order.customerPhone,
+        name: order.customerName,
+        message: isPickup
+          ? `Olá ${order.customerName}! Seu pedido está PRONTO para retirada! Pode buscar na pizzaria. 🍕`
+          : `Olá ${order.customerName}! Seu pedido SAIU PARA ENTREGA. Fique atento ao seu celular! 🛵🍕`
+      })
     }
   }
 
@@ -109,7 +116,7 @@ export default function OrdersAdmin() {
 
   const getPaymentLabel = (method: string) => {
     if (method === 'pix') return 'PIX'
-    if (method === 'card') return 'Cartão na Entrega'
+    if (method === 'card') return 'Cartão crédito/débito na entrega/retirada'
     if (method === 'cash') return 'Dinheiro'
     if (method === 'credit') return 'Cartão Crédito'
     if (method === 'debit') return 'Cartão Débito'
@@ -270,7 +277,10 @@ function OrderCard({ order, advanceStatus, confirmPayment, backStatus, cancelOrd
   formatCurrency: (n: number) => string
   formatTime: (d: Date) => string
 }) {
-  const status = statusConfig[order.status] || statusConfig.waitingPayment
+  const isPickup = order.deliveryType === 'pickup'
+  const status = isPickup && order.status === 'outForDelivery'
+    ? { label: 'Pronto, aguardando retirada', color: 'bg-purple-500/10 text-purple-400' }
+    : statusConfig[order.status] || statusConfig.waitingPayment
   return (
     <div className="rounded-xl border border-border bg-surface p-3.5 md:p-4">
       <div className="flex items-start gap-3">

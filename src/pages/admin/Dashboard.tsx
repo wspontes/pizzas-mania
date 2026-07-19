@@ -197,7 +197,7 @@ export default function Dashboard() {
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-sm font-medium text-white">{formatCurrency(order.total)}</p>
-                  <p className="text-xs text-muted capitalize">{order.status === 'delivered' ? 'Entregue' : order.status === 'preparing' ? 'Preparando' : order.status === 'received' ? 'Recebido' : order.status === 'outForDelivery' ? 'Saiu' : order.status}</p>
+                  <p className="text-xs text-muted capitalize">{order.status === 'delivered' ? 'Entregue' : order.status === 'preparing' ? 'Preparando' : order.status === 'received' ? 'Recebido' : order.status === 'outForDelivery' ? (order.deliveryType === 'pickup' ? 'Pronto' : 'Saiu') : order.status}</p>
                 </div>
               </div>
             ))}
