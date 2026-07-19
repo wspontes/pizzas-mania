@@ -8,16 +8,6 @@ import { useSettings } from '@/hooks'
 import { formatCurrency } from '@/utils'
 import { resolveImageUrl } from '@/utils/resolveImageUrl'
 
-  const isPickup = (order.deliveryType as string) === 'pickup'
-
-  const allSteps = [
-    { key: 'waitingPayment', icon: QrCode, label: 'Aguardando pagamento' },
-    { key: 'received', icon: CheckCircle, label: 'Pedido recebido' },
-    { key: 'preparing', icon: ChefHat, label: 'Preparando' },
-    { key: 'outForDelivery', icon: Bike, label: isPickup ? 'Pronto para retirada' : 'Saiu para entrega' },
-    { key: 'delivered', icon: Clock, label: isPickup ? 'Retirado' : 'Entregue' },
-  ]
-
 const stepOrder = ['waitingPayment', 'received', 'preparing', 'outForDelivery', 'delivered']
 
 const ORDER_ID_KEY = 'pizzasmania_lastOrderId'
@@ -112,6 +102,16 @@ export default function OrderConfirmed() {
       </div>
     )
   }
+
+  const isPickup = (order.deliveryType as string) === 'pickup'
+
+  const allSteps = [
+    { key: 'waitingPayment', icon: QrCode, label: 'Aguardando pagamento' },
+    { key: 'received', icon: CheckCircle, label: 'Pedido recebido' },
+    { key: 'preparing', icon: ChefHat, label: 'Preparando' },
+    { key: 'outForDelivery', icon: Bike, label: isPickup ? 'Pronto para retirada' : 'Saiu para entrega' },
+    { key: 'delivered', icon: Clock, label: isPickup ? 'Retirado' : 'Entregue' },
+  ]
 
   const isPix = (order.paymentMethod as string) === 'pix'
   const currentStatus = (order.status as string) || (isPix ? 'waitingPayment' : 'received')
