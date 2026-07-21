@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { X, ShoppingCart, Star } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { useToast } from '@/contexts/ToastContext'
-import { useSettings } from '@/hooks'
+import { useSettings, useBusinessStatus } from '@/hooks'
 import { formatCurrency } from '@/utils'
 import { resolveImageUrl } from '@/utils/resolveImageUrl'
 import { Button } from '@/components/ui'
+import { OperatingHoursModal } from './OperatingHoursModal'
 import type { Product } from '@/types'
 
 interface ProductModalProps {
@@ -17,7 +18,9 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
   const { addItem } = useCart()
   const { showToast } = useToast()
   const { settings } = useSettings()
+  const { status } = useBusinessStatus()
   const [selectedBorder, setSelectedBorder] = useState<string>('')
+  const [showHoursModal, setShowHoursModal] = useState(false)
   const price = product.discountPrice && product.discountPrice > 0 ? product.discountPrice : product.price
 
   const crustOptions = settings?.crustOptions || []
@@ -25,6 +28,10 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
   const borderPrice = crustOptions.find((c) => c.name === selectedBorder)?.price || 0
 
   const handleAddToCart = () => {
+    if (!status.isOpen) {
+      setShowHoursModal(true)
+      return
+    }
     addItem({
       productId: product.id,
       productName: product.name,
@@ -113,6 +120,7 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
           </Button>
         </div>
       </div>
+      <OperatingHoursModal isOpen={showHoursModal} onClose={() => setShowHoursModal(false)} message={status.message} />
     </div>
   )
 }

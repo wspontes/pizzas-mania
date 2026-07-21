@@ -9,13 +9,13 @@ import { formatCurrency } from '@/utils'
 export default function Settings() {
   const [saving, setSaving] = useState(false)
   const [hours, setHours] = useState([
+    { day: 'Domingo', open: '18:00', close: '22:00', closed: false },
     { day: 'Segunda-feira', open: '18:00', close: '23:00', closed: false },
     { day: 'Terça-feira', open: '18:00', close: '23:00', closed: false },
     { day: 'Quarta-feira', open: '18:00', close: '23:00', closed: false },
     { day: 'Quinta-feira', open: '18:00', close: '23:00', closed: false },
     { day: 'Sexta-feira', open: '18:00', close: '00:00', closed: false },
     { day: 'Sábado', open: '18:00', close: '00:00', closed: false },
-    { day: 'Domingo', open: '18:00', close: '22:00', closed: false },
   ])
 
   const [neighborhoods, setNeighborhoods] = useState<{ name: string; fee: number; estimatedTime: number; active: boolean }[]>([
@@ -41,6 +41,7 @@ export default function Settings() {
   const [instagram, setInstagram] = useState('')
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
+  const [businessHoursEnabled, setBusinessHoursEnabled] = useState(true)
   const [bannerBenefits, setBannerBenefits] = useState(['Ingredientes selecionados', 'Pronto em até 30 min', 'Entrega gratuita*'])
   const [crustOptions, setCrustOptions] = useState<{ name: string; price: number }[]>([])
   const [newCrust, setNewCrust] = useState({ name: '', price: '' })
@@ -50,7 +51,7 @@ export default function Settings() {
       if (data) {
         if (data.neighborhoods?.length) setNeighborhoods(data.neighborhoods)
         if (data.businessHours?.length) {
-          const dayNames = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo']
+          const dayNames = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
           setHours(data.businessHours.map((h) => ({
             day: dayNames[h.dayOfWeek] || `Dia ${h.dayOfWeek}`,
             open: h.open,
@@ -58,6 +59,7 @@ export default function Settings() {
             closed: h.closed,
           })))
         }
+        if (data.businessHoursEnabled !== undefined) setBusinessHoursEnabled(data.businessHoursEnabled)
         if (data.paymentMethods) {
           const pm = data.paymentMethods
           if (pm.pix) { setPixKey(pm.pix.key || ''); setPixQrCode(pm.pix.qrCode || '') }
@@ -94,6 +96,7 @@ export default function Settings() {
         close: h.close,
         closed: h.closed,
       })),
+      businessHoursEnabled,
       neighborhoods,
       defaultDeliveryFee: defaultDeliveryFee !== '' ? Number(defaultDeliveryFee) : undefined,
       paymentMethods: {
@@ -318,6 +321,18 @@ export default function Settings() {
             <Clock size={18} className="text-accent" />
             Horários de Funcionamento
           </h2>
+          <div className="flex items-center justify-between rounded-lg bg-surface-hover px-4 py-3 mb-4">
+            <div>
+              <p className="text-sm font-medium text-white">Restrição de horário</p>
+              <p className="text-xs text-muted mt-0.5">{businessHoursEnabled ? 'Pedidos bloqueados fora do horário' : 'Pedidos aceitos em qualquer horário'}</p>
+            </div>
+            <button
+              onClick={() => setBusinessHoursEnabled(!businessHoursEnabled)}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors ${businessHoursEnabled ? 'bg-accent' : 'bg-surface-hover border border-border'}`}
+            >
+              <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${businessHoursEnabled ? 'translate-x-5.5 mt-0.5 ml-0.5' : 'translate-x-0.5 mt-0.5 ml-0.5'}`} />
+            </button>
+          </div>
           <div className="space-y-2">
             {hours.map((day, index) => (
               <div key={day.day} className="flex flex-wrap items-center gap-2 md:gap-3">

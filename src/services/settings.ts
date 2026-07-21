@@ -8,6 +8,7 @@ export interface BusinessSettings {
     close: string
     closed: boolean
   }[]
+  businessHoursEnabled?: boolean
   minOrder?: number
   freeDeliveryFrom?: number
   neighborhoods: {

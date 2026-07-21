@@ -5,6 +5,8 @@ import { resolveImageUrl } from '@/utils/resolveImageUrl'
 import { Button } from '@/components/ui'
 import { useCart } from '@/contexts/CartContext'
 import { useToast } from '@/contexts/ToastContext'
+import { useBusinessStatus } from '@/hooks'
+import { OperatingHoursModal } from './OperatingHoursModal'
 import { ProductModal } from './ProductModal'
 import type { Product } from '@/types'
 
@@ -15,13 +17,19 @@ interface ProductCardProps {
 
 export function ProductCard({ product, className }: ProductCardProps) {
   const [showModal, setShowModal] = useState(false)
+  const [showHoursModal, setShowHoursModal] = useState(false)
   const { addItem } = useCart()
   const { showToast } = useToast()
+  const { status } = useBusinessStatus()
   const price = product.discountPrice && product.discountPrice > 0 ? product.discountPrice : product.price
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    if (!status.isOpen) {
+      setShowHoursModal(true)
+      return
+    }
     addItem({
       productId: product.id,
       productName: product.name,
@@ -86,6 +94,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
       </div>
 
       {showModal && <ProductModal product={product} onClose={() => setShowModal(false)} />}
+      <OperatingHoursModal isOpen={showHoursModal} onClose={() => setShowHoursModal(false)} message={status.message} />
     </>
   )
 }

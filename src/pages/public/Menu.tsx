@@ -27,6 +27,7 @@ export default function Menu() {
 
   const handleCategoryClick = (categoryId: string) => {
     setActiveCategory((prev) => (prev === categoryId ? null : categoryId))
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   return (

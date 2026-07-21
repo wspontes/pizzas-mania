@@ -4,7 +4,8 @@ import { ArrowLeft, CreditCard, Banknote, QrCode, MapPin, User, AlertTriangle, C
 import { Button, Input } from '@/components/ui'
 import { useCart } from '@/contexts/CartContext'
 import { useCustomer } from '@/contexts/CustomerContext'
-import { useSettings } from '@/hooks'
+import { useSettings, useBusinessStatus } from '@/hooks'
+import { OperatingHoursModal } from '@/components/shared/OperatingHoursModal'
 import { ordersService, couponsService } from '@/services'
 import { formatCurrency } from '@/utils'
 
@@ -24,7 +25,9 @@ export default function Checkout() {
   const navigate = useNavigate()
   const { state, subtotal, discount, total, clearCart, setDeliveryFee } = useCart()
   const { settings } = useSettings()
+  const { status } = useBusinessStatus()
   const { customer, isLoggedIn, login } = useCustomer()
+  const [showHoursModal, setShowHoursModal] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<string>('')
   const [deliveryType, setDeliveryType] = useState<'delivery' | 'pickup'>('delivery')
   const [changeNeeded, setChangeNeeded] = useState(false)
@@ -98,6 +101,10 @@ export default function Checkout() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    if (!status.isOpen) {
+      setShowHoursModal(true)
+      return
+    }
     if (!paymentMethod) { setError('Selecione uma forma de pagamento'); return }
     setSubmitting(true)
 
@@ -338,12 +345,19 @@ export default function Checkout() {
                 <span>{error}</span>
               </div>
             )}
-            <Button type="submit" className="w-full" size="lg" disabled={!paymentMethod || !form.name || form.whatsappDigits.length < 10 || (deliveryType === 'delivery' && (!form.street || !form.number || !form.neighborhood))} loading={submitting}>
+            <Button type="submit" className="w-full" size="lg" disabled={!status.isOpen || !paymentMethod || !form.name || form.whatsappDigits.length < 10 || (deliveryType === 'delivery' && (!form.street || !form.number || !form.neighborhood))} loading={submitting}>
               {submitting ? 'Finalizando...' : `Confirmar Pedido - ${formatCurrency(orderTotal)}`}
             </Button>
           </div>
         </div>
       </form>
+      {!status.isOpen && (
+        <div className="mt-4 flex items-center gap-2 rounded-lg bg-yellow-500/10 p-3 text-sm text-yellow-400">
+          <AlertTriangle size={16} className="shrink-0" />
+          <span>{status.message}</span>
+        </div>
+      )}
+      <OperatingHoursModal isOpen={showHoursModal} onClose={() => setShowHoursModal(false)} message={status.message} />
     </div>
   )
 }
