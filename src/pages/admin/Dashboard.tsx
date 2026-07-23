@@ -3,18 +3,24 @@ import { ShoppingBag, DollarSign, TrendingUp, TrendingDown, Trophy } from 'lucid
 import { ordersService } from '@/services'
 import type { Order } from '@/types'
 import { formatCurrency, formatTime, formatDate } from '@/utils'
+import { getAnalytics, type AnalyticsData } from '@/utils/analytics'
 
 export default function Dashboard() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month'>('today')
   const [topRange, setTopRange] = useState<'today' | 'week' | 'month'>('today')
+  const [analytics, setAnalytics] = useState<AnalyticsData>({ totalVisits: 0, monthlyVisits: 0, currentMonth: '' })
 
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await ordersService.getAll()
+        const [data, analyticsData] = await Promise.all([
+          ordersService.getAll(),
+          getAnalytics(),
+        ])
         setOrders(data)
+        setAnalytics(analyticsData)
       } catch {
         setOrders([])
       } finally {
@@ -91,7 +97,7 @@ export default function Dashboard() {
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-xs md:text-sm text-muted mt-0.5">Visão geral do seu negócio</p>
+          <p className="text-xs md:text-sm text-muted mt-0.5">{analytics.todayVisits} acessos hoje, {analytics.monthlyVisits} acessos este mês</p>
         </div>
         <div className="flex gap-1 self-start rounded-lg border border-border bg-surface p-1">
           {([

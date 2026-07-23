@@ -22,6 +22,8 @@ export default function Settings() {
     { name: 'Centro', fee: 5.00, estimatedTime: 25, active: true },
   ])
   const [newNb, setNewNb] = useState({ name: '', fee: '', time: '' })
+  const [editingNb, setEditingNb] = useState<number | null>(null)
+  const [editNb, setEditNb] = useState({ name: '', fee: '', time: '', active: true })
   const [nbCepLoading, setNbCepLoading] = useState(false)
   const [nbZipForLookup, setNbZipForLookup] = useState('')
   const [defaultDeliveryFee, setDefaultDeliveryFee] = useState('')
@@ -134,6 +136,18 @@ export default function Settings() {
     setNeighborhoods((prev) => [...prev, { name: newNb.name, fee: Number(newNb.fee), estimatedTime: Number(newNb.time), active: true }])
     setNewNb({ name: '', fee: '', time: '' })
     setNbZipForLookup('')
+  }
+
+  const startEditNb = (index: number) => {
+    const n = neighborhoods[index]
+    setEditNb({ name: n.name, fee: String(n.fee), time: String(n.estimatedTime), active: n.active })
+    setEditingNb(index)
+  }
+
+  const saveEditNb = () => {
+    if (editingNb === null) return
+    setNeighborhoods((prev) => prev.map((n, i) => i === editingNb ? { ...n, name: editNb.name, fee: Number(editNb.fee), estimatedTime: Number(editNb.time), active: editNb.active } : n))
+    setEditingNb(null)
   }
 
   const handleNbCepLookup = async (cep: string) => {
@@ -389,16 +403,36 @@ export default function Settings() {
           </div>
           <div className="space-y-2">
             {neighborhoods.map((n, index) => (
-              <div key={index} className="flex items-center justify-between gap-2 rounded-lg bg-surface-hover px-3 md:px-4 py-2.5">
-                <div className="min-w-0">
-                  <span className="text-sm text-white font-medium truncate block">{n.name}</span>
+              editingNb === index ? (
+                <div key={index} className="rounded-lg bg-surface-hover border border-accent/30 p-3 space-y-2">
+                  <input type="text" value={editNb.name} onChange={(e) => setEditNb({ ...editNb, name: e.target.value })} className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-white" placeholder="Bairro" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="number" value={editNb.fee} onChange={(e) => setEditNb({ ...editNb, fee: e.target.value })} className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-white" placeholder="Taxa R$" step="0.50" />
+                    <input type="number" value={editNb.time} onChange={(e) => setEditNb({ ...editNb, time: e.target.value })} className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-white" placeholder="Tempo min" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setEditNb({ ...editNb, active: !editNb.active })} className={`text-xs font-medium px-2 py-1 rounded-full transition-colors ${editNb.active ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                      {editNb.active ? 'Ativo' : 'Inativo'}
+                    </button>
+                    <div className="ml-auto flex gap-2">
+                      <button onClick={() => setEditingNb(null)} className="text-xs text-muted hover:text-white transition-colors px-2 py-1">Cancelar</button>
+                      <button onClick={saveEditNb} className="text-xs text-accent hover:text-accent/80 font-medium transition-colors px-2 py-1">Salvar</button>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-muted shrink-0">
-                  <span>R$ {n.fee.toFixed(2)}</span>
-                  <span>~{n.estimatedTime}min</span>
-                  <button onClick={() => removeNeighborhood(index)} className="text-red-400 hover:text-red-300 transition-colors text-xs">Remover</button>
+              ) : (
+                <div key={index} className="flex items-center justify-between gap-2 rounded-lg bg-surface-hover px-3 md:px-4 py-2.5">
+                  <div className="min-w-0">
+                    <span className={`text-sm font-medium truncate block ${n.active ? 'text-white' : 'text-muted line-through'}`}>{n.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm text-muted shrink-0">
+                    <span>R$ {n.fee.toFixed(2)}</span>
+                    <span>~{n.estimatedTime}min</span>
+                    <button onClick={() => startEditNb(index)} className="text-accent hover:text-accent/80 transition-colors text-xs">Editar</button>
+                    <button onClick={() => removeNeighborhood(index)} className="text-red-400 hover:text-red-300 transition-colors text-xs">Remover</button>
+                  </div>
                 </div>
-              </div>
+              )
             ))}
           </div>
         </div>

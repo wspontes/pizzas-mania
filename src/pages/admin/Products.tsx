@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Plus, Pencil, Trash2, Copy, Search } from 'lucide-react'
+import { Plus, Pencil, Trash2, Copy, Search, Percent, DollarSign } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { productsService, categoriesService } from '@/services'
 import { resolveImageUrl } from '@/utils/resolveImageUrl'
@@ -17,6 +17,12 @@ export default function Products() {
   const [filterCat, setFilterCat] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [cloneConfirm, setCloneConfirm] = useState<Product | null>(null)
+  const [showBulkModal, setShowBulkModal] = useState(false)
+  const [bulkType, setBulkType] = useState<'percent' | 'fixed' | 'clear'>('percent')
+  const [bulkDirection, setBulkDirection] = useState<'increase' | 'decrease'>('increase')
+  const [bulkValue, setBulkValue] = useState('')
+  const [bulkApplying, setBulkApplying] = useState(false)
+  const [showBulkConfirm, setShowBulkConfirm] = useState(false)
 
   const load = async () => {
     try {
@@ -75,6 +81,62 @@ export default function Products() {
 
   const displayed = base.filter((p) => !search || p.name.toLowerCase().includes(search.toLowerCase()))
 
+  const bulkTargets = filterCat === 'all' ? products : products.filter((p) => p.categoryId === filterCat)
+
+  const computeNewPrice = (product: Product): number | null => {
+    if (bulkType === 'clear') return 0
+    const val = parseFloat(bulkValue)
+    if (isNaN(val) || val <= 0) return null
+    const basePrice = product.price
+    let newPrice: number
+    if (bulkType === 'percent') {
+      newPrice = bulkDirection === 'increase'
+        ? basePrice * (1 + val / 100)
+        : basePrice * (1 - val / 100)
+    } else {
+      newPrice = bulkDirection === 'increase'
+        ? basePrice + val
+        : basePrice - val
+    }
+    return Math.max(0.01, Math.round(newPrice * 100) / 100)
+  }
+
+  const bulkPreview = bulkTargets.map((p) => ({
+    product: p,
+    oldDiscount: p.discountPrice ?? 0,
+    newDiscount: computeNewPrice(p),
+  })).filter((item) => item.newDiscount !== null)
+
+  const handleBulkConfirm = () => {
+    if (bulkType === 'clear') {
+      setShowBulkModal(false)
+      setShowBulkConfirm(true)
+    } else {
+      const val = parseFloat(bulkValue)
+      if (isNaN(val) || val <= 0) return
+      setShowBulkModal(false)
+      setShowBulkConfirm(true)
+    }
+  }
+
+  const applyBulk = async () => {
+    setBulkApplying(true)
+    try {
+      for (const item of bulkPreview) {
+        if (item.newDiscount === null) continue
+        await productsService.update(item.product.id, { discountPrice: item.newDiscount } as Partial<Product>)
+      }
+      showToast(`${bulkTargets.length} produtos atualizados!`)
+      setShowBulkConfirm(false)
+      setBulkValue('')
+      load()
+    } catch {
+      showToast('Erro ao ajustar preços')
+    } finally {
+      setBulkApplying(false)
+    }
+  }
+
   const getCategoryName = (catId: string) => categories.find((c) => c.id === catId)?.name || catId
 
   if (loading) {
@@ -108,7 +170,7 @@ export default function Products() {
       </div>
 
       <div className="mb-5">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={() => setFilterCat('all')} className={`rounded-full px-3.5 py-2 text-xs font-medium transition-colors ${filterCat === 'all' ? 'bg-accent text-white' : 'bg-surface text-muted hover:text-white border border-border'}`}>
             Todas
           </button>
@@ -117,6 +179,10 @@ export default function Products() {
               {cat.name}
             </button>
           ))}
+          <button onClick={() => setShowBulkModal(true)} className="ml-auto rounded-full bg-yellow-500/10 px-3.5 py-2 text-xs font-medium text-yellow-400 hover:bg-yellow-500/20 transition-colors flex items-center gap-1.5">
+            <DollarSign size={13} />
+            Ajustar Preços
+          </button>
         </div>
       </div>
 
@@ -186,6 +252,129 @@ export default function Products() {
               <Button className="flex-1 text-sm h-10" onClick={confirmClone}>
                 <Copy size={15} />
                 Clonar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showBulkModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setShowBulkModal(false)}>
+          <div className="w-full max-w-sm rounded-xl border border-border bg-surface p-5 md:p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="mb-1 text-base font-semibold text-white">Ajustar Preços</h3>
+            <p className="text-xs text-muted mb-4">
+              {filterCat === 'all'
+                ? `Todos os ${bulkTargets.length} produtos — preço promocional`
+                : `${bulkTargets.length} produtos em "${categories.find((c) => c.id === filterCat)?.name || ''}" — preço promocional`}
+            </p>
+
+            <div className="flex gap-2 mb-3">
+              <button onClick={() => setBulkType('percent')} className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition-colors ${bulkType === 'percent' ? 'bg-accent text-white' : 'bg-surface-hover text-muted border border-border hover:text-white'}`}>
+                <Percent size={14} /> Percentual
+              </button>
+              <button onClick={() => setBulkType('fixed')} className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition-colors ${bulkType === 'fixed' ? 'bg-accent text-white' : 'bg-surface-hover text-muted border border-border hover:text-white'}`}>
+                <DollarSign size={14} /> Valor Fixo
+              </button>
+              <button onClick={() => setBulkType('clear')} className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition-colors ${bulkType === 'clear' ? 'bg-red-500/10 text-red-400 border border-red-500/30' : 'bg-surface-hover text-muted border border-border hover:text-white'}`}>
+                Limpar
+              </button>
+            </div>
+
+            {bulkType !== 'clear' && (
+              <>
+                <div className="flex gap-2 mb-3">
+                  <button onClick={() => setBulkDirection('increase')} className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-colors ${bulkDirection === 'increase' ? 'bg-green-500/10 text-green-400 border border-green-500/30' : 'bg-surface-hover text-muted border border-border hover:text-white'}`}>
+                    Aumentar
+                  </button>
+                  <button onClick={() => setBulkDirection('decrease')} className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-colors ${bulkDirection === 'decrease' ? 'bg-red-500/10 text-red-400 border border-red-500/30' : 'bg-surface-hover text-muted border border-border hover:text-white'}`}>
+                    Reduzir
+                  </button>
+                </div>
+
+                <div className="relative mb-4">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">{bulkType === 'percent' ? '%' : 'R$'}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step={bulkType === 'percent' ? '1' : '0.50'}
+                    placeholder={bulkType === 'percent' ? 'Ex: 10' : 'Ex: 5.00'}
+                    value={bulkValue}
+                    onChange={(e) => setBulkValue(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-surface-hover pl-8 pr-3 py-2.5 text-sm text-white placeholder:text-muted focus:border-accent focus:outline-none"
+                  />
+                </div>
+              </>
+            )}
+
+            {bulkType === 'clear' && (
+              <p className="mb-4 text-xs text-muted text-center rounded-lg bg-red-500/5 border border-red-500/20 p-3">
+                Remove o preço promocional de {bulkTargets.length} produtos, retornando ao preço original.
+              </p>
+            )}
+
+            <div className="flex gap-2">
+              <Button variant="ghost" className="flex-1 text-sm h-10" onClick={() => setShowBulkModal(false)}>
+                Cancelar
+              </Button>
+              <Button
+                className="flex-1 text-sm h-10"
+                disabled={bulkType !== 'clear' && (!bulkValue || parseFloat(bulkValue) <= 0)}
+                onClick={handleBulkConfirm}
+              >
+                Continuar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBulkConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setShowBulkConfirm(false)}>
+          <div className="w-full max-w-lg rounded-xl border border-border bg-surface p-5 md:p-6 shadow-2xl max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <h3 className="mb-1 text-base font-semibold text-white">Confirmar Alteração</h3>
+            <p className="text-xs text-muted mb-3">
+              {bulkType === 'clear'
+                ? `Removendo promoção de ${bulkPreview.length} produtos`
+                : `${bulkDirection === 'increase' ? 'Aumento' : 'Redução'} de ${bulkType === 'percent' ? `${bulkValue}%` : formatCurrency(parseFloat(bulkValue))} no preço promocional`}
+            </p>
+
+            <div className="flex-1 overflow-y-auto rounded-lg border border-border mb-4">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border bg-surface-hover">
+                    <th className="px-3 py-2 text-left text-muted font-medium">Produto</th>
+                    <th className="px-3 py-2 text-right text-muted font-medium">Atual</th>
+                    <th className="px-3 py-2 text-center text-muted font-medium w-8"></th>
+                    <th className="px-3 py-2 text-right text-muted font-medium">Novo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bulkPreview.map((item) => (
+                    <tr key={item.product.id} className="border-b border-border/50 last:border-0">
+                      <td className="px-3 py-2 text-white truncate max-w-[180px]">{item.product.name}</td>
+                      <td className="px-3 py-2 text-right text-muted">
+                        {item.oldDiscount > 0 ? formatCurrency(item.oldDiscount) : formatCurrency(item.product.price)}
+                      </td>
+                      <td className="px-3 py-2 text-center text-muted">→</td>
+                      <td className="px-3 py-2 text-right text-accent font-medium">
+                        {bulkType === 'clear' ? formatCurrency(item.product.price) : formatCurrency(item.newDiscount!)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="ghost" className="flex-1 text-sm h-10" onClick={() => setShowBulkConfirm(false)}>
+                Cancelar
+              </Button>
+              <Button
+                className="flex-1 text-sm h-10"
+                disabled={bulkApplying}
+                onClick={applyBulk}
+                loading={bulkApplying}
+              >
+                Confirmar
               </Button>
             </div>
           </div>

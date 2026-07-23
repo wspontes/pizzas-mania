@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -9,10 +9,16 @@ import { loginSchema, type LoginFormData } from '@/utils/validators'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { login, user } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (user && !loading) {
+      navigate('/admin', { replace: true })
+    }
+  }, [user, loading, navigate])
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -23,7 +29,6 @@ export default function Login() {
       setLoading(true)
       setError('')
       await login(data.identifier, data.password)
-      navigate('/admin')
     } catch (err) {
       const message = err instanceof Error ? err.message : ''
       if (message.includes('user-not-found') || message.includes('wrong-password') || message.includes('invalid-credential') || message === 'Usuário não encontrado') {
