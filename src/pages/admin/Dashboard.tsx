@@ -10,7 +10,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month'>('today')
   const [topRange, setTopRange] = useState<'today' | 'week' | 'month'>('today')
-  const [analytics, setAnalytics] = useState<AnalyticsData>({ totalVisits: 0, monthlyVisits: 0, currentMonth: '' })
+  const [analytics, setAnalytics] = useState<AnalyticsData>({ totalVisits: 0, monthlyVisits: 0, todayVisits: 0, currentMonth: '', currentDay: '' })
 
   useEffect(() => {
     const load = async () => {
