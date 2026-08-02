@@ -324,7 +324,7 @@ export default function Checkout() {
               <div className="space-y-2 border-t border-border pt-3 text-sm">
                 <div className="flex justify-between text-muted"><span>Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
                 {discount > 0 && <div className="flex justify-between text-green-400"><span>Desconto</span><span>-{formatCurrency(discount)}</span></div>}
-                {state.deliveryFee > 0 && <div className="flex justify-between text-muted"><span>Entrega</span><span>{formatCurrency(state.deliveryFee)}</span></div>}
+                <div className="flex justify-between text-muted"><span>Entrega</span><span>{deliveryType === 'pickup' ? formatCurrency(0) : formatCurrency(state.deliveryFee)}</span></div>
                 <div className="flex justify-between font-semibold text-white pt-2 border-t border-border"><span>Total</span><span>{formatCurrency(orderTotal)}</span></div>
               </div>
             </div>
