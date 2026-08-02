@@ -58,6 +58,7 @@ export const router = createBrowserRouter([
       { path: 'carrinho', element: <Suspense fallback={<PageLoader />}><Cart /></Suspense> },
       { path: 'checkout', element: <Suspense fallback={<PageLoader />}><Checkout /></Suspense> },
       { path: 'pedido/confirmacao', element: <Suspense fallback={<PageLoader />}><OrderConfirmed /></Suspense> },
+      { path: 'pedido/:id', element: <Suspense fallback={<PageLoader />}><OrderConfirmed /></Suspense> },
       { path: 'meus-pedidos', element: <Suspense fallback={<PageLoader />}><MyOrders /></Suspense> },
     ],
   },

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase/config'
-import { ArrowLeft, ShoppingBag, CheckCircle, Bike, ChefHat, QrCode, LogIn, LogOut, RotateCcw, Banknote, CreditCard, Bell } from 'lucide-react'
+import { ArrowLeft, ShoppingBag, CheckCircle, Bike, ChefHat, QrCode, LogIn, LogOut, RotateCcw, Banknote, CreditCard, Bell, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { useCustomer } from '@/contexts/CustomerContext'
 import { useCart } from '@/contexts/CartContext'
@@ -234,15 +234,21 @@ function OrderItem({ order }: { order: Order }) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
-      <div className="flex items-center justify-between mb-2">
+    <button
+      onClick={() => navigate(`/pedido/${order.id}`)}
+      className="w-full rounded-xl border border-border bg-surface p-4 text-left transition-colors hover:border-accent/50"
+    >
+      <div className="mb-2 flex items-center justify-between gap-2">
         <span className={`flex items-center gap-1.5 text-xs font-medium ${st.color}`}>
           <Icon size={13} />
           {label}
         </span>
-        <span className="text-xs text-muted">{dateStr} • {timeStr}</span>
+        <span className="flex items-center gap-2 text-xs text-muted">
+          {dateStr} • {timeStr}
+          <ChevronRight size={14} className="text-muted" />
+        </span>
       </div>
-      <div className="space-y-0.5 mb-2">
+      <div className="mb-2 space-y-0.5">
         {order.items.map((item, i) => (
           <p key={i} className="text-sm text-muted">{item.quantity}x {item.productName}</p>
         ))}
@@ -252,7 +258,7 @@ function OrderItem({ order }: { order: Order }) {
         <span className="flex items-center gap-1">#{order.id.slice(0, 8)}</span>
         {isCompleted && (
           <button
-            onClick={reorder}
+            onClick={(e) => { e.stopPropagation(); reorder() }}
             className="flex items-center gap-1 ml-auto rounded-md px-2 py-1 font-medium text-accent transition-colors hover:bg-accent/10"
           >
             <RotateCcw size={11} />
@@ -261,6 +267,6 @@ function OrderItem({ order }: { order: Order }) {
         )}
         <span className="text-sm font-semibold text-white ml-auto">{formatCurrency(order.total)}</span>
       </div>
-    </div>
+    </button>
   )
 }

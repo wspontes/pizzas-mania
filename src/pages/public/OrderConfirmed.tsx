@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useLocation, Link } from 'react-router-dom'
+import { useLocation, useParams, Link } from 'react-router-dom'
 import { doc, onSnapshot, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase/config'
 import { CheckCircle, Clock, Bike, ChefHat, ShoppingBag, QrCode, AlertTriangle, Copy, Bell } from 'lucide-react'
@@ -30,12 +30,13 @@ function playStatusBeep() {
 
 export default function OrderConfirmed() {
   const location = useLocation()
+  const { id: paramId } = useParams<{ id: string }>()
   const { settings } = useSettings()
   const initialOrder = (location.state as { order?: Record<string, unknown> })?.order
   const [order, setOrder] = useState<Record<string, unknown> | null>(initialOrder || null)
   const [toast, setToast] = useState<string | null>(null)
+  const effectiveId = (initialOrder?.id as string) || paramId || sessionStorage.getItem(ORDER_ID_KEY) || ''
   const prevStatus = useRef<string>((initialOrder?.status as string) || '')
-  const orderIdRef = useRef<string>((initialOrder?.id as string) || sessionStorage.getItem(ORDER_ID_KEY) || '')
 
   const showToast = useCallback((msg: string) => {
     setToast(msg)
@@ -44,14 +45,15 @@ export default function OrderConfirmed() {
   }, [])
 
   useEffect(() => {
-    if (initialOrder?.id) {
-      orderIdRef.current = initialOrder.id as string
-      sessionStorage.setItem(ORDER_ID_KEY, initialOrder.id as string)
+    const oid = (initialOrder?.id as string) || paramId
+    if (oid) {
+      sessionStorage.setItem(ORDER_ID_KEY, oid)
+      prevStatus.current = ''
     }
-  }, [initialOrder?.id])
+  }, [initialOrder?.id, paramId])
 
   useEffect(() => {
-    const oid = orderIdRef.current
+    const oid = (initialOrder?.id as string) || paramId || sessionStorage.getItem(ORDER_ID_KEY) || ''
     if (!oid) return
 
     const unsub = onSnapshot(doc(db, 'orders', oid), (snap) => {
@@ -62,8 +64,8 @@ export default function OrderConfirmed() {
   const statusLabels: Record<string, string> = {
     received: 'Recebido',
     preparing: 'Saiu para produção',
-    outForDelivery: isPickup ? 'Pronto para retirada' : 'Saiu para entrega',
-    delivered: isPickup ? 'Retirado' : 'Entregue',
+    outForDelivery: (data.deliveryType as string) === 'pickup' ? 'Pronto para retirada' : 'Saiu para entrega',
+    delivered: (data.deliveryType as string) === 'pickup' ? 'Retirado' : 'Entregue',
     cancelled: 'Cancelado',
   }
           showToast(statusLabels[newStatus] || newStatus)
@@ -81,17 +83,17 @@ export default function OrderConfirmed() {
     }
 
     return () => unsub()
-  }, [showToast])
+  }, [showToast, initialOrder?.id, paramId])
 
   useEffect(() => {
-    if (!order && orderIdRef.current) {
-      getDoc(doc(db, 'orders', orderIdRef.current)).then((snap) => {
+    if (!order && effectiveId) {
+      getDoc(doc(db, 'orders', effectiveId)).then((snap) => {
         if (snap.exists()) {
           setOrder({ id: snap.id, ...snap.data() } as Record<string, unknown>)
         }
       }).catch(() => {})
     }
-  }, [order])
+  }, [order, effectiveId])
 
   if (!order) {
     return (
