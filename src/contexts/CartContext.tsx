@@ -12,9 +12,9 @@ interface CartState {
 
 type CartAction =
   | { type: 'ADD_ITEM'; payload: OrderItem }
-  | { type: 'REMOVE_ITEM'; payload: { productId: string } }
-  | { type: 'UPDATE_QUANTITY'; payload: { productId: string; quantity: number } }
-  | { type: 'UPDATE_BORDER'; payload: { productId: string; border?: string; borderPrice?: number } }
+  | { type: 'REMOVE_ITEM'; payload: { key: string } }
+  | { type: 'UPDATE_QUANTITY'; payload: { key: string; quantity: number } }
+  | { type: 'UPDATE_BORDER'; payload: { key: string; border?: string; borderPrice?: number } }
   | { type: 'APPLY_COUPON'; payload: { code: string; type: 'percentage' | 'fixed'; value: number } }
   | { type: 'SET_DELIVERY_FEE'; payload: number }
   | { type: 'CLEAR_CART' }
@@ -22,9 +22,9 @@ type CartAction =
 interface CartContextType {
   state: CartState
   addItem: (item: OrderItem) => void
-  removeItem: (productId: string) => void
-  updateQuantity: (productId: string, quantity: number) => void
-  updateBorder: (productId: string, border?: string, borderPrice?: number) => void
+  removeItem: (key: string) => void
+  updateQuantity: (key: string, quantity: number) => void
+  updateBorder: (key: string, border?: string, borderPrice?: number) => void
   applyCoupon: (code: string, type: 'percentage' | 'fixed', value: number) => void
   setDeliveryFee: (fee: number) => void
   clearCart: () => void
@@ -45,17 +45,34 @@ function loadCart(): CartState {
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
+function itemsMatch(a: OrderItem, b: OrderItem): boolean {
+  if (a.isSplit || b.isSplit) {
+    if (!a.isSplit || !b.isSplit) return false
+    const keyA = [...(a.flavors ?? [])].map((f) => f.productId).sort().join(',')
+    const keyB = [...(b.flavors ?? [])].map((f) => f.productId).sort().join(',')
+    return keyA === keyB
+  }
+  return a.productId === b.productId
+}
+
+export function itemKey(item: OrderItem): string {
+  if (item.isSplit) {
+    return `split:${[...(item.flavors ?? [])].map((f) => f.productId).sort().join(',')}`
+  }
+  return `whole:${item.productId}`
+}
+
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case 'ADD_ITEM': {
       const existing = state.items.find(
-        (i) => i.productId === action.payload.productId
+        (i) => itemsMatch(i, action.payload)
       )
       if (existing) {
         return {
           ...state,
           items: state.items.map((i) =>
-            i.productId === action.payload.productId
+            itemsMatch(i, action.payload)
               ? { ...i, quantity: i.quantity + action.payload.quantity }
               : i
           ),
@@ -64,7 +81,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       return { ...state, items: [...state.items, action.payload] }
     }
     case 'REMOVE_ITEM': {
-      const newItems = state.items.filter((i) => i.productId !== action.payload.productId)
+      const newItems = state.items.filter((i) => itemKey(i) !== action.payload.key)
       if (newItems.length === 0) return { items: [], couponDiscount: 0, couponType: undefined, couponValue: undefined, couponCode: undefined, deliveryFee: 0 }
       return { ...state, items: newItems }
     }
@@ -72,7 +89,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       return {
         ...state,
         items: state.items.map((i) =>
-          i.productId === action.payload.productId
+          itemKey(i) === action.payload.key
             ? { ...i, quantity: action.payload.quantity }
             : i
         ),
@@ -81,7 +98,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       return {
         ...state,
         items: state.items.map((i) =>
-          i.productId === action.payload.productId
+          itemKey(i) === action.payload.key
             ? { ...i, border: action.payload.border, borderPrice: action.payload.borderPrice }
             : i
         ),
@@ -126,12 +143,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = (item: OrderItem) =>
     dispatch({ type: 'ADD_ITEM', payload: item })
-  const removeItem = (productId: string) =>
-    dispatch({ type: 'REMOVE_ITEM', payload: { productId } })
-  const updateQuantity = (productId: string, quantity: number) =>
-    dispatch({ type: 'UPDATE_QUANTITY', payload: { productId, quantity } })
-  const updateBorder = (productId: string, border?: string, borderPrice?: number) =>
-    dispatch({ type: 'UPDATE_BORDER', payload: { productId, border, borderPrice } })
+  const removeItem = (key: string) =>
+    dispatch({ type: 'REMOVE_ITEM', payload: { key } })
+  const updateQuantity = (key: string, quantity: number) =>
+    dispatch({ type: 'UPDATE_QUANTITY', payload: { key, quantity } })
+  const updateBorder = (key: string, border?: string, borderPrice?: number) =>
+    dispatch({ type: 'UPDATE_BORDER', payload: { key, border, borderPrice } })
   const applyCoupon = (code: string, type: 'percentage' | 'fixed', value: number) =>
     dispatch({ type: 'APPLY_COUPON', payload: { code, type, value } })
   const setDeliveryFee = (fee: number) =>

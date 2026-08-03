@@ -35,6 +35,7 @@ export interface Category {
   image?: string
   order: number
   active: boolean
+  allowsMeiaMeia?: boolean
 }
 
 export interface Product {
@@ -133,7 +134,8 @@ export interface OrderItem {
   quantity: number
   price: number
   size?: string
-  flavors?: string[]
+  flavors?: { productId: string; name: string; price: number }[]
+  isSplit?: boolean
   border?: string
   borderPrice?: number
   hasCrust?: boolean

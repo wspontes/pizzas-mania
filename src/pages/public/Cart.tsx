@@ -7,6 +7,7 @@ import { useCart } from '@/contexts/CartContext'
 import { useSettings } from '@/hooks'
 import { couponsService } from '@/services'
 import { formatCurrency } from '@/utils'
+import { itemKey } from '@/contexts/CartContext'
 
 export default function Cart() {
   const { state, removeItem, updateQuantity, updateBorder, applyCoupon, subtotal, discount, total } = useCart()
@@ -71,7 +72,7 @@ export default function Cart() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-3">
           {state.items.map((item) => (
-            <div key={item.productId} className="rounded-xl border border-border bg-surface p-3 md:p-4">
+            <div key={itemKey(item)} className="rounded-xl border border-border bg-surface p-3 md:p-4">
               <div className="flex items-start gap-3">
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium text-white text-sm md:text-base truncate">{item.productName}</h3>
@@ -81,18 +82,18 @@ export default function Cart() {
                 </div>
 
                 <div className="flex items-center gap-1 md:gap-2">
-                  <button onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1))} className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-lg border border-border text-muted hover:bg-surface-hover hover:text-white transition-colors">
+                  <button onClick={() => updateQuantity(itemKey(item), Math.max(1, item.quantity - 1))} className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-lg border border-border text-muted hover:bg-surface-hover hover:text-white transition-colors">
                     <Minus size={12} />
                   </button>
                   <span className="w-6 md:w-8 text-center text-sm font-medium text-white">{item.quantity}</span>
-                  <button onClick={() => updateQuantity(item.productId, item.quantity + 1)} className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-lg border border-border text-muted hover:bg-surface-hover hover:text-white transition-colors">
+                  <button onClick={() => updateQuantity(itemKey(item), item.quantity + 1)} className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-lg border border-border text-muted hover:bg-surface-hover hover:text-white transition-colors">
                     <Plus size={12} />
                   </button>
                 </div>
 
                 <p className="w-16 md:w-20 text-right font-medium text-white text-sm shrink-0">{formatCurrency((item.price + (item.borderPrice || 0)) * item.quantity)}</p>
 
-                <button onClick={() => removeItem(item.productId)} className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-400 transition-colors shrink-0">
+                <button onClick={() => removeItem(itemKey(item))} className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-400 transition-colors shrink-0">
                   <Trash2 size={14} />
                 </button>
               </div>
@@ -105,7 +106,7 @@ export default function Cart() {
                     onChange={(e) => {
                       const val = e.target.value || undefined
                       const opt = crustOptions.find((c) => c.name === val)
-                      updateBorder(item.productId, val, opt?.price)
+                      updateBorder(itemKey(item), val, opt?.price)
                     }}
                     className="w-full rounded-lg border border-border bg-surface-hover px-3 py-2 text-sm text-white focus:border-accent focus:outline-none transition-colors"
                   >

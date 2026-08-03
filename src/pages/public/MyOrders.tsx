@@ -228,6 +228,11 @@ function OrderItem({ order }: { order: Order }) {
         productName: item.productName,
         price: item.price,
         quantity: item.quantity,
+        hasCrust: item.hasCrust,
+        border: item.border,
+        borderPrice: item.borderPrice,
+        isSplit: item.isSplit,
+        flavors: item.flavors,
       })
     })
     navigate('/carrinho')

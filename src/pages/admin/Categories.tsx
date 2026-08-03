@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Check, X, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, Pencil, Trash2, Check, X, ChevronUp, ChevronDown, Pizza } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { categoriesService } from '@/services'
 import type { Category } from '@/types'
@@ -88,6 +88,13 @@ export default function Categories() {
     setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, active: !c.active } : c)))
   }
 
+  const toggleMeiaMeia = async (id: string) => {
+    const cat = categories.find((c) => c.id === id)
+    if (!cat) return
+    await categoriesService.update(id, { allowsMeiaMeia: !cat.allowsMeiaMeia })
+    setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, allowsMeiaMeia: !c.allowsMeiaMeia } : c)))
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -167,7 +174,25 @@ export default function Categories() {
                   <>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-white truncate">{category.name}</p>
+                      {category.allowsMeiaMeia && (
+                        <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
+                          <Pizza size={10} />
+                          Meia-meia
+                        </span>
+                      )}
                     </div>
+                    <button
+                      onClick={() => toggleMeiaMeia(category.id)}
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] md:text-xs font-medium transition-colors ${
+                        category.allowsMeiaMeia
+                          ? 'bg-accent/10 text-accent hover:bg-accent/20'
+                          : 'bg-surface-hover text-muted hover:bg-surface-hover/70 hover:text-white'
+                      }`}
+                      title={category.allowsMeiaMeia ? 'Desativar meia-meia' : 'Ativar meia-meia'}
+                    >
+                      <Pizza size={11} className="inline mr-1" />
+                      Meia-meia
+                    </button>
                     <button
                       onClick={() => toggleActive(category.id)}
                       className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] md:text-xs font-medium transition-colors ${
