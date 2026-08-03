@@ -43,9 +43,6 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
   }, [products, categoryMap, canSplit, product.id, price])
 
   const splitAvailable = canSplit && eligibleFlavors.length > 0
-  const selectedFlavors = mode === 'split' && secondFlavor
-    ? [product, secondFlavor]
-    : [product]
 
   const crustOptions = settings?.crustOptions || []
   const hasCrust = product.hasCrust && crustOptions.length > 0
@@ -232,12 +229,6 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
                 : 'Selecione o 2º sabor'
               : 'Adicionar ao Carrinho'}
           </Button>
-
-          {selectedFlavors.length > 0 && mode === 'split' && secondFlavor && (
-            <p className="mt-3 text-center text-xs text-muted">
-              {selectedFlavors.map((f) => f.name).join(' + ')} — cada metade {formatCurrency(price)}
-            </p>
-          )}
         </div>
       </div>
       <OperatingHoursModal isOpen={showHoursModal} onClose={() => setShowHoursModal(false)} message={status.message} />
