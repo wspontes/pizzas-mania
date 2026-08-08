@@ -255,8 +255,16 @@ function OrderItem({ order }: { order: Order }) {
       </div>
       <div className="mb-2 space-y-0.5">
         {order.items.map((item, i) => (
-          <p key={i} className="text-sm text-muted">{item.quantity}x {item.productName}</p>
+          <div key={i}>
+            <p className="text-sm text-muted">{item.quantity}x {item.productName}</p>
+            {item.notes && <p className="text-xs text-yellow-400/90"><span className="font-medium">Obs.:</span> {item.notes}</p>}
+          </div>
         ))}
+        {order.notes && (
+          <p className="mt-1 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-2 py-1 text-xs text-yellow-400">
+            <span className="font-medium">Observações:</span> {order.notes}
+          </p>
+        )}
       </div>
       <div className="flex items-center gap-3 border-t border-border pt-2 text-xs text-muted">
         <span className="flex items-center gap-1"><PayIcon size={11} />{payLabel}</span>

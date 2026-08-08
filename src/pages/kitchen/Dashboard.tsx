@@ -99,10 +99,17 @@ export default function KitchenDashboard() {
                   </div>
                   <div className="mb-4 space-y-1.5">
                     {order.items.map((item, idx) => (
-                      <div key={idx} className="flex justify-between text-sm">
-                        <span className="text-white">{item.quantity}x {item.productName}</span>
+                      <div key={idx}>
+                        <p className="text-sm text-white">{item.quantity}x {item.productName}</p>
+                        {item.notes && <p className="text-xs text-yellow-400/90"><span className="font-medium">Obs.:</span> {item.notes}</p>}
                       </div>
                     ))}
+                    {order.notes && (
+                      <p className="mt-2 flex items-start gap-1.5 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-2.5 py-1.5 text-xs text-yellow-400">
+                        <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                        <span><span className="font-medium">Observações:</span> {order.notes}</span>
+                      </p>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button size="lg" className="flex-1 text-base" onClick={() => advanceStatus(order.id)}>
@@ -132,8 +139,17 @@ export default function KitchenDashboard() {
                     <p className="text-sm text-muted">{order.id}</p>
                     <div className="mt-3 space-y-1">
                       {order.items.map((item, idx) => (
-                        <p key={idx} className="text-sm text-white">{item.quantity}x {item.productName}</p>
+                        <div key={idx}>
+                          <p className="text-sm text-white">{item.quantity}x {item.productName}</p>
+                          {item.notes && <p className="text-xs text-yellow-400/90"><span className="font-medium">Obs.:</span> {item.notes}</p>}
+                        </div>
                       ))}
+                      {order.notes && (
+                        <p className="mt-2 flex items-start gap-1.5 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-2.5 py-1.5 text-xs text-yellow-400">
+                          <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                          <span><span className="font-medium">Observações:</span> {order.notes}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}

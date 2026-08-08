@@ -78,6 +78,7 @@ export default function Cart() {
                   <h3 className="font-medium text-white text-sm md:text-base truncate">{item.productName}</h3>
                   {item.size && <p className="text-xs text-muted mt-0.5">Tamanho: {item.size}</p>}
                   {!item.hasCrust && item.border && <p className="text-xs text-accent mt-0.5">Borda: {item.border}{item.borderPrice ? ` (+${formatCurrency(item.borderPrice)})` : ''}</p>}
+                  {item.notes && <p className="mt-1 text-xs text-yellow-400/90"><span className="font-medium">Observação:</span> {item.notes}</p>}
                   <p className="mt-1.5 font-semibold text-accent text-sm">{formatCurrency(item.price)}</p>
                 </div>
 

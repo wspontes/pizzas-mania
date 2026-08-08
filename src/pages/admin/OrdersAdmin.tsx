@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { ChefHat, XCircle, ArrowLeft, MessageSquare, CheckCircle, Search, User as UserIcon, Clock, Banknote, Bell, ChevronDown, ChevronUp } from 'lucide-react'
+import { ChefHat, XCircle, ArrowLeft, MessageSquare, CheckCircle, Search, User as UserIcon, Clock, Banknote, Bell, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { ordersService } from '@/services'
 import { onSnapshot, collection, query, orderBy } from 'firebase/firestore'
@@ -83,7 +83,8 @@ export default function OrdersAdmin() {
     if (nextStatus === 'received') updateData.paymentStatus = 'paid'
     await ordersService.update(orderId, updateData as Partial<Order>)
     if (nextStatus === 'accepted') {
-      setWhatsappModal({ phone: order.customerPhone, name: order.customerName, message: `Olá ${order.customerName}! Seu pedido foi ACEITO e já está em preparação. Obrigado por escolher a Pizzas Mania! 🍕` })
+      const baseMsg = `Olá ${order.customerName}! Seu pedido foi ACEITO e já está em preparação. Obrigado por escolher a Pizzas Mania! 🍕`
+      setWhatsappModal({ phone: order.customerPhone, name: order.customerName, message: order.notes ? `${baseMsg}\n\nObservações: ${order.notes}` : baseMsg })
     } else if (nextStatus === 'outForDelivery') {
       const isPickup = order.deliveryType === 'pickup'
       setWhatsappModal({
@@ -282,7 +283,7 @@ function OrderCard({ order, advanceStatus, confirmPayment, backStatus, cancelOrd
     ? { label: 'Pronto, aguardando retirada', color: 'bg-purple-500/10 text-purple-400' }
     : statusConfig[order.status] || statusConfig.waitingPayment
   return (
-    <div className="rounded-xl border border-border bg-surface p-3.5 md:p-4">
+    <div className={`rounded-xl border bg-surface p-3.5 md:p-4 ${order.notes ? 'border-yellow-500/50' : 'border-border'}`}>
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
           <UserIcon size={18} />
@@ -299,9 +300,18 @@ function OrderCard({ order, advanceStatus, confirmPayment, backStatus, cancelOrd
           </div>
           <div className="mt-2 space-y-0.5">
             {order.items.map((item, idx) => (
-              <p key={idx} className="text-xs text-muted">{item.quantity}x {item.productName}</p>
+              <div key={idx}>
+                <p className="text-xs text-muted">{item.quantity}x {item.productName}</p>
+                {item.notes && <p className="text-[11px] text-yellow-400/90"><span className="font-medium">Obs.:</span> {item.notes}</p>}
+              </div>
             ))}
           </div>
+          {order.notes && (
+            <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-2.5 py-1.5">
+              <AlertTriangle size={12} className="mt-0.5 shrink-0 text-yellow-400" />
+              <p className="text-xs text-yellow-400"><span className="font-medium">Observações:</span> {order.notes}</p>
+            </div>
+          )}
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
             <span className="flex items-center gap-1"><Clock size={11} />{formatTime(new Date(order.createdAt))}</span>
             <span className="flex items-center gap-1"><Banknote size={11} />{getPaymentLabel(order.paymentMethod)}</span>

@@ -227,8 +227,11 @@ export default function OrderConfirmed() {
           <h3 className="mb-3 font-semibold text-white text-sm">Detalhes do Pedido</h3>
           <div className="space-y-1 text-sm">
             <p className="flex justify-between text-muted"><span>Cliente</span><span className="text-white">{order.customerName as string}</span></p>
-            {(order.items as Array<{ quantity: number; productName: string; price: number }>)?.map((item, i) => (
-              <p key={i} className="flex justify-between text-muted"><span>{item.quantity}x {item.productName}</span><span className="text-white">{formatCurrency(item.price * item.quantity)}</span></p>
+            {(order.items as Array<{ quantity: number; productName: string; price: number; border?: string; notes?: string }>)?.map((item, i) => (
+              <div key={i}>
+                <p className="flex justify-between text-muted"><span>{item.quantity}x {item.productName}{item.border ? ` (${item.border})` : ''}</span><span className="text-white">{formatCurrency(item.price * item.quantity)}</span></p>
+                {item.notes && <p className="mt-0.5 text-xs text-yellow-400/90"><span className="font-medium">Obs.:</span> {item.notes}</p>}
+              </div>
             ))}
             <div className="border-t border-border mt-2 pt-2 space-y-1">
               <p className="flex justify-between text-muted"><span>Subtotal</span><span className="text-white">{formatCurrency(order.subtotal as number)}</span></p>
@@ -239,6 +242,11 @@ export default function OrderConfirmed() {
             <p className="flex justify-between text-muted"><span>Pagamento</span><span className="text-white">
               {paymentLabels[order.paymentMethod as string] || (order.paymentMethod as string)}
             </span></p>
+            {(order.notes as string) && (
+              <p className="mt-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-2.5 text-xs text-yellow-400">
+                <span className="font-medium">Observações do pedido:</span> {order.notes as string}
+              </p>
+            )}
           </div>
         </div>
 

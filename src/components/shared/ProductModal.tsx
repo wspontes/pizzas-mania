@@ -22,6 +22,7 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
   const { products } = useProducts()
   const { categories } = useCategories()
   const [selectedBorder, setSelectedBorder] = useState<string>('')
+  const [notes, setNotes] = useState('')
   const [showHoursModal, setShowHoursModal] = useState(false)
   const [mode, setMode] = useState<'whole' | 'split'>('whole')
   const [secondFlavor, setSecondFlavor] = useState<Product | null>(null)
@@ -62,6 +63,7 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
         hasCrust: product.hasCrust,
         border: selectedBorder || undefined,
         borderPrice: selectedBorder ? borderPrice : undefined,
+        notes: notes.trim() || undefined,
         isSplit: true,
         flavors: [
           { productId: product.id, name: product.name, price },
@@ -77,6 +79,7 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
         hasCrust: product.hasCrust,
         border: selectedBorder || undefined,
         borderPrice: selectedBorder ? borderPrice : undefined,
+        notes: notes.trim() || undefined,
       })
     }
     showToast('Adicionado no carrinho!')
@@ -215,6 +218,17 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
               </div>
             </div>
           )}
+
+          <div className="mt-4">
+            <label className="mb-1.5 block text-xs font-medium text-muted uppercase tracking-wider">Observações (opcional)</label>
+            <textarea
+              rows={2}
+              placeholder="Ex.: sem cebola, ponto da massa, retirar ingrediente..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full resize-none rounded-lg border border-border bg-surface-hover px-3 py-2 text-sm text-white placeholder:text-muted transition-colors focus:border-accent focus:outline-none"
+            />
+          </div>
 
           <Button
             onClick={handleAddToCart}

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, CreditCard, Banknote, QrCode, MapPin, User, AlertTriangle, Coins, Hash, Truck, Store } from 'lucide-react'
+import { ArrowLeft, CreditCard, Banknote, QrCode, MapPin, User, AlertTriangle, Coins, Hash, Truck, Store, MessageSquarePlus } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { useCart } from '@/contexts/CartContext'
 import { useCustomer } from '@/contexts/CustomerContext'
@@ -47,6 +47,7 @@ export default function Checkout() {
     reference: '',
   })
   const [cepLoading, setCepLoading] = useState(false)
+  const [notes, setNotes] = useState('')
 
   const handleCepLookup = async (cep: string) => {
     const clean = cep.replace(/\D/g, '')
@@ -114,6 +115,7 @@ export default function Checkout() {
         customerName: form.name,
         customerPhone: '+55' + form.whatsappDigits,
         deliveryType,
+        notes: notes.trim() || undefined,
         deliveryAddress: deliveryType === 'delivery' ? {
           street: form.street,
           number: form.number,
@@ -308,6 +310,20 @@ export default function Checkout() {
                 </div>
               )}
             </div>
+
+            <div className="rounded-xl border border-border bg-surface p-4 md:p-6">
+              <h2 className="mb-4 flex items-center gap-2 text-base md:text-lg font-semibold text-white">
+                <MessageSquarePlus size={18} className="text-accent" />
+                Observações
+              </h2>
+              <textarea
+                rows={3}
+                placeholder="Alguma observação para o seu pedido? Ex.: sem talheres, deixar na portaria..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="w-full resize-none rounded-lg border border-border bg-surface-hover px-3 py-2.5 text-sm text-white placeholder:text-muted transition-colors focus:border-accent focus:outline-none"
+              />
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -315,9 +331,12 @@ export default function Checkout() {
               <h3 className="mb-3 font-semibold text-white text-sm">Resumo do Pedido</h3>
               <div className="mb-3 max-h-48 space-y-2 overflow-y-auto scrollbar-thin">
                 {state.items.map((item) => (
-                  <div key={`${item.productId}-${item.size}`} className="flex justify-between text-sm">
-                    <span className="text-muted truncate mr-2">{item.quantity}x {item.productName}{item.border ? ` (${item.border})` : ''}</span>
-                    <span className="text-white shrink-0">{formatCurrency((item.price + (item.borderPrice || 0)) * item.quantity)}</span>
+                  <div key={`${item.productId}-${item.size}`}>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted truncate mr-2">{item.quantity}x {item.productName}{item.border ? ` (${item.border})` : ''}</span>
+                      <span className="text-white shrink-0">{formatCurrency((item.price + (item.borderPrice || 0)) * item.quantity)}</span>
+                    </div>
+                    {item.notes && <p className="mt-0.5 text-xs text-yellow-400/90"><span className="font-medium">Obs.:</span> {item.notes}</p>}
                   </div>
                 ))}
               </div>
