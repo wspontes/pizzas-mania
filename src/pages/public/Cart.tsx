@@ -122,8 +122,8 @@ export default function Cart() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 min-w-0 space-y-3">
           {state.items.map((item) => (
             <div key={itemKey(item)} className="rounded-xl border border-border bg-surface p-3 md:p-4">
               <div className="flex items-start gap-3">
@@ -175,7 +175,7 @@ export default function Cart() {
           ))}
         </div>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <div className="rounded-xl border border-border bg-surface p-4">
             <h3 className="mb-3 font-semibold text-white text-sm">Cupom de desconto</h3>
             {couponApplied ? (
@@ -185,9 +185,9 @@ export default function Cart() {
                 <span className="text-xs text-green-400/70 ml-auto">Aplicado</span>
               </div>
             ) : (
-              <div className="flex gap-2">
+              <div className="flex min-w-0 gap-2">
                 <Input placeholder="Digite o cupom" value={couponInput} onChange={(e) => setCouponInput(e.target.value)} icon={<Ticket size={16} />} disabled={couponLoading} />
-                <Button variant="outline" size="md" onClick={handleApplyCoupon} loading={couponLoading}>Aplicar</Button>
+                <Button variant="outline" size="md" onClick={handleApplyCoupon} loading={couponLoading} className="shrink-0">Aplicar</Button>
               </div>
             )}
             {couponError && <p className="mt-2 text-xs text-red-400">{couponError}</p>}

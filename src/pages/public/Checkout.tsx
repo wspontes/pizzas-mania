@@ -191,8 +191,8 @@ export default function Checkout() {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="space-y-6 lg:col-span-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="min-w-0 space-y-6 lg:col-span-2">
             <div className="rounded-xl border border-border bg-surface p-4 md:p-6">
               <h2 className="mb-4 flex items-center gap-2 text-base md:text-lg font-semibold text-white">
                 <User size={18} className="text-accent" />
@@ -325,7 +325,7 @@ export default function Checkout() {
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="min-w-0 space-y-4">
             <div className="rounded-xl border border-border bg-surface p-4">
               <h3 className="mb-3 font-semibold text-white text-sm">Resumo do Pedido</h3>
               <div className="mb-3 max-h-48 space-y-2 overflow-y-auto scrollbar-thin">
