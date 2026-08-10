@@ -23,7 +23,7 @@ const paymentDescriptions: Record<string, string> = {
 
 export default function Checkout() {
   const navigate = useNavigate()
-  const { state, subtotal, discount, total, clearCart, setDeliveryFee } = useCart()
+  const { state, subtotal, discount, total, clearCart, setDeliveryFee, setOrderNotes } = useCart()
   const { settings } = useSettings()
   const { status } = useBusinessStatus()
   const { customer, isLoggedIn, login } = useCustomer()
@@ -47,7 +47,6 @@ export default function Checkout() {
     reference: '',
   })
   const [cepLoading, setCepLoading] = useState(false)
-  const [notes, setNotes] = useState('')
 
   const handleCepLookup = async (cep: string) => {
     const clean = cep.replace(/\D/g, '')
@@ -115,7 +114,7 @@ export default function Checkout() {
         customerName: form.name,
         customerPhone: '+55' + form.whatsappDigits,
         deliveryType,
-        notes: notes.trim() || undefined,
+        notes: (state.orderNotes || '').trim() || undefined,
         deliveryAddress: deliveryType === 'delivery' ? {
           street: form.street,
           number: form.number,
@@ -319,8 +318,8 @@ export default function Checkout() {
               <textarea
                 rows={3}
                 placeholder="Alguma observação para o seu pedido? Ex.: sem talheres, deixar na portaria..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                value={state.orderNotes || ''}
+                onChange={(e) => setOrderNotes(e.target.value)}
                 className="w-full resize-none rounded-lg border border-border bg-surface-hover px-3 py-2.5 text-sm text-white placeholder:text-muted transition-colors focus:border-accent focus:outline-none"
               />
             </div>

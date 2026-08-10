@@ -8,6 +8,7 @@ interface CartState {
   couponType?: 'percentage' | 'fixed'
   couponValue?: number
   deliveryFee: number
+  orderNotes?: string
 }
 
 type CartAction =
@@ -15,6 +16,8 @@ type CartAction =
   | { type: 'REMOVE_ITEM'; payload: { key: string } }
   | { type: 'UPDATE_QUANTITY'; payload: { key: string; quantity: number } }
   | { type: 'UPDATE_BORDER'; payload: { key: string; border?: string; borderPrice?: number } }
+  | { type: 'UPDATE_NOTES'; payload: { key: string; notes?: string } }
+  | { type: 'SET_ORDER_NOTES'; payload: string }
   | { type: 'APPLY_COUPON'; payload: { code: string; type: 'percentage' | 'fixed'; value: number } }
   | { type: 'SET_DELIVERY_FEE'; payload: number }
   | { type: 'CLEAR_CART' }
@@ -25,6 +28,8 @@ interface CartContextType {
   removeItem: (key: string) => void
   updateQuantity: (key: string, quantity: number) => void
   updateBorder: (key: string, border?: string, borderPrice?: number) => void
+  updateNotes: (key: string, notes?: string) => void
+  setOrderNotes: (notes: string) => void
   applyCoupon: (code: string, type: 'percentage' | 'fixed', value: number) => void
   setDeliveryFee: (fee: number) => void
   clearCart: () => void
@@ -103,6 +108,17 @@ function cartReducer(state: CartState, action: CartAction): CartState {
             : i
         ),
       }
+    case 'UPDATE_NOTES':
+      return {
+        ...state,
+        items: state.items.map((i) =>
+          itemKey(i) === action.payload.key
+            ? { ...i, notes: action.payload.notes?.trim() ? action.payload.notes.trim() : undefined }
+            : i
+        ),
+      }
+    case 'SET_ORDER_NOTES':
+      return { ...state, orderNotes: action.payload }
     case 'APPLY_COUPON':
       return {
         ...state,
@@ -149,6 +165,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'UPDATE_QUANTITY', payload: { key, quantity } })
   const updateBorder = (key: string, border?: string, borderPrice?: number) =>
     dispatch({ type: 'UPDATE_BORDER', payload: { key, border, borderPrice } })
+  const updateNotes = (key: string, notes?: string) =>
+    dispatch({ type: 'UPDATE_NOTES', payload: { key, notes } })
+  const setOrderNotes = (notes: string) =>
+    dispatch({ type: 'SET_ORDER_NOTES', payload: notes })
   const applyCoupon = (code: string, type: 'percentage' | 'fixed', value: number) =>
     dispatch({ type: 'APPLY_COUPON', payload: { code, type, value } })
   const setDeliveryFee = (fee: number) =>
@@ -163,6 +183,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         removeItem,
         updateQuantity,
         updateBorder,
+        updateNotes,
+        setOrderNotes,
         applyCoupon,
         setDeliveryFee,
         clearCart,

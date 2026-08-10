@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft, Ticket } from 'lucide-react'
+import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft, Ticket, Pencil, X, Check } from 'lucide-react'
 import { useState } from 'react'
 import { Timestamp } from 'firebase/firestore'
 import { Button, Input } from '@/components/ui'
@@ -9,8 +9,61 @@ import { couponsService } from '@/services'
 import { formatCurrency } from '@/utils'
 import { itemKey } from '@/contexts/CartContext'
 
+function NoteEditor({ value, onSave }: { value?: string; onSave: (notes: string) => void }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value || '')
+
+  const start = () => { setDraft(value || ''); setEditing(true) }
+  const cancel = () => { setDraft(value || ''); setEditing(false) }
+  const save = () => { onSave(draft); setEditing(false) }
+
+  if (editing) {
+    return (
+      <div className="mt-2">
+        <textarea
+          rows={2}
+          autoFocus
+          placeholder="Ex.: sem cebola, retirar ingrediente..."
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          className="w-full resize-none rounded-lg border border-border bg-surface-hover px-3 py-2 text-sm text-white placeholder:text-muted transition-colors focus:border-accent focus:outline-none"
+        />
+        <div className="mt-1.5 flex justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={cancel} className="h-8 text-xs">
+            <X size={13} />
+            Cancelar
+          </Button>
+          <Button size="sm" onClick={save} className="h-8 text-xs bg-green-600 hover:bg-green-700">
+            <Check size={13} />
+            Salvar
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-1.5">
+      {value ? (
+        <div className="flex items-center gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-2.5 py-1.5">
+          <p className="flex-1 text-xs text-yellow-400"><span className="font-medium">Observação:</span> {value}</p>
+          <button onClick={start} className="flex shrink-0 items-center gap-1 text-xs text-muted transition-colors hover:text-white" title="Editar observação">
+            <Pencil size={12} />
+            Editar
+          </button>
+        </div>
+      ) : (
+        <button onClick={start} className="flex items-center gap-1 text-xs text-muted transition-colors hover:text-accent">
+          <Pencil size={12} />
+          Adicionar observação
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function Cart() {
-  const { state, removeItem, updateQuantity, updateBorder, applyCoupon, subtotal, discount, total } = useCart()
+  const { state, removeItem, updateQuantity, updateBorder, updateNotes, applyCoupon, subtotal, discount, total } = useCart()
   const { settings } = useSettings()
   const [couponInput, setCouponInput] = useState('')
   const couponApplied = !!state.couponCode
@@ -78,8 +131,8 @@ export default function Cart() {
                   <h3 className="font-medium text-white text-sm md:text-base truncate">{item.productName}</h3>
                   {item.size && <p className="text-xs text-muted mt-0.5">Tamanho: {item.size}</p>}
                   {!item.hasCrust && item.border && <p className="text-xs text-accent mt-0.5">Borda: {item.border}{item.borderPrice ? ` (+${formatCurrency(item.borderPrice)})` : ''}</p>}
-                  {item.notes && <p className="mt-1 text-xs text-yellow-400/90"><span className="font-medium">Observação:</span> {item.notes}</p>}
                   <p className="mt-1.5 font-semibold text-accent text-sm">{formatCurrency(item.price)}</p>
+                  <NoteEditor value={item.notes} onSave={(notes) => updateNotes(itemKey(item), notes)} />
                 </div>
 
                 <div className="flex items-center gap-1 md:gap-2">
