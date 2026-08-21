@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase/config'
@@ -6,6 +6,7 @@ import { ArrowLeft, ShoppingBag, CheckCircle, Bike, ChefHat, QrCode, LogIn, LogO
 import { Button } from '@/components/ui'
 import { useCustomer } from '@/contexts/CustomerContext'
 import { useCart } from '@/contexts/CartContext'
+import { useFirestoreSync } from '@/hooks'
 import { formatCurrency } from '@/utils'
 import { CustomerLoginModal } from '@/components/shared/CustomerLoginModal'
 import type { Order } from '@/types'
@@ -59,8 +60,8 @@ export default function MyOrders() {
     setTimeout(() => setToast(null), 5000)
   }, [])
 
-  useEffect(() => {
-    if (!isLoggedIn || !customer) { setLoading(false); return }
+  useFirestoreSync(({ onError, onHealthy }) => {
+    if (!isLoggedIn || !customer) { setLoading(false); return () => {} }
 
     const phoneQuery = query(
       collection(db, 'orders'),
@@ -95,25 +96,27 @@ export default function MyOrders() {
     }
 
     const unsub1 = onSnapshot(phoneQuery, (snap) => {
+      onHealthy()
       snap.docs.forEach((d) => {
         allOrders.set(d.id, { id: d.id, ...d.data() } as Order)
       })
       merge()
-    })
+    }, (err) => onError(err))
 
     const unsub2 = onSnapshot(nameQuery, (snap) => {
+      onHealthy()
       snap.docs.forEach((d) => {
         allOrders.set(d.id, { id: d.id, ...d.data() } as Order)
       })
       merge()
-    })
+    }, (err) => onError(err))
 
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission()
     }
 
     return () => { unsub1(); unsub2() }
-  }, [customer, isLoggedIn, showNotification])
+  }, [isLoggedIn, customer?.phone, customer?.name])
 
   if (!isLoggedIn) {
     return (

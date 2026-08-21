@@ -4,7 +4,7 @@ import { doc, onSnapshot, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase/config'
 import { CheckCircle, Clock, Bike, ChefHat, ShoppingBag, QrCode, AlertTriangle, Copy, Bell } from 'lucide-react'
 import { Button } from '@/components/ui'
-import { useSettings } from '@/hooks'
+import { useSettings, useFirestoreSync } from '@/hooks'
 import { formatCurrency } from '@/utils'
 import { resolveImageUrl } from '@/utils/resolveImageUrl'
 
@@ -52,11 +52,12 @@ export default function OrderConfirmed() {
     }
   }, [initialOrder?.id, paramId])
 
-  useEffect(() => {
+  useFirestoreSync(({ onError, onHealthy }) => {
     const oid = (initialOrder?.id as string) || paramId || sessionStorage.getItem(ORDER_ID_KEY) || ''
-    if (!oid) return
+    if (!oid) return () => {}
 
     const unsub = onSnapshot(doc(db, 'orders', oid), (snap) => {
+      onHealthy()
       if (snap.exists()) {
         const data = { id: snap.id, ...snap.data() } as Record<string, unknown>
         const newStatus = (data.status as string) || ''
@@ -76,7 +77,7 @@ export default function OrderConfirmed() {
         prevStatus.current = newStatus
         setOrder(data as Record<string, unknown>)
       }
-    })
+    }, (err) => onError(err))
 
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission()

@@ -31,7 +31,20 @@ export default function KitchenDashboard() {
     }
   }
 
-  useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t) }, [])
+  useEffect(() => {
+    load()
+    const t = setInterval(load, 15000)
+    const refresh = () => {
+      if (document.visibilityState === 'visible') load()
+    }
+    document.addEventListener('visibilitychange', refresh)
+    window.addEventListener('online', refresh)
+    return () => {
+      clearInterval(t)
+      document.removeEventListener('visibilitychange', refresh)
+      window.removeEventListener('online', refresh)
+    }
+  }, [])
 
   const advanceStatus = async (orderId: string) => {
     const order = orders.find((o) => o.id === orderId)

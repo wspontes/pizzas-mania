@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Clock, MapPin, CreditCard, Image, Plus, Phone, Trash2, Sparkles, CircleDot } from 'lucide-react'
+import { Clock, MapPin, CreditCard, Image, Plus, Phone, Trash2, Sparkles, CircleDot, Bike } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { ImageUpload } from '@/components/shared'
 import { settingsService, type BusinessSettings } from '@/services/settings'
+import { motoboysService } from '@/services'
 import { resolveImageUrl } from '@/utils/resolveImageUrl'
 import { formatCurrency } from '@/utils'
+import type { Motoboy } from '@/types'
 
 export default function Settings() {
   const [saving, setSaving] = useState(false)
@@ -47,6 +49,10 @@ export default function Settings() {
   const [bannerBenefits, setBannerBenefits] = useState(['Ingredientes selecionados', 'Pronto em até 30 min', 'Entrega gratuita*'])
   const [crustOptions, setCrustOptions] = useState<{ name: string; price: number }[]>([])
   const [newCrust, setNewCrust] = useState({ name: '', price: '' })
+  const [motoboys, setMotoboys] = useState<Motoboy[]>([])
+  const [newMotoboy, setNewMotoboy] = useState({ name: '', phone: '' })
+  const [editingMotoboyId, setEditingMotoboyId] = useState<string | null>(null)
+  const [editMotoboy, setEditMotoboy] = useState({ name: '', phone: '', active: true })
 
   useEffect(() => {
     settingsService.get().then((data) => {
@@ -168,6 +174,48 @@ export default function Settings() {
 
   const removeNeighborhood = (index: number) => {
     setNeighborhoods((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const loadMotoboys = () => {
+    motoboysService.getAll().then((list) => {
+      setMotoboys(list.sort((a, b) => (a.name || '').localeCompare(b.name || '')))
+    }).catch(() => {})
+  }
+
+  useEffect(() => { loadMotoboys() }, [])
+
+  const addMotoboy = async () => {
+    const name = newMotoboy.name.trim()
+    const phoneDigits = newMotoboy.phone.replace(/\D/g, '')
+    if (!name || phoneDigits.length < 10) return
+    await motoboysService.create({ name, phone: phoneDigits, active: true, createdAt: new Date().toISOString() })
+    setNewMotoboy({ name: '', phone: '' })
+    loadMotoboys()
+  }
+
+  const startEditMotoboy = (m: Motoboy) => {
+    setEditMotoboy({ name: m.name, phone: m.phone, active: m.active })
+    setEditingMotoboyId(m.id)
+  }
+
+  const saveEditMotoboy = async () => {
+    if (!editingMotoboyId) return
+    const name = editMotoboy.name.trim()
+    const phoneDigits = editMotoboy.phone.replace(/\D/g, '')
+    if (!name || phoneDigits.length < 10) return
+    await motoboysService.update(editingMotoboyId, { name, phone: phoneDigits, active: editMotoboy.active })
+    setEditingMotoboyId(null)
+    loadMotoboys()
+  }
+
+  const toggleMotoboyActive = async (m: Motoboy) => {
+    await motoboysService.update(m.id, { active: !m.active })
+    loadMotoboys()
+  }
+
+  const removeMotoboy = async (id: string) => {
+    await motoboysService.delete(id)
+    loadMotoboys()
   }
 
   return (
@@ -430,6 +478,55 @@ export default function Settings() {
                     <span>~{n.estimatedTime}min</span>
                     <button onClick={() => startEditNb(index)} className="text-accent hover:text-accent/80 transition-colors text-xs">Editar</button>
                     <button onClick={() => removeNeighborhood(index)} className="text-red-400 hover:text-red-300 transition-colors text-xs">Remover</button>
+                  </div>
+                </div>
+              )
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
+            <Bike size={18} className="text-accent" />
+            Motoboys
+          </h2>
+          <p className="mb-3 text-xs text-muted">Entregadores que podem receber pedidos para entrega via WhatsApp</p>
+          <div className="mb-4 grid gap-3 grid-cols-2 sm:grid-cols-4">
+            <Input placeholder="Nome" value={newMotoboy.name} onChange={(e) => setNewMotoboy({ ...newMotoboy, name: e.target.value })} className="col-span-2 sm:col-span-1" />
+            <Input placeholder="WhatsApp 11999999999" type="tel" value={newMotoboy.phone} onChange={(e) => setNewMotoboy({ ...newMotoboy, phone: e.target.value.replace(/\D/g, '') })} className="col-span-2" />
+            <Button onClick={addMotoboy} className="col-span-2 sm:col-span-1"><Plus size={16} />Adicionar</Button>
+          </div>
+          <div className="space-y-2">
+            {motoboys.length === 0 && (
+              <p className="text-xs text-muted">Nenhum motoboy cadastrado ainda.</p>
+            )}
+            {motoboys.map((m) => (
+              editingMotoboyId === m.id ? (
+                <div key={m.id} className="rounded-lg bg-surface-hover border border-accent/30 p-3 space-y-2">
+                  <input type="text" value={editMotoboy.name} onChange={(e) => setEditMotoboy({ ...editMotoboy, name: e.target.value })} className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-white" placeholder="Nome" />
+                  <input type="tel" value={editMotoboy.phone} onChange={(e) => setEditMotoboy({ ...editMotoboy, phone: e.target.value.replace(/\D/g, '') })} className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-white" placeholder="WhatsApp 11999999999" />
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setEditMotoboy({ ...editMotoboy, active: !editMotoboy.active })} className={`text-xs font-medium px-2 py-1 rounded-full transition-colors ${editMotoboy.active ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                      {editMotoboy.active ? 'Ativo' : 'Inativo'}
+                    </button>
+                    <div className="ml-auto flex gap-2">
+                      <button onClick={() => setEditingMotoboyId(null)} className="text-xs text-muted hover:text-white transition-colors px-2 py-1">Cancelar</button>
+                      <button onClick={saveEditMotoboy} className="text-xs text-accent hover:text-accent/80 font-medium transition-colors px-2 py-1">Salvar</button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div key={m.id} className="flex items-center justify-between gap-2 rounded-lg bg-surface-hover px-3 md:px-4 py-2.5">
+                  <div className="min-w-0">
+                    <span className={`text-sm font-medium truncate block ${m.active ? 'text-white' : 'text-muted line-through'}`}>{m.name}</span>
+                    <span className="text-xs text-muted">{m.phone}</span>
+                  </div>
+                  <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm shrink-0">
+                    <button onClick={() => toggleMotoboyActive(m)} className={`font-medium px-2 py-1 rounded-full transition-colors ${m.active ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'}`}>
+                      {m.active ? 'Ativo' : 'Inativo'}
+                    </button>
+                    <button onClick={() => startEditMotoboy(m)} className="text-accent hover:text-accent/80 transition-colors text-xs">Editar</button>
+                    <button onClick={() => removeMotoboy(m.id)} className="text-red-400 hover:text-red-300 transition-colors text-xs">Remover</button>
                   </div>
                 </div>
               )
