@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
-import { ChefHat, XCircle, ArrowLeft, MessageSquare, CheckCircle, Search, User as UserIcon, Clock, Banknote, Bell, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { ChefHat, XCircle, ArrowLeft, MessageSquare, CheckCircle, Search, User as UserIcon, Clock, Banknote, Bell, ChevronDown, ChevronUp, AlertTriangle, Bike } from 'lucide-react'
 import { Button } from '@/components/ui'
-import { ordersService } from '@/services'
+import { ordersService, motoboysService } from '@/services'
 import { onSnapshot, collection, query, orderBy } from 'firebase/firestore'
 import { db } from '@/firebase/config'
-import type { Order } from '@/types'
+import { useFirestoreSync } from '@/hooks'
+import type { Motoboy, Order } from '@/types'
 import { formatCurrency, formatTime } from '@/utils'
 import { useToast } from '@/contexts/ToastContext'
 
@@ -47,14 +48,17 @@ export default function OrdersAdmin() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [whatsappModal, setWhatsappModal] = useState<{ phone: string; name: string; message: string } | null>(null)
+  const [motoboyModalOrder, setMotoboyModalOrder] = useState<Order | null>(null)
+  const [motoboyList, setMotoboyList] = useState<Motoboy[]>([])
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null)
   const prevIds = useRef<Set<string>>(new Set())
   const { showToast } = useToast()
 
-  useEffect(() => {
+  useFirestoreSync(({ onError, onHealthy }) => {
     const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'))
-    const unsub = onSnapshot(q, (snapshot) => {
+    return onSnapshot(q, (snapshot) => {
+      onHealthy()
       const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Order))
       setOrders(data)
 
@@ -69,8 +73,7 @@ export default function OrdersAdmin() {
       }
       prevIds.current = currentIds
       setLoading(false)
-    })
-    return () => unsub()
+    }, (err) => onError(err))
   }, [])
 
   const advanceStatus = async (orderId: string) => {
@@ -83,7 +86,7 @@ export default function OrdersAdmin() {
     if (nextStatus === 'received') updateData.paymentStatus = 'paid'
     await ordersService.update(orderId, updateData as Partial<Order>)
     if (nextStatus === 'accepted') {
-      const baseMsg = `Olá ${order.customerName}! Seu pedido foi ACEITO e já está em preparação. Obrigado por escolher a Pizzas Mania! 🍕`
+      const baseMsg = `Olá ${order.customerName}! Seu pedido foi ACEITO e já está em preparação. Obrigado por escolher a Pizzas Mania! \u{1F355}`
       setWhatsappModal({ phone: order.customerPhone, name: order.customerName, message: order.notes ? `${baseMsg}\n\nObservações: ${order.notes}` : baseMsg })
     } else if (nextStatus === 'outForDelivery') {
       const isPickup = order.deliveryType === 'pickup'
@@ -91,14 +94,61 @@ export default function OrdersAdmin() {
         phone: order.customerPhone,
         name: order.customerName,
         message: isPickup
-          ? `Olá ${order.customerName}! Seu pedido está PRONTO para retirada! Pode buscar na pizzaria. 🍕`
-          : `Olá ${order.customerName}! Seu pedido SAIU PARA ENTREGA. Fique atento ao seu celular! 🛵🍕`
+          ? `Olá ${order.customerName}! Seu pedido está PRONTO para retirada! Pode buscar na pizzaria. \u{1F355}`
+          : `Olá ${order.customerName}! Seu pedido SAIU PARA ENTREGA. Fique atento ao seu celular! \u{1F6F5}\u{1F355}`
       })
     }
   }
 
   const confirmPayment = async (orderId: string) => {
     await ordersService.update(orderId, { status: 'received', paymentStatus: 'paid' } as Partial<Order>)
+  }
+
+  const openMotoboyModal = async (order: Order) => {
+    setMotoboyModalOrder(order)
+    try {
+      const list = await motoboysService.getActive()
+      setMotoboyList(list.sort((a, b) => a.name.localeCompare(b.name)))
+    } catch {
+      setMotoboyList([])
+    }
+  }
+
+  const buildMotoboyMessage = (order: Order) => {
+    const addr = order.deliveryAddress
+    let payment = getPaymentLabel(order.paymentMethod)
+    if (order.paymentMethod === 'cash') {
+      if (order.changeNeeded && order.changeFor) payment += ` — levar troco para ${formatCurrency(order.changeFor)}`
+      else payment += ' — valor exato'
+    }
+    const lines = [
+      '\u{1F3CD}\u{FE0F} *Nova entrega — Pizzas Mania*',
+      '',
+      `Pedido #${order.id.slice(0, 8)}`,
+      `\u{1F464} ${order.customerName} — ${order.customerPhone}`,
+      '',
+      '\u{1F4E6} Itens:',
+      ...order.items.map((item) => `\u{2022} ${item.quantity}x ${item.productName}${item.border ? ` (borda ${item.border})` : ''}`),
+      '',
+      `\u{1F4B0} Total: ${formatCurrency(order.total)} (${payment})`,
+      '',
+      '\u{1F4CD} Endereço:',
+      `${addr?.street}, ${addr?.number}${addr?.complement ? ` - ${addr.complement}` : ''}`,
+      `${addr?.neighborhood}${addr?.city ? ` - ${addr.city}` : ''}${addr?.reference ? ` (Ref.: ${addr.reference})` : ''}`,
+      '',
+      `\u{1F5FA}\u{FE0F} Rota: https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${addr?.street || ''}, ${addr?.number || ''} - ${addr?.neighborhood || ''}${addr?.city ? `, ${addr.city}` : ''}`)}`,
+    ]
+    return lines.join('\n')
+  }
+
+  const assignMotoboy = async (motoboy: Motoboy) => {
+    if (!motoboyModalOrder) return
+    const order = motoboyModalOrder
+    await ordersService.update(order.id, { motoboyId: motoboy.id, motoboyName: motoboy.name } as Partial<Order>)
+    setMotoboyModalOrder(null)
+    const digits = motoboy.phone.replace(/\D/g, '')
+    const fullPhone = digits.length <= 11 ? `55${digits}` : digits
+    setWhatsappModal({ phone: fullPhone, name: motoboy.name, message: buildMotoboyMessage(order) })
   }
 
   const backStatus = async (orderId: string) => {
@@ -177,7 +227,7 @@ export default function OrdersAdmin() {
               </button>
               {!collapsed.has('ativos') && (
                 <div className="space-y-3">
-                  {activeOrders.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: (id: string) => setCancelConfirm(id), setWhatsappModal, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
+                  {activeOrders.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: (id: string) => setCancelConfirm(id), setWhatsappModal, onSendMotoboy: openMotoboyModal, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
                 </div>
               )}
             </div>
@@ -192,7 +242,7 @@ export default function OrdersAdmin() {
               </button>
               {!collapsed.has('entregues') && (
                 <div className="space-y-3">
-                  {doneOnes.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: () => {}, setWhatsappModal, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
+                  {doneOnes.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: () => {}, setWhatsappModal, onSendMotoboy: openMotoboyModal, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
                 </div>
               )}
             </div>
@@ -207,7 +257,7 @@ export default function OrdersAdmin() {
               </button>
               {!collapsed.has('cancelados') && (
                 <div className="space-y-3">
-                  {cancelledOnes.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: () => {}, setWhatsappModal, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
+                  {cancelledOnes.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: () => {}, setWhatsappModal, onSendMotoboy: openMotoboyModal, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
                 </div>
               )}
             </div>
@@ -240,6 +290,44 @@ export default function OrdersAdmin() {
         </div>
       )}
 
+      {motoboyModalOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setMotoboyModalOrder(null)}>
+          <div className="w-full max-w-md rounded-xl border border-border bg-surface p-5 md:p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-base md:text-lg font-semibold text-white">
+                <Bike size={18} className="text-accent" />
+                Enviar ao motoboy
+              </h3>
+              <button onClick={() => setMotoboyModalOrder(null)} className="text-muted hover:text-white transition-colors">
+                <XCircle size={18} />
+              </button>
+            </div>
+            <p className="mb-4 text-sm text-muted">Quem vai fazer a entrega para <span className="text-white font-medium">{motoboyModalOrder.customerName}</span>?</p>
+            {motoboyList.length === 0 ? (
+              <div className="rounded-lg bg-surface-hover p-4 text-center">
+                <p className="text-sm text-muted mb-1">Nenhum motoboy ativo encontrado.</p>
+                <p className="text-xs text-muted">Cadastre em Configurações &rsaquo; Motoboys</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-72 overflow-y-auto scrollbar-thin">
+                {motoboyList.map((m) => (
+                  <button key={m.id} onClick={() => assignMotoboy(m)} className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface-hover px-3 py-2.5 text-left transition-colors hover:border-accent/50">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                      <Bike size={16} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-white">{m.name}</p>
+                      <p className="text-xs text-muted">{m.phone}</p>
+                    </div>
+                    <MessageSquare size={14} className="shrink-0 text-green-500" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {cancelConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setCancelConfirm(null)}>
           <div className="w-full max-w-sm rounded-xl border border-border bg-surface p-5 md:p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
@@ -266,13 +354,14 @@ export default function OrdersAdmin() {
   )
 }
 
-function OrderCard({ order, advanceStatus, confirmPayment, backStatus, cancelOrder, setWhatsappModal, statusConfig, getPaymentLabel, formatCurrency, formatTime }: {
+function OrderCard({ order, advanceStatus, confirmPayment, backStatus, cancelOrder, setWhatsappModal, onSendMotoboy, statusConfig, getPaymentLabel, formatCurrency, formatTime }: {
   order: Order
   advanceStatus: (id: string) => void
   confirmPayment: (id: string) => void
   backStatus: (id: string) => void
   cancelOrder: (id: string) => void
   setWhatsappModal: (data: { phone: string; name: string; message: string }) => void
+  onSendMotoboy: (order: Order) => void
   statusConfig: Record<string, { label: string; color: string }>
   getPaymentLabel: (method: string) => string
   formatCurrency: (n: number) => string
@@ -315,6 +404,9 @@ function OrderCard({ order, advanceStatus, confirmPayment, backStatus, cancelOrd
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
             <span className="flex items-center gap-1"><Clock size={11} />{formatTime(new Date(order.createdAt))}</span>
             <span className="flex items-center gap-1"><Banknote size={11} />{getPaymentLabel(order.paymentMethod)}</span>
+            {order.motoboyName && (
+              <span className="flex items-center gap-1 text-accent font-medium"><Bike size={11} />{order.motoboyName}</span>
+            )}
             {order.paymentMethod === 'cash' && order.changeNeeded && order.changeFor && (
               <span className="text-green-400">Troco: {formatCurrency(order.changeFor - order.total)}</span>
             )}
@@ -341,6 +433,12 @@ function OrderCard({ order, advanceStatus, confirmPayment, backStatus, cancelOrd
               <ChefHat size={13} />
               Avançar
             </Button>
+            {order.status === 'outForDelivery' && !isPickup && (
+              <Button size="sm" variant="outline" onClick={() => onSendMotoboy(order)} className="text-xs">
+                <Bike size={13} />
+                Motoboy
+              </Button>
+            )}
           </>
         )}
         {order.status !== 'delivered' && order.status !== 'cancelled' && (
