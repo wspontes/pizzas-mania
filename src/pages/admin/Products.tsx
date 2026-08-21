@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Plus, Pencil, Trash2, Copy, Search, Percent, DollarSign } from 'lucide-react'
+import { Plus, Pencil, Trash2, Copy, Search, Percent, DollarSign, Power } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { productsService, categoriesService } from '@/services'
 import { resolveImageUrl } from '@/utils/resolveImageUrl'
@@ -27,7 +27,7 @@ export default function Products() {
   const load = async () => {
     try {
       const [prods, cats] = await Promise.all([
-        productsService.getActiveProducts(),
+        productsService.getAllOrdered(),
         categoriesService.getAllOrdered(),
       ])
       setProducts(prods)
@@ -40,6 +40,11 @@ export default function Products() {
   }
 
   useEffect(() => { load() }, [])
+
+  const handleToggleActive = async (product: Product) => {
+    await productsService.update(product.id, { active: !product.active } as Partial<Product>)
+    setProducts((prev) => prev.map((p) => (p.id === product.id ? { ...p, active: !p.active } : p)))
+  }
 
   const handleDelete = async (id: string, name: string) => {
     if (window.confirm(`Tem certeza que deseja excluir "${name}"?`)) {
@@ -215,6 +220,9 @@ export default function Products() {
                 </div>
               </div>
               <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
+                <button onClick={() => handleToggleActive(product)} className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${product.active ? 'text-muted hover:bg-yellow-500/10 hover:text-yellow-400' : 'text-green-400 hover:bg-green-500/10'}`} title={product.active ? 'Desativar' : 'Ativar'}>
+                  <Power size={15} />
+                </button>
                 <button onClick={() => navigate(`/admin/produtos/${product.id}/editar`)} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors" title="Editar">
                   <Pencil size={15} />
                 </button>
