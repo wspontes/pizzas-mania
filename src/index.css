@@ -11,11 +11,29 @@
   --color-muted: #a3a3a3;
   --color-accent: #dc2626;
   --animate-fade-in: fade-in 0.3s ease-out;
+  --animate-pop-in: pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-check-pop: check-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+  --animate-fade-simple: fade-simple 0.2s ease-out;
 }
 
 @keyframes fade-in {
   from { opacity: 0; transform: translate(-50%, -10px); }
   to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.75); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes check-pop {
+  from { opacity: 0; transform: scale(0.4); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes fade-simple {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @layer base {

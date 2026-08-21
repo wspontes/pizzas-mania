@@ -37,7 +37,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
       price,
       hasCrust: product.hasCrust,
     })
-    showToast('Adicionado no carrinho!')
+    showToast('Adicionado no carrinho!', 'cart', product.name)
   }
 
   return (

@@ -82,7 +82,7 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
         notes: notes.trim() || undefined,
       })
     }
-    showToast('Adicionado no carrinho!')
+    showToast('Adicionado no carrinho!', 'cart', mode === 'split' && secondFlavor ? `1/2 ${product.name} + 1/2 ${secondFlavor.name}` : product.name)
     onClose()
   }
 
