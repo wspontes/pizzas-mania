@@ -132,8 +132,8 @@ export default function Categories() {
         <div className="rounded-xl border border-border bg-surface">
           <div className="divide-y divide-border">
             {categories.map((category, index) => (
-              <div key={category.id} className="flex items-center gap-2 md:gap-3 px-3 md:px-4 py-3">
-                <div className="flex flex-col gap-0.5">
+              <div key={category.id} className="flex items-start gap-2 md:gap-3 px-3 md:px-4 py-3">
+                <div className="flex flex-col gap-0.5 shrink-0">
                   <button
                     onClick={() => moveUp(index)}
                     disabled={index === 0}
@@ -152,10 +152,8 @@ export default function Categories() {
                   </button>
                 </div>
 
-                <span className="w-5 md:w-6 text-center text-xs text-muted shrink-0">{index + 1}</span>
-
                 {editingId === category.id ? (
-                  <div className="flex flex-1 items-center gap-2 min-w-0">
+                  <div className="flex flex-1 items-center gap-2 min-w-0 py-1">
                     <Input
                       value={editingName}
                       onChange={(e) => setEditingName(e.target.value)}
@@ -171,45 +169,44 @@ export default function Categories() {
                     </button>
                   </div>
                 ) : (
-                  <>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white truncate">{category.name}</p>
-                      {category.allowsMeiaMeia && (
-                        <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
-                          <Pizza size={10} />
-                          Meia-meia
-                        </span>
-                      )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 shrink-0 text-[10px] text-muted">{index + 1}</span>
+                      <p className="min-w-0 flex-1 truncate text-sm font-medium text-white">{category.name}</p>
+                      <button
+                        onClick={() => toggleActive(category.id)}
+                        className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] md:text-xs font-medium transition-colors ${
+                          category.active
+                            ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
+                            : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
+                        }`}
+                      >
+                        {category.active ? 'Ativo' : 'Inativo'}
+                      </button>
                     </div>
-                    <button
-                      onClick={() => toggleMeiaMeia(category.id)}
-                      className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] md:text-xs font-medium transition-colors ${
-                        category.allowsMeiaMeia
-                          ? 'bg-accent/10 text-accent hover:bg-accent/20'
-                          : 'bg-surface-hover text-muted hover:bg-surface-hover/70 hover:text-white'
-                      }`}
-                      title={category.allowsMeiaMeia ? 'Desativar meia-meia' : 'Ativar meia-meia'}
-                    >
-                      <Pizza size={11} className="inline mr-1" />
-                      Meia-meia
-                    </button>
-                    <button
-                      onClick={() => toggleActive(category.id)}
-                      className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] md:text-xs font-medium transition-colors ${
-                        category.active
-                          ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
-                          : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
-                      }`}
-                    >
-                      {category.active ? 'Ativo' : 'Inativo'}
-                    </button>
-                    <button onClick={() => startEdit(category)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors" title="Editar">
-                      <Pencil size={15} />
-                    </button>
-                    <button onClick={() => handleDelete(category.id, category.name)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-400 transition-colors" title="Excluir">
-                      <Trash2 size={15} />
-                    </button>
-                  </>
+                    <div className="mt-2 flex items-center gap-2">
+                      <button
+                        onClick={() => toggleMeiaMeia(category.id)}
+                        className={`rounded-full px-2.5 py-1 text-[10px] md:text-xs font-medium transition-colors ${
+                          category.allowsMeiaMeia
+                            ? 'bg-accent/10 text-accent hover:bg-accent/20'
+                            : 'bg-surface-hover text-muted hover:bg-surface-hover/70 hover:text-white'
+                        }`}
+                        title={category.allowsMeiaMeia ? 'Desativar meia-meia' : 'Ativar meia-meia'}
+                      >
+                        <Pizza size={11} className="inline mr-1" />
+                        Meia-meia
+                      </button>
+                      <div className="ml-auto flex items-center gap-1">
+                        <button onClick={() => startEdit(category)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors" title="Editar">
+                          <Pencil size={15} />
+                        </button>
+                        <button onClick={() => handleDelete(category.id, category.name)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-400 transition-colors" title="Excluir">
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
             ))}

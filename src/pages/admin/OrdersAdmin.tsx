@@ -415,7 +415,7 @@ function OrderCard({ order, advanceStatus, confirmPayment, backStatus, cancelOrd
         </div>
       </div>
 
-      <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
+      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
         {order.status === 'waitingPayment' && (
           <Button size="sm" onClick={() => confirmPayment(order.id)} className="bg-green-600 hover:bg-green-700 text-xs">
             <CheckCircle size={13} />

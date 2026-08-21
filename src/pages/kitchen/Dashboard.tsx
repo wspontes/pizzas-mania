@@ -99,7 +99,7 @@ export default function KitchenDashboard() {
                     <div>
                       <h3 className="text-lg font-bold text-white">{order.customerName}</h3>
                       <div className="flex items-center gap-2 text-sm text-muted">
-                        <span>{order.id}</span><span>•</span>
+                        <span>#{order.id.slice(0, 8)}</span><span>•</span>
                         <Clock size={14} />
                         <span className={delayed ? 'text-red-400 font-medium' : ''}>{getTimeSince(order.createdAt)}</span>
                       </div>
@@ -149,7 +149,7 @@ export default function KitchenDashboard() {
                       <h3 className="font-bold text-white">{order.customerName}</h3>
                       <CheckCircle size={20} className="text-green-400" />
                     </div>
-                    <p className="text-sm text-muted">{order.id}</p>
+                    <p className="text-sm text-muted">#{order.id.slice(0, 8)}</p>
                     <div className="mt-3 space-y-1">
                       {order.items.map((item, idx) => (
                         <div key={idx}>

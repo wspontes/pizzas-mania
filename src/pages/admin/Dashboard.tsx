@@ -181,7 +181,7 @@ export default function Dashboard() {
         <PeriodFilter value={period} onChange={setPeriod} />
       </div>
 
-      <div className="mb-8 grid gap-3 grid-cols-2 lg:grid-cols-3">
+      <div className="mb-8 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {stats.map((stat) => {
           const Icon = stat.icon
           return (
@@ -200,7 +200,7 @@ export default function Dashboard() {
       </div>
 
       <div className="mb-6 rounded-xl border border-border bg-surface">
-        <div className="flex items-center justify-between border-b border-border p-3 md:p-4">
+        <div className="flex flex-col items-start gap-2 border-b border-border p-3 md:p-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-2">
             <Trophy size={16} className="text-accent" />
             <h2 className="text-sm md:text-base font-semibold text-white">Mais Pedidos</h2>
