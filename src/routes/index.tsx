@@ -19,6 +19,7 @@ const AdminOrders = lazy(() => import('@/pages/admin/OrdersAdmin'))
 const AdminSettings = lazy(() => import('@/pages/admin/Settings'))
 const AdminCoupons = lazy(() => import('@/pages/admin/CouponsAdmin'))
 const KitchenDashboard = lazy(() => import('@/pages/kitchen/Dashboard'))
+const KitchenBoard = lazy(() => import('@/pages/kitchen/Board'))
 const Seed = lazy(() => import('@/pages/dev/Seed'))
 
 function PageLoader() {
@@ -91,7 +92,8 @@ export const router = createBrowserRouter([
     element: <ProtectedKitchen><KitchenLayout /></ProtectedKitchen>,
     errorElement: <ChunkError />,
     children: [
-      { index: true, element: <Suspense fallback={<PageLoader />}><KitchenDashboard /></Suspense> },
+      { index: true, element: <Suspense fallback={<PageLoader />}><KitchenBoard /></Suspense> },
+      { path: 'lista', element: <Suspense fallback={<PageLoader />}><KitchenDashboard /></Suspense> },
     ],
   },
   {
