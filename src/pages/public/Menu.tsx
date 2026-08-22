@@ -51,6 +51,17 @@ export default function Menu() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [grouped, searching])
 
+  const chipsRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!activeCategory || searching) return
+    const container = chipsRef.current
+    const chip = container?.querySelector<HTMLElement>(`[data-cat-id="${activeCategory}"]`)
+    if (!container || !chip) return
+    const target = chip.offsetLeft - container.clientWidth / 2 + chip.offsetWidth / 2
+    container.scrollTo({ left: Math.max(target, 0), behavior: 'smooth' })
+  }, [activeCategory, searching])
+
   useEffect(() => {
     if (!searching && !activeCategory && grouped.length > 0) {
       setActiveCategory(grouped[0].id)
@@ -80,13 +91,13 @@ export default function Menu() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div ref={filterRef} className="sticky top-16 z-30 -mx-4 bg-brand-black px-4 pt-8 pb-4 border-b border-border/50">
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold text-white">Cardápio</h1>
-          <p className="mt-1 text-sm text-muted">Escolha seu sabor favorito</p>
+      <div ref={filterRef} className="sticky top-16 z-30 -mx-4 bg-brand-black px-4 pt-3 pb-3 md:pt-8 md:pb-4 border-b border-border/50">
+        <div className="mb-3">
+          <h1 className="text-xl font-bold text-white md:text-2xl">Cardápio</h1>
+          <p className="mt-0.5 text-sm text-muted">Escolha seu sabor favorito</p>
         </div>
 
-        <div className="mb-4">
+        <div className="mb-3">
           <SearchBar value={search} onChange={setSearch} />
         </div>
 
@@ -94,14 +105,15 @@ export default function Menu() {
           {catLoading ? (
             <CategorySkeleton />
           ) : categories.length > 0 ? (
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+            <div ref={chipsRef} className="relative flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
               {grouped.map((group) => (
-                <CategoryCard
-                  key={group.id}
-                  category={group}
-                  active={!searching && activeCategory === group.id}
-                  onClick={handleCategoryClick}
-                />
+                <div key={group.id} data-cat-id={group.id}>
+                  <CategoryCard
+                    category={group}
+                    active={!searching && activeCategory === group.id}
+                    onClick={handleCategoryClick}
+                  />
+                </div>
               ))}
             </div>
           ) : null}
