@@ -1,12 +1,12 @@
 import { useState, useRef } from 'react'
-import { ChefHat, XCircle, ArrowLeft, MessageSquare, CheckCircle, Search, User as UserIcon, Clock, Banknote, Bell, ChevronDown, ChevronUp, AlertTriangle, Bike, Monitor } from 'lucide-react'
+import { ChefHat, XCircle, ArrowLeft, MessageSquare, CheckCircle, Search, User as UserIcon, Clock, Banknote, Bell, ChevronDown, ChevronUp, AlertTriangle, Bike, Monitor, Printer } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { ordersService, motoboysService } from '@/services'
 import { onSnapshot, collection, query, orderBy } from 'firebase/firestore'
 import { db } from '@/firebase/config'
 import { useFirestoreSync } from '@/hooks'
 import type { Motoboy, Order } from '@/types'
-import { formatCurrency, formatTime } from '@/utils'
+import { formatCurrency, formatTime, printOrder } from '@/utils'
 import { useToast } from '@/contexts/ToastContext'
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -446,6 +446,11 @@ function OrderCard({ order, advanceStatus, confirmPayment, backStatus, cancelOrd
               </Button>
             )}
           </>
+        )}
+        {['received', 'accepted', 'preparing', 'outForDelivery'].includes(order.status) && (
+          <Button size="sm" variant="ghost" onClick={() => printOrder(order)} className="h-8 w-8 md:h-9 md:w-9 p-0" aria-label="Imprimir cupom">
+            <Printer size={15} />
+          </Button>
         )}
         {order.status !== 'delivered' && order.status !== 'cancelled' && (
           <Button size="sm" variant="ghost" onClick={() => cancelOrder(order.id)} className="h-8 w-8 md:h-9 md:w-9 p-0">
