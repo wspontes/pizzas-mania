@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { onSnapshot, collection, query, orderBy } from 'firebase/firestore'
 import { db } from '@/firebase/config'
-import { Clock, ChefHat, XCircle, ShoppingBag, Bike } from 'lucide-react'
-import { Button } from '@/components/ui'
-import { ordersService } from '@/services'
+import { Clock, ChefHat, ShoppingBag, Bike } from 'lucide-react'
 import { useFirestoreSync } from '@/hooks'
 import type { Order } from '@/types'
 
@@ -98,17 +96,6 @@ export default function KitchenBoard() {
     return () => clearInterval(t)
   }, [newCount])
 
-  const advance = async (order: Order) => {
-    const idx = (ACTIVE_STATUSES as readonly string[]).indexOf(order.status)
-    if (idx === -1 || idx >= ACTIVE_STATUSES.length - 1) return
-    await ordersService.update(order.id, { status: ACTIVE_STATUSES[idx + 1] } as Partial<Order>)
-  }
-
-  const cancel = async (order: Order) => {
-    if (!window.confirm(`Cancelar o pedido de ${order.customerName}? O cliente será avisado.`)) return
-    await ordersService.update(order.id, { status: 'cancelled' } as Partial<Order>)
-  }
-
   const clock = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
   const dateLabel = now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })
 
@@ -160,7 +147,6 @@ export default function KitchenBoard() {
                     colOrders.map((order) => {
                       const delayed = elapsedMinutes(order.createdAt) > 20
                       const isPickup = order.deliveryType === 'pickup'
-                      const lastColumn = col.status === 'outForDelivery'
                       return (
                         <article
                           key={order.id}
@@ -199,20 +185,6 @@ export default function KitchenBoard() {
                             <p className="mt-3 rounded-lg border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 text-sm font-medium text-yellow-400">
                               Obs.: {order.notes}
                             </p>
-                          )}
-                          {!lastColumn && (
-                            <div className="mt-4 flex gap-2">
-                              <Button size="lg" className="flex-1 text-base font-bold" onClick={() => advance(order)}>
-                                {order.status === 'received' && 'Aceitar'}
-                                {order.status === 'accepted' && 'Iniciar preparo'}
-                                {order.status === 'preparing' && (isPickup ? 'Pronto!' : 'Saiu p/ entrega')}
-                              </Button>
-                              {(order.status === 'received' || order.status === 'accepted') && (
-                                <Button size="lg" variant="ghost" onClick={() => cancel(order)} aria-label="Cancelar pedido">
-                                  <XCircle size={20} />
-                                </Button>
-                              )}
-                            </div>
                           )}
                         </article>
                       )

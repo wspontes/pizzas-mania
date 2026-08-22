@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { ChefHat, XCircle, ArrowLeft, MessageSquare, CheckCircle, Search, User as UserIcon, Clock, Banknote, Bell, ChevronDown, ChevronUp, AlertTriangle, Bike } from 'lucide-react'
+import { ChefHat, XCircle, ArrowLeft, MessageSquare, CheckCircle, Search, User as UserIcon, Clock, Banknote, Bell, ChevronDown, ChevronUp, AlertTriangle, Bike, Monitor } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { ordersService, motoboysService } from '@/services'
 import { onSnapshot, collection, query, orderBy } from 'firebase/firestore'
@@ -200,9 +200,15 @@ export default function OrdersAdmin() {
 
   return (
     <div className="pb-20">
-      <div className="mb-5">
-        <h1 className="text-xl md:text-2xl font-bold text-white">Pedidos</h1>
-        <p className="text-xs md:text-sm text-muted mt-0.5">{orders.length} pedidos no total</p>
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold text-white">Pedidos</h1>
+          <p className="text-xs md:text-sm text-muted mt-0.5">{orders.length} pedidos no total</p>
+        </div>
+        <a href="/cozinha" target="_blank" rel="noopener noreferrer" className="flex shrink-0 items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-surface-hover">
+          <Monitor size={16} className="text-accent" />
+          <span className="hidden sm:inline">Tela Cozinha</span>
+        </a>
       </div>
 
       <div className="mb-4">
