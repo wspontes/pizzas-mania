@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ChefHat, XCircle, ArrowLeft, MessageSquare, CheckCircle, Search, User as UserIcon, Clock, Banknote, Bell, ChevronDown, ChevronUp, AlertTriangle, Bike, Monitor, Printer } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { PrintOrderModal } from '@/components/shared'
@@ -54,8 +54,15 @@ export default function OrdersAdmin() {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null)
   const [print58, setPrint58] = useState<Order | null>(null)
+  const [hasMotoboys, setHasMotoboys] = useState(true)
   const prevIds = useRef<Set<string>>(new Set())
   const { showToast } = useToast()
+
+  useEffect(() => {
+    motoboysService.getActive()
+      .then((list) => setHasMotoboys(list.length > 0))
+      .catch(() => setHasMotoboys(false))
+  }, [])
 
   useFirestoreSync(({ onError, onHealthy }) => {
     const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'))
@@ -234,7 +241,7 @@ export default function OrdersAdmin() {
               </button>
               {!collapsed.has('ativos') && (
                 <div className="space-y-3">
-                  {activeOrders.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: (id: string) => setCancelConfirm(id), setWhatsappModal, onSendMotoboy: openMotoboyModal, onPrint58: setPrint58, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
+                  {activeOrders.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: (id: string) => setCancelConfirm(id), setWhatsappModal, onSendMotoboy: openMotoboyModal, onPrint58: setPrint58, hasMotoboys, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
                 </div>
               )}
             </div>
@@ -249,7 +256,7 @@ export default function OrdersAdmin() {
               </button>
               {!collapsed.has('entregues') && (
                 <div className="space-y-3">
-                  {doneOnes.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: () => {}, setWhatsappModal, onSendMotoboy: openMotoboyModal, onPrint58: setPrint58, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
+                  {doneOnes.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: () => {}, setWhatsappModal, onSendMotoboy: openMotoboyModal, onPrint58: setPrint58, hasMotoboys, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
                 </div>
               )}
             </div>
@@ -264,7 +271,7 @@ export default function OrdersAdmin() {
               </button>
               {!collapsed.has('cancelados') && (
                 <div className="space-y-3">
-                  {cancelledOnes.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: () => {}, setWhatsappModal, onSendMotoboy: openMotoboyModal, onPrint58: setPrint58, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
+                  {cancelledOnes.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: () => {}, setWhatsappModal, onSendMotoboy: openMotoboyModal, onPrint58: setPrint58, hasMotoboys, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
                 </div>
               )}
             </div>
@@ -362,7 +369,7 @@ export default function OrdersAdmin() {
   )
 }
 
-function OrderCard({ order, advanceStatus, confirmPayment, backStatus, cancelOrder, setWhatsappModal, onSendMotoboy, onPrint58, statusConfig, getPaymentLabel, formatCurrency, formatTime }: {
+function OrderCard({ order, advanceStatus, confirmPayment, backStatus, cancelOrder, setWhatsappModal, onSendMotoboy, onPrint58, hasMotoboys, statusConfig, getPaymentLabel, formatCurrency, formatTime }: {
   order: Order
   advanceStatus: (id: string) => void
   confirmPayment: (id: string) => void
@@ -371,6 +378,7 @@ function OrderCard({ order, advanceStatus, confirmPayment, backStatus, cancelOrd
   setWhatsappModal: (data: { phone: string; name: string; message: string }) => void
   onSendMotoboy: (order: Order) => void
   onPrint58: (order: Order) => void
+  hasMotoboys: boolean
   statusConfig: Record<string, { label: string; color: string }>
   getPaymentLabel: (method: string) => string
   formatCurrency: (n: number) => string
@@ -442,7 +450,7 @@ function OrderCard({ order, advanceStatus, confirmPayment, backStatus, cancelOrd
               <ChefHat size={13} />
               Avançar
             </Button>
-            {order.status === 'outForDelivery' && !isPickup && (
+            {order.status === 'outForDelivery' && !isPickup && hasMotoboys && (
               <Button size="sm" variant="outline" onClick={() => onSendMotoboy(order)} className="text-xs">
                 <Bike size={13} />
                 Motoboy
