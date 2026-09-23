@@ -3,6 +3,7 @@ import { collection, onSnapshot, orderBy, query } from 'firebase/firestore'
 import { db } from '@/firebase/config'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
+import { ensurePushToken, onForegroundPush } from '@/services/fcm'
 import type { Order } from '@/types'
 
 const STAFF_ROLES = ['admin', 'manager', 'attendant', 'kitchen']
@@ -51,6 +52,37 @@ export function NewOrderWatcher() {
       Notification.requestPermission().catch(() => {})
     }
   }, [isStaff])
+
+  // Push na nuvem (FCM): cobre app em segundo plano e tela bloqueada.
+  useEffect(() => {
+    if (!isStaff || !user) return
+    let cancel: (() => void) | undefined
+    ;(async () => {
+      if (!('Notification' in window)) return
+      if (Notification.permission === 'default') {
+        try {
+          await Notification.requestPermission()
+        } catch {
+          return
+        }
+      }
+      if (Notification.permission !== 'granted') return
+      await ensurePushToken(user.id, user.role)
+      cancel = await onForegroundPush((payload) => {
+        // Com o app visível o snapshot já avisa; aqui cobre aba oculta.
+        if (!document.hidden) return
+        beep()
+        const title = payload.notification?.title || 'Novo pedido — Pizzas Mania'
+        const body = payload.notification?.body || 'Chegou um pedido novo!'
+        try {
+          new Notification(title, { body })
+        } catch {
+          // Notificação bloqueada
+        }
+      })
+    })()
+    return () => cancel?.()
+  }, [isStaff, user])
 
   useEffect(() => {
     if (!isStaff) return
