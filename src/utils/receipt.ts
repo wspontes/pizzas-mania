@@ -135,6 +135,7 @@ export function buildDeliveryText(order: Order, storeName = 'Pizzas Mania', moto
   out += leftRight('TOTAL', money(order.total))
   if (order.paymentMethod === 'cash' && order.changeNeeded && order.changeFor) {
     out += line(`Troco p/ ${money(order.changeFor)}`)
+    out += leftRight('Troco', money(order.changeFor - order.total))
   }
   if (order.couponCode) out += line(`Cupom: ${order.couponCode}`)
   if (order.notes) out += wrap(`Obs: ${order.notes}`, '')
@@ -204,6 +205,7 @@ export function buildReceiptText(order: Order, storeName = 'Pizzas Mania'): stri
   out += line(`Pagto: ${paymentLabel(order.paymentMethod)}`)
   if (order.paymentMethod === 'cash' && order.changeNeeded && order.changeFor) {
     out += line(`Troco p/ ${money(order.changeFor)}`)
+    out += leftRight('Troco', money(order.changeFor - order.total))
   }
   if (order.couponCode) out += line(`Cupom: ${order.couponCode}`)
   if (order.notes) out += wrap(`Obs: ${order.notes}`, '')
