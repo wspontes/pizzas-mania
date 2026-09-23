@@ -287,12 +287,12 @@ export default function OrdersAdmin() {
             </div>
             <p className="mb-4 text-sm text-muted">Enviar mensagem para <span className="text-white font-medium">{whatsappModal.name}</span></p>
             <textarea className="mb-4 w-full rounded-lg border border-border bg-surface-hover px-3 py-2.5 text-sm text-white" rows={4} value={whatsappModal.message} onChange={(e) => setWhatsappModal({ ...whatsappModal, message: e.target.value })} />
-            <div className="flex gap-2 flex-col sm:flex-row">
-              <Button className="flex-1 text-sm h-10" onClick={() => { window.open(`https://wa.me/${whatsappModal.phone.replace(/\D/g, '')}?text=${encodeURIComponent(whatsappModal.message)}`, '_blank'); setWhatsappModal(null) }}>
+            <div className="flex flex-col gap-2">
+              <Button className="h-11 w-full bg-green-600 text-sm font-semibold hover:bg-green-700" onClick={() => { window.open(`https://wa.me/${whatsappModal.phone.replace(/\D/g, '')}?text=${encodeURIComponent(whatsappModal.message)}`, '_blank'); setWhatsappModal(null) }}>
                 <MessageSquare size={16} />
                 Enviar via WhatsApp
               </Button>
-              <Button variant="ghost" className="text-sm h-10" onClick={() => setWhatsappModal(null)}>Cancelar</Button>
+              <Button variant="ghost" className="h-10 w-full text-sm" onClick={() => setWhatsappModal(null)}>Cancelar</Button>
             </div>
           </div>
         </div>
