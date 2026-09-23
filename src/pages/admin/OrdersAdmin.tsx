@@ -7,7 +7,7 @@ import { onSnapshot, collection, query, orderBy } from 'firebase/firestore'
 import { db } from '@/firebase/config'
 import { useFirestoreSync } from '@/hooks'
 import type { Motoboy, Order } from '@/types'
-import { formatCurrency, formatTime, printOrder } from '@/utils'
+import { formatCurrency, formatTime } from '@/utils'
 import { useToast } from '@/contexts/ToastContext'
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -452,13 +452,8 @@ function OrderCard({ order, advanceStatus, confirmPayment, backStatus, cancelOrd
           </>
         )}
         {['received', 'accepted', 'preparing', 'outForDelivery'].includes(order.status) && (
-          <Button size="sm" variant="ghost" onClick={() => printOrder(order)} className="h-8 w-8 md:h-9 md:w-9 p-0" aria-label="Imprimir cupom">
+          <Button size="sm" variant="ghost" onClick={() => onPrint58(order)} className="h-8 w-8 md:h-9 md:w-9 p-0" title="Imprimir cupom (RawBT ou navegador)">
             <Printer size={15} />
-          </Button>
-        )}
-        {['received', 'accepted', 'preparing', 'outForDelivery'].includes(order.status) && (
-          <Button size="sm" variant="ghost" onClick={() => onPrint58(order)} className="h-8 px-2 text-[10px] font-semibold text-accent hover:bg-accent/10" title="Cupom 58mm via RawBT">
-            58mm
           </Button>
         )}
         {order.status !== 'delivered' && order.status !== 'cancelled' && (
