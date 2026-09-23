@@ -1,10 +1,26 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from '@/components/admin'
 import { AdminHeader } from '@/components/admin'
 
+const ADMIN_MANIFEST = '/manifest-admin.webmanifest'
+
+/** Troca o manifesto nas telas do admin para instalar o app abrindo direto em /admin. */
+function useAdminManifest() {
+  useEffect(() => {
+    const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]')
+    if (!link) return
+    const previous = link.getAttribute('href')
+    link.setAttribute('href', ADMIN_MANIFEST)
+    return () => {
+      if (previous) link.setAttribute('href', previous)
+    }
+  }, [])
+}
+
 export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  useAdminManifest()
 
   return (
     <div className="flex min-h-screen bg-brand-black">
