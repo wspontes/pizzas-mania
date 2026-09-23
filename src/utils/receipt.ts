@@ -58,8 +58,11 @@ function paymentLabel(method: string): string {
   return method
 }
 
-function paymentStatusLabel(order: Order): string {
-  return order.paymentStatus === 'paid' || order.paymentStatus === 'approved' ? 'PAGO' : 'A PAGAR'
+/** Pix é pré-pago. Cartão/dinheiro pagam na entrega ou retirada. */
+function deliveryPaymentLine(order: Order): string {
+  if (order.paymentMethod === 'pix') return 'PIX - PAGO'
+  const where = order.deliveryType === 'pickup' ? 'NA RETIRADA' : 'NA ENTREGA'
+  return `${paymentLabel(order.paymentMethod)} - PAGAR ${where}`
 }
 
 function formatShortDate(d: Date): string {
@@ -128,7 +131,7 @@ export function buildDeliveryText(order: Order, storeName = 'Pizzas Mania', moto
   out += sep()
   out += itemsBlock(order, false)
   out += sep()
-  out += line(`${paymentLabel(order.paymentMethod)} - ${paymentStatusLabel(order)}`)
+  out += line(deliveryPaymentLine(order))
   out += leftRight('TOTAL', money(order.total))
   if (order.paymentMethod === 'cash' && order.changeNeeded && order.changeFor) {
     out += line(`Troco p/ ${money(order.changeFor)}`)
