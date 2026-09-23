@@ -21,19 +21,19 @@ function NoteEditor({ value, onSave }: { value?: string; onSave: (notes: string)
     return (
       <div className="mt-2">
         <textarea
-          rows={2}
+          rows={3}
           autoFocus
           placeholder="Ex.: sem cebola, retirar ingrediente..."
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           className="w-full resize-none rounded-lg border border-border bg-surface-hover px-3 py-2 text-sm text-white placeholder:text-muted transition-colors focus:border-accent focus:outline-none"
         />
-        <div className="mt-1.5 flex justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={cancel} className="h-8 text-xs">
+        <div className="mt-1.5 flex gap-2">
+          <Button variant="ghost" size="sm" onClick={cancel} className="h-9 flex-1 text-xs">
             <X size={13} />
             Cancelar
           </Button>
-          <Button size="sm" onClick={save} className="h-8 text-xs bg-green-600 hover:bg-green-700">
+          <Button size="sm" onClick={save} className="h-9 flex-1 text-xs bg-green-600 hover:bg-green-700">
             <Check size={13} />
             Salvar
           </Button>
@@ -132,7 +132,6 @@ export default function Cart() {
                   {item.size && <p className="text-xs text-muted mt-0.5">Tamanho: {item.size}</p>}
                   {!item.hasCrust && item.border && <p className="text-xs text-accent mt-0.5">Borda: {item.border}{item.borderPrice ? ` (+${formatCurrency(item.borderPrice)})` : ''}</p>}
                   <p className="mt-1.5 font-semibold text-accent text-sm">{formatCurrency(item.price)}</p>
-                  <NoteEditor value={item.notes} onSave={(notes) => updateNotes(itemKey(item), notes)} />
                 </div>
 
                 <div className="flex items-center gap-1 md:gap-2">
@@ -151,6 +150,8 @@ export default function Cart() {
                   <Trash2 size={14} />
                 </button>
               </div>
+
+              <NoteEditor value={item.notes} onSave={(notes) => updateNotes(itemKey(item), notes)} />
 
               {item.hasCrust && crustOptions.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-border/50">
