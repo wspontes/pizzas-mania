@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { ChefHat, XCircle, ArrowLeft, MessageSquare, CheckCircle, Search, User as UserIcon, Clock, Banknote, Bell, ChevronDown, ChevronUp, AlertTriangle, Bike, Monitor, Printer } from 'lucide-react'
 import { Button } from '@/components/ui'
+import { PrintOrderModal } from '@/components/shared'
 import { ordersService, motoboysService } from '@/services'
 import { onSnapshot, collection, query, orderBy } from 'firebase/firestore'
 import { db } from '@/firebase/config'
@@ -52,6 +53,7 @@ export default function OrdersAdmin() {
   const [motoboyList, setMotoboyList] = useState<Motoboy[]>([])
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null)
+  const [print58, setPrint58] = useState<Order | null>(null)
   const prevIds = useRef<Set<string>>(new Set())
   const { showToast } = useToast()
 
@@ -233,7 +235,7 @@ export default function OrdersAdmin() {
               </button>
               {!collapsed.has('ativos') && (
                 <div className="space-y-3">
-                  {activeOrders.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: (id: string) => setCancelConfirm(id), setWhatsappModal, onSendMotoboy: openMotoboyModal, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
+                  {activeOrders.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: (id: string) => setCancelConfirm(id), setWhatsappModal, onSendMotoboy: openMotoboyModal, onPrint58: setPrint58, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
                 </div>
               )}
             </div>
@@ -248,7 +250,7 @@ export default function OrdersAdmin() {
               </button>
               {!collapsed.has('entregues') && (
                 <div className="space-y-3">
-                  {doneOnes.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: () => {}, setWhatsappModal, onSendMotoboy: openMotoboyModal, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
+                  {doneOnes.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: () => {}, setWhatsappModal, onSendMotoboy: openMotoboyModal, onPrint58: setPrint58, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
                 </div>
               )}
             </div>
@@ -263,7 +265,7 @@ export default function OrdersAdmin() {
               </button>
               {!collapsed.has('cancelados') && (
                 <div className="space-y-3">
-                  {cancelledOnes.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: () => {}, setWhatsappModal, onSendMotoboy: openMotoboyModal, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
+                  {cancelledOnes.map((order) => <OrderCard key={order.id} order={order} {...{ advanceStatus, confirmPayment, backStatus, cancelOrder: () => {}, setWhatsappModal, onSendMotoboy: openMotoboyModal, onPrint58: setPrint58, statusConfig, getPaymentLabel, formatCurrency, formatTime }} />)}
                 </div>
               )}
             </div>
@@ -334,8 +336,9 @@ export default function OrdersAdmin() {
         </div>
       )}
 
-      {cancelConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setCancelConfirm(null)}>
+      {print58 && <PrintOrderModal order={print58} initialMotoboy={print58.motoboyName ?? ''} onClose={() => setPrint58(null)} />}
+
+      {cancelConfirm && (        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setCancelConfirm(null)}>
           <div className="w-full max-w-sm rounded-xl border border-border bg-surface p-5 md:p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10">
@@ -360,7 +363,7 @@ export default function OrdersAdmin() {
   )
 }
 
-function OrderCard({ order, advanceStatus, confirmPayment, backStatus, cancelOrder, setWhatsappModal, onSendMotoboy, statusConfig, getPaymentLabel, formatCurrency, formatTime }: {
+function OrderCard({ order, advanceStatus, confirmPayment, backStatus, cancelOrder, setWhatsappModal, onSendMotoboy, onPrint58, statusConfig, getPaymentLabel, formatCurrency, formatTime }: {
   order: Order
   advanceStatus: (id: string) => void
   confirmPayment: (id: string) => void
@@ -368,6 +371,7 @@ function OrderCard({ order, advanceStatus, confirmPayment, backStatus, cancelOrd
   cancelOrder: (id: string) => void
   setWhatsappModal: (data: { phone: string; name: string; message: string }) => void
   onSendMotoboy: (order: Order) => void
+  onPrint58: (order: Order) => void
   statusConfig: Record<string, { label: string; color: string }>
   getPaymentLabel: (method: string) => string
   formatCurrency: (n: number) => string
@@ -450,6 +454,11 @@ function OrderCard({ order, advanceStatus, confirmPayment, backStatus, cancelOrd
         {['received', 'accepted', 'preparing', 'outForDelivery'].includes(order.status) && (
           <Button size="sm" variant="ghost" onClick={() => printOrder(order)} className="h-8 w-8 md:h-9 md:w-9 p-0" aria-label="Imprimir cupom">
             <Printer size={15} />
+          </Button>
+        )}
+        {['received', 'accepted', 'preparing', 'outForDelivery'].includes(order.status) && (
+          <Button size="sm" variant="ghost" onClick={() => onPrint58(order)} className="h-8 px-2 text-[10px] font-semibold text-accent hover:bg-accent/10" title="Cupom 58mm via RawBT">
+            58mm
           </Button>
         )}
         {order.status !== 'delivered' && order.status !== 'cancelled' && (

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Clock, ChefHat, CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
+import { Clock, ChefHat, CheckCircle, XCircle, AlertTriangle, Printer } from 'lucide-react'
 import { Button } from '@/components/ui'
+import { PrintOrderModal } from '@/components/shared'
 import { ordersService } from '@/services'
 import type { Order } from '@/types'
 
@@ -19,6 +20,7 @@ const statusFlow = ['received', 'accepted', 'preparing'] as const
 export default function KitchenDashboard() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const [print58, setPrint58] = useState<Order | null>(null)
 
   const load = async () => {
     try {
@@ -129,6 +131,9 @@ export default function KitchenDashboard() {
                       <ChefHat size={18} />
                       {order.status === 'received' ? 'Aceitar' : order.status === 'accepted' ? 'Iniciar Preparo' : 'Finalizar'}
                     </Button>
+                    <Button size="lg" variant="ghost" onClick={() => setPrint58(order)} title="Cupom 58mm via RawBT">
+                      <Printer size={18} />
+                    </Button>
                     {(order.status === 'received' || order.status === 'accepted') && (
                       <Button size="lg" variant="ghost" onClick={() => cancelOrder(order.id)}>
                         <XCircle size={18} />
@@ -164,6 +169,10 @@ export default function KitchenDashboard() {
                         </p>
                       )}
                     </div>
+                    <Button size="sm" variant="ghost" onClick={() => setPrint58(order)} className="mt-3 w-full text-sm" title="Cupom 58mm via RawBT">
+                      <Printer size={15} />
+                      Imprimir 58mm
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -171,6 +180,7 @@ export default function KitchenDashboard() {
           )}
         </>
       )}
+      {print58 && <PrintOrderModal order={print58} initialMotoboy={print58.motoboyName ?? ''} onClose={() => setPrint58(null)} />}
     </div>
   )
 }
