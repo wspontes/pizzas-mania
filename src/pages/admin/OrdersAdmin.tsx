@@ -6,6 +6,7 @@ import { ordersService, motoboysService } from '@/services'
 import { onSnapshot, collection, query, orderBy } from 'firebase/firestore'
 import { db } from '@/firebase/config'
 import { useFirestoreSync } from '@/hooks'
+import { useSettings } from '@/hooks'
 import type { Motoboy, Order } from '@/types'
 import { formatCurrency, formatTime } from '@/utils'
 
@@ -36,6 +37,7 @@ export default function OrdersAdmin() {
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null)
   const [print58, setPrint58] = useState<Order | null>(null)
   const [hasMotoboys, setHasMotoboys] = useState(true)
+  const { settings } = useSettings()
 
   useEffect(() => {
     motoboysService.getActive()
@@ -70,8 +72,8 @@ export default function OrdersAdmin() {
         phone: order.customerPhone,
         name: order.customerName,
         message: isPickup
-          ? `Olá ${order.customerName}! Seu pedido está PRONTO para retirada! Pode buscar na pizzaria. \u{1F355}`
-          : `Olá ${order.customerName}! Seu pedido SAIU PARA ENTREGA. Fique atento ao seu celular! \u{1F6F5}\u{1F355}`
+          ? `Olá ${order.customerName}! Seu pedido está PRONTO para retirada! 🍕${settings?.address ? `\nRetire em: ${settings.address}` : '\nPode buscar na pizzaria.'}\nObrigado por escolher a Pizzas Mania!`
+          : `Olá ${order.customerName}! Seu pedido SAIU PARA ENTREGA. Fique atento ao seu celular! 🛵🍕`
       })
     }
   }
