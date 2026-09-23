@@ -120,9 +120,10 @@ export function buildDeliveryText(order: Order, storeName = 'Pizzas Mania', moto
   if (!isPickup && order.deliveryAddress) {
     const a = order.deliveryAddress
     out += sep()
-    out += line(`${a.street}, ${a.number}${a.complement ? ` ${a.complement}` : ''}`.slice(0, RECEIPT_COLS))
-    out += line(`${a.neighborhood} - ${a.city}`.slice(0, RECEIPT_COLS))
+    out += wrap(`${a.street}, ${a.number}`, '')
+    if (a.complement) out += wrap(`Ponto de referencia: ${a.complement}`, '')
     if (a.reference) out += wrap(`Ref: ${a.reference}`, '')
+    out += wrap(`${a.neighborhood} - ${a.city}`, '')
   }
   out += sep()
   out += itemsBlock(order, false)

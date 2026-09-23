@@ -88,8 +88,7 @@ export default function OrdersAdmin() {
     if (nextStatus === 'received') updateData.paymentStatus = 'paid'
     await ordersService.update(orderId, updateData as Partial<Order>)
     if (nextStatus === 'accepted') {
-      const baseMsg = `Olá ${order.customerName}! Seu pedido foi ACEITO e já está em preparação. Obrigado por escolher a Pizzas Mania! \u{1F355}`
-      setWhatsappModal({ phone: order.customerPhone, name: order.customerName, message: order.notes ? `${baseMsg}\n\nObservações: ${order.notes}` : baseMsg })
+      setWhatsappModal({ phone: order.customerPhone, name: order.customerName, message: `Olá ${order.customerName}! Seu pedido foi ACEITO e já está em preparação. Obrigado por escolher a Pizzas Mania! \u{1F355}` })
     } else if (nextStatus === 'outForDelivery') {
       const isPickup = order.deliveryType === 'pickup'
       setWhatsappModal({

@@ -243,11 +243,10 @@ export default function Checkout() {
                     <Input label="Número" name="number" placeholder="N°" value={form.number} onChange={(e) => setForm({ ...form, number: e.target.value })} required />
                   </div>
                   <div className="grid gap-4">
-                    <Input label="Complemento" name="complement" placeholder="Apto, Bloco..." value={form.complement} onChange={(e) => setForm({ ...form, complement: e.target.value })} />
                     <Input label="Bairro" name="neighborhood" placeholder="Seu bairro" value={form.neighborhood} onChange={(e) => setForm({ ...form, neighborhood: e.target.value })} required />
                     <Input label="Cidade" name="city" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} required />
                   </div>
-                  <Input label="Ponto de referência" name="reference" placeholder="Próximo a..." value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
+                  <Input label="Ponto de referência" name="reference" placeholder="Ex: próximo ao mercado, portão azul..." value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
                 </div>
               </div>
             ) : (
