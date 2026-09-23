@@ -69,17 +69,17 @@ function formatShortDate(d: Date): string {
   return `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
 }
 
-function itemsBlock(order: Order, withDetails: boolean): string {
+function itemsBlock(order: Order, withDetails: boolean, withItemNotes = false): string {
   let out = ''
   for (const item of order.items) {
     out += line(`${item.quantity}x ${item.productName}`.slice(0, RECEIPT_COLS))
+    if (item.notes && (withDetails || withItemNotes)) out += wrap(`Obs: ${item.notes}`, '  ')
     if (!withDetails) continue
     if (item.size) out += line(`  Tam: ${item.size}`.slice(0, RECEIPT_COLS))
     if (item.flavors?.length) out += wrap(item.flavors.join(' + '), '  ')
     if (item.border) out += line(`  Borda: ${item.border}`.slice(0, RECEIPT_COLS))
     if (item.extras?.length) out += line(`  Extra: ${item.extras.join(', ')}`.slice(0, RECEIPT_COLS))
     if (item.removedIngredients?.length) out += line(`  S/ ${item.removedIngredients.join(', ')}`.slice(0, RECEIPT_COLS))
-    if (item.notes) out += wrap(`Obs: ${item.notes}`, '  ')
   }
   return out
 }
@@ -129,7 +129,7 @@ export function buildDeliveryText(order: Order, storeName = 'Pizzas Mania', moto
     out += wrap(`${a.neighborhood} - ${a.city}`, '')
   }
   out += sep()
-  out += itemsBlock(order, false)
+  out += itemsBlock(order, false, true)
   out += sep()
   out += line(deliveryPaymentLine(order))
   out += leftRight('TOTAL', money(order.total))
