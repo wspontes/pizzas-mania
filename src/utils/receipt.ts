@@ -69,14 +69,20 @@ function formatShortDate(d: Date): string {
   return `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
 }
 
+function flavorName(f: unknown): string {
+  if (typeof f === 'string') return f
+  if (f && typeof f === 'object' && 'name' in f) return String((f as { name: unknown }).name)
+  return ''
+}
+
 function itemsBlock(order: Order, withDetails: boolean, withItemNotes = false): string {
   let out = ''
   for (const item of order.items) {
-    out += line(`${item.quantity}x ${item.productName}`.slice(0, RECEIPT_COLS))
+    out += wrap(`${item.quantity}x ${item.productName}`, '')
     if (item.notes && (withDetails || withItemNotes)) out += wrap(`Obs: ${item.notes}`, '  ')
     if (!withDetails) continue
     if (item.size) out += line(`  Tam: ${item.size}`.slice(0, RECEIPT_COLS))
-    if (item.flavors?.length) out += wrap(item.flavors.join(' + '), '  ')
+    if (item.flavors?.length && !item.isSplit) out += wrap(item.flavors.map(flavorName).join(' + '), '  ')
     if (item.border) out += line(`  Borda: ${item.border}`.slice(0, RECEIPT_COLS))
     if (item.extras?.length) out += line(`  Extra: ${item.extras.join(', ')}`.slice(0, RECEIPT_COLS))
     if (item.removedIngredients?.length) out += line(`  S/ ${item.removedIngredients.join(', ')}`.slice(0, RECEIPT_COLS))
@@ -190,7 +196,7 @@ export function buildReceiptText(order: Order, storeName = 'Pizzas Mania'): stri
   for (const item of order.items) {
     out += leftRight(`${item.quantity}x ${item.productName}`.slice(0, 22), money(item.price * item.quantity).slice(0, 9))
     if (item.size) out += line(`  Tam: ${item.size}`.slice(0, RECEIPT_COLS))
-    if (item.flavors?.length) out += wrap(item.flavors.join(' + '), '  ')
+    if (item.flavors?.length && !item.isSplit) out += wrap(item.flavors.map(flavorName).join(' + '), '  ')
     if (item.border) out += line(`  Borda: ${item.border}`.slice(0, RECEIPT_COLS))
     if (item.extras?.length) out += line(`  Extra: ${item.extras.join(', ')}`.slice(0, RECEIPT_COLS))
     if (item.removedIngredients?.length) out += line(`  S/ ${item.removedIngredients.join(', ')}`.slice(0, RECEIPT_COLS))
