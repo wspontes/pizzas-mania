@@ -5,7 +5,6 @@ import { CartProvider } from '@/contexts/CartContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { CustomerProvider } from '@/contexts/CustomerContext'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
-import { NewOrderWatcher } from '@/components/shared'
 import { router } from '@/routes'
 
 export default function App() {
@@ -15,7 +14,6 @@ export default function App() {
         <CartProvider>
           <CustomerProvider>
             <ToastProvider>
-              <NewOrderWatcher />
               <ErrorBoundary>
                 <RouterProvider router={router} />
               </ErrorBoundary>

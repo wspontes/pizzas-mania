@@ -2,12 +2,14 @@ import { Outlet, Link } from 'react-router-dom'
 import { UtensilsCrossed, LogOut } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui'
+import { NewOrderWatcher } from '@/components/shared'
 
 export function KitchenLayout() {
   const { user, logout } = useAuth()
 
   return (
     <div className="flex min-h-screen flex-col bg-brand-black">
+      <NewOrderWatcher />
       <header className="sticky top-0 z-50 border-b border-border bg-surface">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
           <Link to="/cozinha" className="flex items-center gap-2 font-bold text-white">
