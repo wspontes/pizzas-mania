@@ -5,6 +5,7 @@ import { Timestamp } from 'firebase/firestore'
 import { Button, Input } from '@/components/ui'
 import { useCart } from '@/contexts/CartContext'
 import { useSettings } from '@/hooks'
+import { useCartPriceSync } from '@/hooks'
 import { couponsService } from '@/services'
 import { formatCurrency } from '@/utils'
 import { itemKey } from '@/contexts/CartContext'
@@ -69,6 +70,7 @@ export default function Cart() {
   const couponApplied = !!state.couponCode
   const [couponError, setCouponError] = useState('')
   const [couponLoading, setCouponLoading] = useState(false)
+  useCartPriceSync()
 
   const handleApplyCoupon = async () => {
     setCouponError('')

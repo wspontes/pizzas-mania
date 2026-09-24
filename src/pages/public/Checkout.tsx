@@ -4,7 +4,7 @@ import { ArrowLeft, CreditCard, Banknote, QrCode, MapPin, User, AlertTriangle, C
 import { Button, Input } from '@/components/ui'
 import { useCart } from '@/contexts/CartContext'
 import { useCustomer } from '@/contexts/CustomerContext'
-import { useSettings, useBusinessStatus } from '@/hooks'
+import { useSettings, useBusinessStatus, useCartPriceSync } from '@/hooks'
 import { OperatingHoursModal } from '@/components/shared/OperatingHoursModal'
 import { ordersService, couponsService } from '@/services'
 import { formatCurrency } from '@/utils'
@@ -35,6 +35,7 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+  useCartPriceSync()
   const [form, setForm] = useState({
     name: customer?.name || '',
     whatsappDigits: customer?.phone ? customer.phone.replace(/^\+?55/, '') : '',

@@ -20,6 +20,7 @@ type CartAction =
   | { type: 'SET_ORDER_NOTES'; payload: string }
   | { type: 'APPLY_COUPON'; payload: { code: string; type: 'percentage' | 'fixed'; value: number } }
   | { type: 'SET_DELIVERY_FEE'; payload: number }
+  | { type: 'SYNC_PRICES'; payload: { prices: Record<string, number>; removeKeys: string[] } }
   | { type: 'CLEAR_CART' }
 
 interface CartContextType {
@@ -32,6 +33,7 @@ interface CartContextType {
   setOrderNotes: (notes: string) => void
   applyCoupon: (code: string, type: 'percentage' | 'fixed', value: number) => void
   setDeliveryFee: (fee: number) => void
+  syncPrices: (prices: Record<string, number>, removeKeys: string[]) => void
   clearCart: () => void
   subtotal: number
   discount: number
@@ -129,6 +131,23 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       }
     case 'SET_DELIVERY_FEE':
       return { ...state, deliveryFee: action.payload }
+    case 'SYNC_PRICES': {
+      const removed = new Set(action.payload.removeKeys)
+      const items = state.items
+        .filter((i) => !removed.has(itemKey(i)))
+        .map((i) => {
+          const key = itemKey(i)
+          const price = action.payload.prices[key]
+          if (price === undefined || price === i.price) return i
+          const updated = { ...i, price } as OrderItem & { flavors?: Array<{ productId: string; name: string; price: number }> }
+          if (Array.isArray(updated.flavors)) {
+            updated.flavors = updated.flavors.map((f) => ({ ...f, price }))
+          }
+          return updated
+        })
+      if (items.length === 0) return { items: [], couponDiscount: 0, couponType: undefined, couponValue: undefined, couponCode: undefined, deliveryFee: 0 }
+      return { ...state, items }
+    }
     case 'CLEAR_CART':
       return { items: [], couponDiscount: 0, deliveryFee: 0 }
     default:
@@ -173,6 +192,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'APPLY_COUPON', payload: { code, type, value } })
   const setDeliveryFee = (fee: number) =>
     dispatch({ type: 'SET_DELIVERY_FEE', payload: fee })
+  const syncPrices = (prices: Record<string, number>, removeKeys: string[]) =>
+    dispatch({ type: 'SYNC_PRICES', payload: { prices, removeKeys } })
   const clearCart = () => dispatch({ type: 'CLEAR_CART' })
 
   return (
@@ -187,6 +208,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setOrderNotes,
         applyCoupon,
         setDeliveryFee,
+        syncPrices,
         clearCart,
         subtotal,
         discount: calculatedDiscount,
