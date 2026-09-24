@@ -48,6 +48,15 @@ export default function Checkout() {
   })
   const [cepLoading, setCepLoading] = useState(false)
 
+  const resolveFee = (neighborhood: string) => {
+    const match = settings?.neighborhoods?.find((n) => n.name.toLowerCase() === (neighborhood || '').toLowerCase())
+    if (match) {
+      setDeliveryFee(match.fee)
+    } else if (settings?.defaultDeliveryFee !== undefined) {
+      setDeliveryFee(settings.defaultDeliveryFee)
+    }
+  }
+
   const handleCepLookup = async (cep: string) => {
     const clean = cep.replace(/\D/g, '')
     setForm((prev) => ({ ...prev, zipCode: cep }))
@@ -63,15 +72,19 @@ export default function Checkout() {
           neighborhood: data.bairro || prev.neighborhood,
           city: data.localidade || prev.city,
         }))
-        const match = settings?.neighborhoods?.find((n) => n.name.toLowerCase() === (data.bairro || '').toLowerCase())
-        if (match) {
-          setDeliveryFee(match.fee)
-        } else if (settings?.defaultDeliveryFee !== undefined) {
-          setDeliveryFee(settings.defaultDeliveryFee)
-        }
+        resolveFee(data.bairro || '')
       }
     } catch { /* silent */ } finally {
       setCepLoading(false)
+    }
+  }
+
+  const handleDeliveryTypeChange = (type: 'delivery' | 'pickup') => {
+    setDeliveryType(type)
+    if (type === 'pickup') {
+      setDeliveryFee(0)
+    } else {
+      resolveFee(form.neighborhood)
     }
   }
 
@@ -210,14 +223,14 @@ export default function Checkout() {
                 Tipo de Pedido
               </h2>
               <div className="grid grid-cols-2 gap-3">
-                <button type="button" onClick={() => setDeliveryType('delivery')} className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${deliveryType === 'delivery' ? 'border-accent bg-accent/10' : 'border-border bg-surface-hover hover:border-accent/50'}`}>
+                <button type="button" onClick={() => handleDeliveryTypeChange('delivery')} className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${deliveryType === 'delivery' ? 'border-accent bg-accent/10' : 'border-border bg-surface-hover hover:border-accent/50'}`}>
                   <Truck size={22} className={deliveryType === 'delivery' ? 'text-accent' : 'text-muted'} />
                   <div>
                     <p className={`text-sm font-medium ${deliveryType === 'delivery' ? 'text-white' : 'text-muted'}`}>Entrega</p>
                     <p className="text-xs text-muted">Receba em casa</p>
                   </div>
                 </button>
-                <button type="button" onClick={() => { setDeliveryType('pickup'); setDeliveryFee(0) }} className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${deliveryType === 'pickup' ? 'border-accent bg-accent/10' : 'border-border bg-surface-hover hover:border-accent/50'}`}>
+                <button type="button" onClick={() => handleDeliveryTypeChange('pickup')} className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${deliveryType === 'pickup' ? 'border-accent bg-accent/10' : 'border-border bg-surface-hover hover:border-accent/50'}`}>
                   <Store size={22} className={deliveryType === 'pickup' ? 'text-accent' : 'text-muted'} />
                   <div>
                     <p className={`text-sm font-medium ${deliveryType === 'pickup' ? 'text-white' : 'text-muted'}`}>Retirada</p>
