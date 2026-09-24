@@ -219,8 +219,8 @@ export default function Dashboard() {
                   {i + 1}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-white truncate">{item.name}</p>
-                  <p className="text-xs text-muted">{item.qty} un. vendidas</p>
+                  <p className="break-words text-sm font-medium leading-snug text-white line-clamp-2">{item.name}</p>
+                  <p className="mt-0.5 text-xs text-muted">{item.qty} un. vendidas</p>
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-sm font-medium text-white">{formatCurrency(item.revenue)}</p>
