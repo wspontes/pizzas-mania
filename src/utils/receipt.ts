@@ -135,7 +135,7 @@ export function buildDeliveryText(order: Order, storeName = 'Pizzas Mania', moto
     out += wrap(`${a.neighborhood} - ${a.city}`, '')
   }
   out += sep()
-  out += itemsBlock(order, false, true)
+  out += itemsBlock(order, true)
   out += sep()
   out += line(deliveryPaymentLine(order))
   out += leftRight('TOTAL', money(order.total))
