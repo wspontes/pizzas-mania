@@ -101,21 +101,21 @@ export default function KitchenBoard() {
 
   return (
     <div className="min-h-screen bg-brand-black px-4 py-5">
-      <div className="mb-5 flex items-end justify-between">
-        <div>
-          <h1 className="flex items-center gap-3 text-3xl font-bold text-white">
-            <ChefHat size={32} className="text-accent" />
-            Painel da Cozinha
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="flex items-center gap-2 text-2xl md:text-3xl font-bold text-white">
+            <ChefHat size={28} className="shrink-0 text-accent" />
+            <span className="truncate">Painel da Cozinha</span>
           </h1>
           <p className="mt-1 text-sm capitalize text-muted">{dateLabel}</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-2 md:gap-4">
           {newCount > 0 && (
-            <span className="animate-pulse rounded-full bg-red-600 px-4 py-1.5 text-sm font-bold text-white">
+            <span className="animate-pulse rounded-full bg-red-600 px-3 md:px-4 py-1.5 text-xs md:text-sm font-bold text-white">
               {newCount} novo{newCount > 1 ? 's' : ''} pedido{newCount > 1 ? 's' : ''}!
             </span>
           )}
-          <span className="text-4xl font-bold tabular-nums text-white">{clock}</span>
+          <span className="text-2xl md:text-4xl font-bold tabular-nums text-white">{clock}</span>
         </div>
       </div>
 
@@ -159,7 +159,7 @@ export default function KitchenBoard() {
                               {timeLabel(order.createdAt)}
                             </span>
                           </div>
-                          <h3 className="text-xl font-bold leading-tight text-white">{order.customerName}</h3>
+                          <h3 className="break-words text-xl font-bold leading-tight text-white">{order.customerName}</h3>
                           <div className="mt-1.5 mb-3 flex flex-wrap items-center gap-2">
                             {isPickup ? (
                               <span className="flex items-center gap-1 rounded-md bg-amber-500/15 px-2 py-0.5 text-xs font-bold text-amber-400">
@@ -173,11 +173,11 @@ export default function KitchenBoard() {
                           </div>
                           <ul className="space-y-1.5">
                             {order.items.map((item, idx) => (
-                              <li key={idx}>
-                                <p className="text-base font-semibold text-white">
+                              <li key={idx} className="min-w-0">
+                                <p className="break-words text-base font-semibold text-white">
                                   {item.quantity}x {item.productName}
                                 </p>
-                                {item.notes && <p className="pl-4 text-xs text-yellow-400">↳ {item.notes}</p>}
+                                {item.notes && <p className="break-words pl-4 text-xs text-yellow-400">↳ {item.notes}</p>}
                               </li>
                             ))}
                           </ul>
