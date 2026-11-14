@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Header } from '@/components/layout'
 import { Footer } from '@/components/layout'
-import { UpdateToast } from '@/components/shared/UpdateToast'
+import { UpdateToast } from '@/components/shared'
 import { trackVisit } from '@/utils/analytics'
 
 export function PublicLayout() {
