@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Printer, Copy, Check, XCircle } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
+import { PrintArea } from '@/components/shared/PrintArea'
 import type { Order } from '@/types'
-import { buildKitchenText, buildDeliveryText, buildBothRawBtUrl, printBothViaRawBt } from '@/utils'
+import { buildKitchenText, buildDeliveryText, printBothViaRawBt, PRINT_COLS } from '@/utils'
 
 interface Props {
   order: Order | null
@@ -12,6 +13,9 @@ interface Props {
 
 type Tab = 'both' | 'kitchen' | 'delivery'
 
+/** RawBT e um app Android: no PC o botao nao faz sentido. */
+const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent)
+
 export function PrintOrderModal({ order, initialMotoboy = '', onClose }: Props) {
   const [copied, setCopied] = useState(false)
   const [motoboy, setMotoboy] = useState(initialMotoboy)
@@ -19,10 +23,12 @@ export function PrintOrderModal({ order, initialMotoboy = '', onClose }: Props) 
 
   if (!order) return null
 
-  const kitchen = buildKitchenText(order)
-  const delivery = buildDeliveryText(order, 'Pizzas Mania', motoboy)
-  const text = tab === 'kitchen' ? kitchen : tab === 'delivery' ? delivery : `${kitchen}${delivery}`
-  const rawBtUrl = buildBothRawBtUrl(order, 'Pizzas Mania', motoboy)
+  // Impressão via navegador: 26 colunas, caractere maior e mais forte.
+  // O RawBT continua em 32 colunas (a impressora aplica a fonte dela).
+  const kitchen = buildKitchenText(order, 'Pizzas Mania', PRINT_COLS)
+  const delivery = buildDeliveryText(order, 'Pizzas Mania', motoboy, PRINT_COLS)
+  const tickets = tab === 'kitchen' ? [kitchen] : tab === 'delivery' ? [delivery] : [kitchen, delivery]
+  const text = tickets.join('')
 
   const copyText = async () => {
     try {
@@ -76,22 +82,51 @@ export function PrintOrderModal({ order, initialMotoboy = '', onClose }: Props) 
           {text}
         </pre>
 
+        {/* Unica area que vai para o papel. */}
+        <PrintArea tickets={tickets} />
+
         <div className="flex flex-col gap-2">
-          <Button onClick={() => printBothViaRawBt(order, 'Pizzas Mania', motoboy)} className="w-full text-sm">
-            <Printer size={16} />
-            Abrir no RawBT e imprimir
-          </Button>
+          {isAndroid ? (
+            /* No Android a impressora termica nao aparece no framework de
+               impressao do sistema, entao o RawBT e o caminho que funciona. */
+            <>
+              <Button onClick={() => printBothViaRawBt(order, 'Pizzas Mania', motoboy)} className="w-full text-sm">
+                <Printer size={16} />
+                Imprimir via RawBT
+              </Button>
+              <Button variant="outline" onClick={() => window.print()} className="w-full text-sm">
+                Imprimir pelo navegador
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button onClick={() => window.print()} className="w-full text-sm" title="Imprime somente o cupom">
+                <Printer size={16} />
+                Imprimir cupom
+              </Button>
+            </>
+          )}
           <div className="flex gap-2">
             <Button variant="outline" onClick={copyText} className="flex-1 text-sm">
               {copied ? <Check size={15} /> : <Copy size={15} />}
               {copied ? 'Copiado!' : 'Copiar texto'}
             </Button>
-            <Button variant="ghost" onClick={() => window.print()} className="flex-1 text-sm">
-              Via navegador
-            </Button>
           </div>
           <p className="mt-1 text-[10px] text-muted">
-            Sem impressora? Confira o preview acima. Com impressora pareada no RawBT, use o primeiro botão. Os 2 cupons saem em sequência — rasgar no meio.
+            {isAndroid ? (
+              <>
+                Precisa do app <b>RawBT</b> instalado e a impressora pareada no Bluetooth. Ele aplica a fonte da propria
+                impressora e corta o papel logo abaixo da ultima linha.
+              </>
+            ) : (
+              <>
+                &quot;Imprimir cupom&quot; abre o dialogo do navegador: escolha a impressora termica e o papel
+                &quot;Printer Paper(58 x 210mm)&quot;. As margens ja sao automáticas. Sai so o cupom, sem a tela do sistema, e os 2
+                cupons vao na mesma folha separados pelo pontilhado para cortar. Se o pedido for muito grande e nao couber, troque
+                para &quot;58 x 3276mm&quot; (roll contínuo).
+              </>
+            )}{' '}
+            Sem impressora? Confira o preview acima.
           </p>
         </div>
       </div>

@@ -2,32 +2,41 @@ import type { Order } from '@/types'
 
 export const RECEIPT_COLS = 32
 
+/**
+ * Colunas da impressão via navegador.
+ *
+ * São menos colunas de propósito: o papel de 58mm tem só 47,9mm
+ * imprimíveis, e usar menos colunas deixa cada caractere ~25% maior
+ * (mais pontos na térmica de 203dpi, ou seja, mais "forte" no papel).
+ */
+export const PRINT_COLS = 26
+
 function stripAccents(s: string): string {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '')
 }
 
-function line(text = ''): string {
-  return `${text.slice(0, RECEIPT_COLS)}\n`
+function line(text = '', cols = RECEIPT_COLS): string {
+  return `${text.slice(0, cols)}\n`
 }
 
-function sep(char = '-'): string {
-  return `${char.repeat(RECEIPT_COLS)}\n`
+function sep(char = '-', cols = RECEIPT_COLS): string {
+  return `${char.repeat(cols)}\n`
 }
 
-function center(text: string): string {
-  const t = text.slice(0, RECEIPT_COLS)
-  const pad = Math.max(0, Math.floor((RECEIPT_COLS - t.length) / 2))
+function center(text: string, cols = RECEIPT_COLS): string {
+  const t = text.slice(0, cols)
+  const pad = Math.max(0, Math.floor((cols - t.length) / 2))
   return `${' '.repeat(pad)}${t}\n`
 }
 
-function leftRight(left: string, right: string): string {
-  const r = right.slice(0, RECEIPT_COLS)
-  const space = Math.max(1, RECEIPT_COLS - left.length - r.length)
-  return `${left.slice(0, RECEIPT_COLS - r.length - 1)}${' '.repeat(space)}${r}\n`
+function leftRight(left: string, right: string, cols = RECEIPT_COLS): string {
+  const r = right.slice(0, cols)
+  const space = Math.max(1, cols - left.length - r.length)
+  return `${left.slice(0, cols - r.length - 1)}${' '.repeat(space)}${r}\n`
 }
 
-function wrap(text: string, prefix = ''): string {
-  const width = RECEIPT_COLS - prefix.length
+function wrap(text: string, prefix = '', cols = RECEIPT_COLS): string {
+  const width = cols - prefix.length
   const words = text.split(' ')
   let out = ''
   let current = ''
@@ -75,86 +84,86 @@ function flavorName(f: unknown): string {
   return ''
 }
 
-function itemsBlock(order: Order, withDetails: boolean, withItemNotes = false): string {
+function itemsBlock(order: Order, withDetails: boolean, withItemNotes = false, cols = RECEIPT_COLS): string {
   let out = ''
   for (const item of order.items) {
-    out += wrap(`${item.quantity}x ${item.productName}`, '')
-    if (item.notes && (withDetails || withItemNotes)) out += wrap(`Obs: ${item.notes}`, '  ')
+    out += wrap(`${item.quantity}x ${item.productName}`, '', cols)
+    if (item.notes && (withDetails || withItemNotes)) out += wrap(`Obs: ${item.notes}`, '  ', cols)
     if (!withDetails) continue
-    if (item.size) out += line(`  Tam: ${item.size}`.slice(0, RECEIPT_COLS))
-    if (item.flavors?.length && !item.isSplit) out += wrap(item.flavors.map(flavorName).join(' + '), '  ')
-    if (item.border) out += line(`  Borda: ${item.border}`.slice(0, RECEIPT_COLS))
-    if (item.extras?.length) out += line(`  Extra: ${item.extras.join(', ')}`.slice(0, RECEIPT_COLS))
-    if (item.removedIngredients?.length) out += line(`  S/ ${item.removedIngredients.join(', ')}`.slice(0, RECEIPT_COLS))
+    if (item.size) out += wrap(`Tam: ${item.size}`, '  ', cols)
+    if (item.flavors?.length && !item.isSplit) out += wrap(item.flavors.map(flavorName).join(' + '), '  ', cols)
+    if (item.border) out += wrap(`Borda: ${item.border}`, '  ', cols)
+    if (item.extras?.length) out += wrap(`Extra: ${item.extras.join(', ')}`, '  ', cols)
+    if (item.removedIngredients?.length) out += wrap(`S/ ${item.removedIngredients.join(', ')}`, '  ', cols)
   }
   return out
 }
 
 /** Cupom 1 — cozinha: sem endereço, sem valores. Foco no preparo. */
-export function buildKitchenText(order: Order, storeName = 'Pizzas Mania'): string {
+export function buildKitchenText(order: Order, storeName = 'Pizzas Mania', cols = RECEIPT_COLS): string {
   const dt = new Date(order.createdAt)
   const kind = order.deliveryType === 'pickup' ? 'RETIRADA' : 'ENTREGA'
   const count = order.items.reduce((n, i) => n + i.quantity, 0)
   let out = ''
-  out += center(storeName.toUpperCase())
-  out += sep()
-  out += center(`CUPOM COZINHA - ${kind}`)
-  out += sep()
-  out += line(`Pedido #${order.id.slice(0, 8)}`)
-  out += line(formatShortDate(dt))
-  out += line(`Cliente: ${order.customerName}`.slice(0, RECEIPT_COLS))
-  out += sep()
-  out += itemsBlock(order, true)
-  out += sep()
-  out += center(`*** ${count} ${count === 1 ? 'item' : 'itens'} ***`)
-  out += line('')
-  out += line('')
+  out += center(storeName.toUpperCase(), cols)
+  out += sep('-', cols)
+  out += center(`CUPOM COZINHA - ${kind}`, cols)
+  out += sep('-', cols)
+  out += line(`Pedido #${order.id.slice(0, 8)}`, cols)
+  out += line(formatShortDate(dt), cols)
+  out += line(`Cliente: ${order.customerName}`.slice(0, cols), cols)
+  out += sep('-', cols)
+  out += itemsBlock(order, true, false, cols)
+  out += sep('-', cols)
+  out += center(`*** ${count} ${count === 1 ? 'item' : 'itens'} ***`, cols)
+  out += line('', cols)
+  out += line('', cols)
   return out
 }
 
 /** Cupom 2 — entrega/motoboy: endereço, pagamento e total. */
-export function buildDeliveryText(order: Order, storeName = 'Pizzas Mania', motoboy = ''): string {
+export function buildDeliveryText(order: Order, storeName = 'Pizzas Mania', motoboy = '', cols = RECEIPT_COLS): string {
   const dt = new Date(order.createdAt)
   const isPickup = order.deliveryType === 'pickup'
   let out = ''
-  out += center(storeName.toUpperCase())
-  out += sep()
-  out += center(isPickup ? 'DADOS DE RETIRADA' : 'DADOS DE ENTREGA')
-  out += sep()
-  out += line(`Pedido #${order.id.slice(0, 8)}`)
-  out += line(formatShortDate(dt))
-  out += line(`Cliente: ${order.customerName}`.slice(0, RECEIPT_COLS))
-  out += line(`Fone: ${order.customerPhone}`.slice(0, RECEIPT_COLS))
-  if (!isPickup && motoboy.trim()) out += line(`Motoboy: ${motoboy.trim()}`.slice(0, RECEIPT_COLS))
+  out += center(storeName.toUpperCase(), cols)
+  out += sep('-', cols)
+  out += center(isPickup ? 'DADOS DE RETIRADA' : 'DADOS DE ENTREGA', cols)
+  out += sep('-', cols)
+  out += line(`Pedido #${order.id.slice(0, 8)}`, cols)
+  out += line(formatShortDate(dt), cols)
+  out += line(`Cliente: ${order.customerName}`.slice(0, cols), cols)
+  out += line(`Fone: ${order.customerPhone}`.slice(0, cols), cols)
+  if (!isPickup && motoboy.trim()) out += line(`Motoboy: ${motoboy.trim()}`.slice(0, cols), cols)
   if (!isPickup && order.deliveryAddress) {
     const a = order.deliveryAddress
-    out += sep()
-    out += wrap(`${a.street}, ${a.number}`, '')
-    if (a.complement) out += wrap(`Ponto de referencia: ${a.complement}`, '')
-    if (a.reference) out += wrap(`Ref: ${a.reference}`, '')
-    out += wrap(`${a.neighborhood} - ${a.city}`, '')
+    out += sep('-', cols)
+    out += wrap(`${a.street}, ${a.number}`, '', cols)
+    if (a.complement) out += wrap(`Ponto de referencia: ${a.complement}`, '', cols)
+    if (a.reference) out += wrap(`Ref: ${a.reference}`, '', cols)
+    out += wrap(`${a.neighborhood} - ${a.city}`, '', cols)
   }
-  out += sep()
-  out += itemsBlock(order, true)
-  out += sep()
-  out += line(deliveryPaymentLine(order))
-  out += leftRight('TOTAL', money(order.total))
+  out += sep('-', cols)
+  out += itemsBlock(order, true, false, cols)
+  out += sep('-', cols)
+  out += wrap(deliveryPaymentLine(order), '', cols)
+  out += leftRight('TOTAL', money(order.total), cols)
   if (order.paymentMethod === 'cash' && order.changeNeeded && order.changeFor) {
-    out += line(`Troco p/ ${money(order.changeFor)}`)
-    out += leftRight('Troco', money(order.changeFor - order.total))
+    out += line(`Troco p/ ${money(order.changeFor)}`, cols)
+    out += leftRight('Troco', money(order.changeFor - order.total), cols)
   }
-  if (order.couponCode) out += line(`Cupom: ${order.couponCode}`)
-  if (order.notes) out += wrap(`Obs: ${order.notes}`, '')
-  out += line('')
-  out += center('Bom apetite!')
-  out += line('')
-  out += line('')
+  if (order.couponCode) out += line(`Cupom: ${order.couponCode}`, cols)
+  if (order.notes) out += wrap(`Obs: ${order.notes}`, '', cols)
+  out += line('', cols)
+  out += center('Bom apetite!', cols)
+  out += line('', cols)
+  out += line('', cols)
   return out
 }
 
 /** Os dois cupons em sequência para uma única impressão (rasgar no meio). */
-export function buildBothText(order: Order, storeName = 'Pizzas Mania', motoboy = ''): string {
-  return buildKitchenText(order, storeName) + buildDeliveryText(order, storeName, motoboy)
+export function buildBothText(order: Order, storeName = 'Pizzas Mania', motoboy = '', cols = RECEIPT_COLS): string {
+  return buildKitchenText(order, storeName, cols) + buildDeliveryText(order, storeName, motoboy, cols)
 }
 
 export function buildBothAscii(order: Order, storeName = 'Pizzas Mania', motoboy = ''): string {

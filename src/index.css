@@ -45,6 +45,100 @@
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* Impressão: só a área de impressão (cupom) vai para o papel.         */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Impressora térmica POS-58 (58mm, 203 dpi, driver "POS-58 11.3.0.1").
+ * O papel tem 58,06mm mas a área realmente imprimível é de 47,92mm --
+ * por isso o cupom usa 26 colunas (mais grossas) e nunca passa disso.
+ */
+.print-portal {
+  /* Mantém em dia com PRINT_COLS em src/utils/receipt.ts. */
+  --print-cols: 26;
+  display: none;
+  font-family: 'Courier New', Courier, ui-monospace, SFMono-Regular, Menlo, monospace;
+  /*
+   * 26 colunas de Courier New = 46,6mm, dentro dos 47,9mm imprimíveis.
+   * Negrito é essencial: a térmica de 203dpi não consegue queimar o traço
+   * fino de umCourier New normal -- o texto sai apagado.
+   */
+  font-size: 11.3px;
+  font-weight: 700;
+  /* 1.18 = 3,5mm entre linhas: cabe o cupom inteiro no papel 58x210. */
+  line-height: 1.18;
+  color: #000;
+}
+
+.print-coupon {
+  /* Alinhado à esquerda: a área imprimível do driver começa em x=0,
+     então centralizar poderia empurrar a ponta direita para fora do papel. */
+  width: calc(var(--print-cols) * 1ch);
+  margin: 0;
+  white-space: pre;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  color: #000;
+  background: #fff;
+}
+
+/* Linha pontilhada entre os cupons: é por aqui que a folha é cortada. */
+.print-cut {
+  width: calc(var(--print-cols) * 1ch);
+  /* Folga generosa entre o cupom da cozinha e o da entrega, pra dar
+     espaço de corte e deixar claro onde a folha se divide. */
+  margin: 3mm 0;
+  border-top: 1px dashed #000;
+}
+
+@media print {
+  /*
+   * `margin: 0` é obrigatório: sem isso o Chrome aplica a margem padrão
+   * dele, encolhe o cupom pra caber nessa caixa e a letra sai menor/fina.
+   * Com 0 o cupom sai em 1:1 no papel (equivalente a marcar "Nenhuma"
+   * em Margens na caixa de impressão, sem depender do usuário).
+   */
+  @page {
+    size: 58mm auto;
+    margin: 0;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Esconde o app inteiro (sidebar, header, dashboard, modal). */
+  body > *:not(.print-portal) {
+    display: none !important;
+  }
+
+  .print-portal {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .print-coupon {
+    max-height: none !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+}
+
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
