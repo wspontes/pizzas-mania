@@ -2,7 +2,7 @@ import { Outlet, Link } from 'react-router-dom'
 import { UtensilsCrossed, LogOut } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui'
-import { NewOrderWatcher } from '@/components/shared'
+import { NewOrderWatcher, UpdateToast } from '@/components/shared'
 
 export function KitchenLayout() {
   const { user, logout } = useAuth()
@@ -27,6 +27,7 @@ export function KitchenLayout() {
       <main className="flex-1">
         <Outlet />
       </main>
+      <UpdateToast />
     </div>
   )
 }

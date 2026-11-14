@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from '@/components/admin'
 import { AdminHeader } from '@/components/admin'
-import { NewOrderWatcher } from '@/components/shared'
+import { NewOrderWatcher, UpdateToast } from '@/components/shared'
 
 const ADMIN_MANIFEST = '/manifest-admin.webmanifest'
 
@@ -33,6 +33,7 @@ export function AdminLayout() {
           <Outlet />
         </main>
       </div>
+      <UpdateToast />
     </div>
   )
 }
