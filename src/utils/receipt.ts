@@ -114,6 +114,9 @@ export function buildKitchenText(order: Order, storeName = 'Pizzas Mania', cols 
   out += line(`Cliente: ${order.customerName}`.slice(0, cols), cols)
   out += sep('-', cols)
   out += itemsBlock(order, true, false, cols)
+  // Observacao geral do pedido (campo do checkout). Sem indentacao para
+  // nao misturar com a obs por item, que vem indentada com 2 espacos.
+  if (order.notes?.trim()) out += wrap(`Obs: ${order.notes.trim()}`, '', cols)
   out += sep('-', cols)
   out += center(`*** ${count} ${count === 1 ? 'item' : 'itens'} ***`, cols)
   out += line('', cols)
