@@ -3,15 +3,39 @@ import { collection, onSnapshot, orderBy, query } from 'firebase/firestore'
 import { db } from '@/firebase/config'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
+import { useFirestoreSync } from '@/hooks'
 import { ensurePushToken, onForegroundPush } from '@/services/fcm'
 import type { Order } from '@/types'
 
 const STAFF_ROLES = ['admin', 'manager', 'attendant', 'kitchen']
 
-function beep(times = 3) {
+/**
+ * Contexto de audio unico e reaproveitado.
+ *
+ * O navegador so libera audio depois de uma interacao do usuario, e um
+ * contexto recem-criado nasce suspenso. Num notebook largado no balcao da
+ * pizzaria ninguem clica na tela, entao criar um contexto a cada bip
+ * deixaria o alerta mudo. Com um contexto so, ele e destravado na
+ * primeira interacao e continua valendo.
+ */
+let audioCtx: AudioContext | null = null
+
+function getAudioContext(): AudioContext | null {
   try {
     const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-    const ctx = new Ctx()
+    if (!Ctx) return null
+    if (!audioCtx || audioCtx.state === 'closed') audioCtx = new Ctx()
+    if (audioCtx.state === 'suspended') void audioCtx.resume()
+    return audioCtx
+  } catch {
+    return null
+  }
+}
+
+function beep(times = 3) {
+  try {
+    const ctx = getAudioContext()
+    if (!ctx) return
     for (let i = 0; i < times; i++) {
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
@@ -53,6 +77,23 @@ export function NewOrderWatcher() {
     }
   }, [isStaff])
 
+  // Destrava o audio na primeira interacao e ao voltar para a aba: sem isso
+  // o bip do notebook largado no balcao sai mudo.
+  useEffect(() => {
+    const warm = () => { getAudioContext() }
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') getAudioContext()
+    }
+    window.addEventListener('pointerdown', warm)
+    window.addEventListener('keydown', warm)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('pointerdown', warm)
+      window.removeEventListener('keydown', warm)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [])
+
   // Push na nuvem (FCM): cobre app em segundo plano e tela bloqueada.
   useEffect(() => {
     if (!isStaff || !user) return
@@ -84,10 +125,15 @@ export function NewOrderWatcher() {
     return () => cancel?.()
   }, [isStaff, user])
 
-  useEffect(() => {
-    if (!isStaff) return
+  // Vigia com reconexao automatica: se a internet da pizzaria oscilar ou o
+  // notebook dormir, a assinatura volta sozinha. Pedidos que chegaram
+  // durante a queda ainda sao detectados, porque a comparacao e feita
+  // contra o ultimo conjunto conhecido de ids.
+  useFirestoreSync(({ onError, onHealthy }) => {
+    if (!isStaff) return () => {}
     const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'))
-    const unsub = onSnapshot(q, (snapshot) => {
+    return onSnapshot(q, (snapshot) => {
+      onHealthy()
       const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Order))
       const currentIds = new Set(data.map((o) => o.id))
       if (knownIds.current) {
@@ -105,8 +151,7 @@ export function NewOrderWatcher() {
         })
       }
       knownIds.current = currentIds
-    })
-    return () => unsub()
+    }, (err) => onError(err))
   }, [isStaff, showToast])
 
   return null
