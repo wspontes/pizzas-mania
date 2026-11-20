@@ -152,7 +152,7 @@ export default function MyOrders() {
       )}
 
       <div className="mb-6 flex items-center gap-3">
-        <Link to="/" className="text-muted transition-colors hover:text-white">
+        <Link to="/cardapio" className="text-muted transition-colors hover:text-white">
           <ArrowLeft size={20} />
         </Link>
         <div className="flex-1">

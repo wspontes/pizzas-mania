@@ -7,7 +7,6 @@ import { cn } from '@/utils'
 import { CustomerLoginModal } from '@/components/shared/CustomerLoginModal'
 
 const navLinks = [
-  { to: '/', label: 'Início' },
   { to: '/cardapio', label: 'Cardápio' },
 ]
 
@@ -23,7 +22,7 @@ export function Header() {
     <>
       <header className="sticky top-0 z-50 bg-brand-black">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link to="/" className="flex items-center gap-2 text-xl font-bold text-white">
+          <Link to="/cardapio" className="flex items-center gap-2 text-xl font-bold text-white">
             <UtensilsCrossed className="text-accent" size={24} />
             Pizzas Mania
           </Link>

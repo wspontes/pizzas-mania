@@ -2,19 +2,44 @@ import { useState, useEffect } from 'react'
 import { Plus, Pencil, Trash2, Check, X, ChevronUp, ChevronDown, Pizza } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { categoriesService } from '@/services'
-import type { Category } from '@/types'
+import type { Category, MeiaMeiaGroup } from '@/types'
 
 export default function Categories() {
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [newCategory, setNewCategory] = useState('')
+  const [newGroup, setNewGroup] = useState<MeiaMeiaGroup | ''>('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
+  const [editingGroup, setEditingGroup] = useState<MeiaMeiaGroup | ''>('')
+
+  function inferGroup(name: string, index: number): MeiaMeiaGroup | undefined {
+    const n = name.toLowerCase()
+    if (n.includes('tradicional')) return 'tradicional'
+    if (n.includes('premium')) return 'premium'
+    if (n.includes('doce')) return 'doce'
+    // fallback por ordem
+    if (index === 0) return 'tradicional'
+    if (index === 1) return 'premium'
+    if (index === 2) return 'doce'
+    return undefined
+  }
 
   const load = async () => {
     try {
       const data = await categoriesService.getAllOrdered()
-      setCategories(data)
+      // Migração: categorias com allowsMeiaMeia mas sem meiaMeiaGroup
+      const migrated = await Promise.all(data.map(async (cat, idx) => {
+        if (cat.allowsMeiaMeia && !cat.meiaMeiaGroup) {
+          const g = inferGroup(cat.name, idx)
+          if (g) {
+            try { await categoriesService.update(cat.id, { meiaMeiaGroup: g }) } catch { /* silent */ }
+            return { ...cat, meiaMeiaGroup: g }
+          }
+        }
+        return cat
+      }))
+      setCategories(migrated)
     } catch {
       setCategories([])
     } finally {
@@ -32,9 +57,11 @@ export default function Categories() {
       slug: name.toLowerCase().replace(/\s+/g, '-'),
       order: categories.length + 1,
       active: true,
+      meiaMeiaGroup: newGroup || undefined,
     })
     setCategories((prev) => [...prev, created])
     setNewCategory('')
+    setNewGroup('')
   }
 
   const moveUp = async (index: number) => {
@@ -62,13 +89,14 @@ export default function Categories() {
   const startEdit = (cat: Category) => {
     setEditingId(cat.id)
     setEditingName(cat.name)
+    setEditingGroup(cat.meiaMeiaGroup || '')
   }
 
   const confirmEdit = async () => {
     const name = editingName.trim()
     if (!name || !editingId) return
-    await categoriesService.update(editingId, { name })
-    setCategories((prev) => prev.map((c) => (c.id === editingId ? { ...c, name } : c)))
+    await categoriesService.update(editingId, { name, meiaMeiaGroup: editingGroup || undefined })
+    setCategories((prev) => prev.map((c) => (c.id === editingId ? { ...c, name, meiaMeiaGroup: editingGroup || undefined } : c)))
     setEditingId(null)
   }
 
@@ -118,6 +146,17 @@ export default function Categories() {
           onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
           className="flex-1"
         />
+        <select
+          value={newGroup}
+          onChange={(e) => setNewGroup(e.target.value as MeiaMeiaGroup | '')}
+          className="h-10 rounded-lg border border-border bg-surface-hover px-3 text-sm text-white focus:border-accent focus:outline-none"
+          title="Grupo meio-a-meio"
+        >
+          <option value="">Sem meio-a-meio</option>
+          <option value="tradicional">Tradicional</option>
+          <option value="premium">Premium</option>
+          <option value="doce">Doce</option>
+        </select>
         <Button onClick={handleAdd} className="w-full sm:w-auto">
           <Plus size={16} />
           Adicionar
@@ -161,6 +200,16 @@ export default function Categories() {
                       className="h-9 md:h-10 text-sm"
                       autoFocus
                     />
+                    <select
+                      value={editingGroup}
+                      onChange={(e) => setEditingGroup(e.target.value as MeiaMeiaGroup | '')}
+                      className="h-9 md:h-10 rounded-lg border border-border bg-surface-hover px-2 text-xs text-white focus:border-accent focus:outline-none"
+                    >
+                      <option value="">Sem meio-a-meio</option>
+                      <option value="tradicional">Tradicional</option>
+                      <option value="premium">Premium</option>
+                      <option value="doce">Doce</option>
+                    </select>
                     <button onClick={confirmEdit} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-green-400 hover:bg-green-500/10 transition-colors">
                       <Check size={16} />
                     </button>

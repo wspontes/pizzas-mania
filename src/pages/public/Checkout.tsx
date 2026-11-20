@@ -8,6 +8,7 @@ import { useSettings, useBusinessStatus, useCartPriceSync } from '@/hooks'
 import { OperatingHoursModal } from '@/components/shared/OperatingHoursModal'
 import { ordersService, couponsService } from '@/services'
 import { formatCurrency } from '@/utils'
+import { isAllowedCombination } from '@/utils/meiaMeia'
 
 const paymentIcons = {
   pix: QrCode,
@@ -120,6 +121,23 @@ export default function Checkout() {
       return
     }
     if (!paymentMethod) { setError('Selecione uma forma de pagamento'); return }
+    // Validar combinações meio a meio
+    for (const it of state.items) {
+      if (it.isSplit && it.flavors && it.flavors.length === 2) {
+        const g1 = it.flavors[0].group
+        const g2 = it.flavors[1].group
+        if (g1 && g2 && !isAllowedCombination(g1, g2)) {
+          setError('Combinação de sabores não permitida em um item do carrinho.')
+          setSubmitting(false)
+          return
+        }
+        if (!g1 || !g2) {
+          setError('Pizza meio a meio sem categoria definida.')
+          setSubmitting(false)
+          return
+        }
+      }
+    }
     setSubmitting(true)
 
     setSubmitted(true)

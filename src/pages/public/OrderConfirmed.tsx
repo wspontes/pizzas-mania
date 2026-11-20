@@ -253,7 +253,7 @@ export default function OrderConfirmed() {
 
         <div className="mt-8 flex flex-col gap-3">
           <Link to="/cardapio"><Button variant="primary" className="w-full">Fazer novo pedido</Button></Link>
-          <Link to="/"><Button variant="ghost" className="w-full">Voltar ao início</Button></Link>
+          <Link to="/cardapio"><Button variant="ghost" className="w-full">Voltar ao início</Button></Link>
         </div>
       </div>
     </div>

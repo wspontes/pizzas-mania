@@ -27,6 +27,8 @@ export interface Address {
   isDefault: boolean
 }
 
+export type MeiaMeiaGroup = 'tradicional' | 'premium' | 'doce'
+
 export interface Category {
   id: string
   name: string
@@ -36,6 +38,7 @@ export interface Category {
   order: number
   active: boolean
   allowsMeiaMeia?: boolean
+  meiaMeiaGroup?: MeiaMeiaGroup
 }
 
 export interface Product {
@@ -144,7 +147,7 @@ export interface OrderItem {
   quantity: number
   price: number
   size?: string
-  flavors?: { productId: string; name: string; price: number }[]
+  flavors?: { productId: string; name: string; price: number; categoryId?: string; group?: MeiaMeiaGroup }[]
   isSplit?: boolean
   border?: string
   borderPrice?: number

@@ -3,7 +3,6 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { PublicLayout, AuthLayout, AdminLayout, KitchenLayout } from '@/layouts'
 import { ProtectedRoute } from '@/components/shared'
 
-const Home = lazy(() => import('@/pages/public/Home'))
 const Menu = lazy(() => import('@/pages/public/Menu'))
 const Login = lazy(() => import('@/pages/public/Login'))
 const Register = lazy(() => import('@/pages/public/Register'))
@@ -54,7 +53,7 @@ export const router = createBrowserRouter([
     element: <PublicLayout />,
     errorElement: <ChunkError />,
     children: [
-      { index: true, element: <Suspense fallback={<PageLoader />}><Home /></Suspense> },
+      { index: true, element: <Navigate to="/cardapio" replace /> },
       { path: 'cardapio', element: <Suspense fallback={<PageLoader />}><Menu /></Suspense> },
       { path: 'carrinho', element: <Suspense fallback={<PageLoader />}><Cart /></Suspense> },
       { path: 'checkout', element: <Suspense fallback={<PageLoader />}><Checkout /></Suspense> },
@@ -102,6 +101,6 @@ export const router = createBrowserRouter([
   },
   {
     path: '*',
-    element: <Navigate to="/" replace />,
+    element: <Navigate to="/cardapio" replace />,
   },
 ])
