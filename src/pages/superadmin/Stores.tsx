@@ -19,6 +19,7 @@ export default function SuperAdminStores() {
   const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
+  const [editingSlug, setEditingSlug] = useState('')
 
   const load = async () => {
     setLoading(true)
@@ -45,12 +46,14 @@ export default function SuperAdminStores() {
 
   useEffect(() => { load() }, [])
 
+  const toSlug = (text: string) => text.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setSaving(true)
     try {
-      const slug = form.slug.trim().toLowerCase().replace(/\s+/g, '-')
+      const slug = toSlug(form.slug.trim() || form.name)
       const now = new Date().toISOString()
       const store = await storesService.create({
         name: form.name.trim(),
@@ -91,7 +94,8 @@ export default function SuperAdminStores() {
 
   const saveName = async (id: string) => {
     if (!editingName.trim()) { setEditingId(null); return }
-    await updateDoc(doc(db, 'stores', id), { name: editingName.trim(), updatedAt: new Date().toISOString() })
+    const slug = toSlug(editingSlug.trim() || editingName)
+    await updateDoc(doc(db, 'stores', id), { name: editingName.trim(), slug, updatedAt: new Date().toISOString() })
     setEditingId(null)
     await load()
   }
@@ -185,7 +189,10 @@ export default function SuperAdminStores() {
                 <div className="min-w-0">
                   {editingId === s.id ? (
                     <div className="flex items-center gap-2">
-                      <input value={editingName} onChange={(e) => setEditingName(e.target.value)} className="rounded-lg border border-border bg-surface-hover px-2 py-1 text-sm text-white focus:border-accent focus:outline-none" autoFocus />
+                      <div className="flex-1 min-w-0">
+                        <input value={editingName} onChange={(e) => setEditingName(e.target.value)} className="rounded-lg border border-border bg-surface-hover px-2 py-1 text-sm text-white focus:border-accent focus:outline-none" autoFocus placeholder="Nome" />
+                        <input value={editingSlug} onChange={(e) => setEditingSlug(e.target.value)} className="mt-1 rounded-lg border border-border bg-surface-hover px-2 py-1 text-xs text-white focus:border-accent focus:outline-none" placeholder="Slug" />
+                      </div>
                       <Button size="sm" onClick={() => saveName(s.id)}>Salvar</Button>
                       <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>X</Button>
                     </div>
@@ -199,7 +206,7 @@ export default function SuperAdminStores() {
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {s.active ? <CheckCircle size={18} className="text-green-400" /> : <XCircle size={18} className="text-red-400" />}
-                <button onClick={() => { setEditingId(s.id); setEditingName(s.name) }} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors" title="Editar nome">
+                <button onClick={() => { setEditingId(s.id); setEditingName(s.name); setEditingSlug(s.slug) }} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors" title="Editar nome">
                   <Pencil size={15} />
                 </button>
                 <button onClick={() => toggleActive(s)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors" title={s.active ? 'Desativar' : 'Ativar'}>
