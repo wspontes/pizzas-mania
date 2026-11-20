@@ -16,7 +16,11 @@ export default function Login() {
 
   useEffect(() => {
     if (user && !loading) {
-      navigate('/admin', { replace: true })
+      if (user.role === 'superadmin') {
+        navigate('/superadmin', { replace: true })
+      } else {
+        navigate('/admin', { replace: true })
+      }
     }
   }, [user, loading, navigate])
 
