@@ -220,7 +220,7 @@ export default function StoreDetail() {
           <Users size={18} className="text-muted" />
           <span className="text-sm font-medium text-brand-white">Gerenciar usuários</span>
         </Link>
-        <a href={`/${store.slug}/admin`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-xl border border-border bg-surface p-4 hover:bg-surface-hover transition-colors">
+        <a href={`/${store.slug}/admin`} rel="noopener noreferrer" className="flex items-center gap-3 rounded-xl border border-border bg-surface p-4 hover:bg-surface-hover transition-colors">
           <ExternalLink size={18} className="text-muted" />
           <span className="text-sm font-medium text-brand-white">Acessar admin</span>
         </a>
