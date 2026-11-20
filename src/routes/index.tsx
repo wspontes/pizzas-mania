@@ -122,21 +122,7 @@ export const router = createBrowserRouter([
       { path: 'lista', element: <Suspense fallback={<PageLoader />}><KitchenDashboard /></Suspense> },
     ],
   },
-  {
-    path: '/admin/:storeSlug?',
-    element: <ProtectedAdmin><AdminLayout /></ProtectedAdmin>,
-    errorElement: <ChunkError />,
-    children: [
-      { index: true, element: <Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense> },
-      { path: 'pedidos', element: <Suspense fallback={<PageLoader />}><AdminOrders /></Suspense> },
-      { path: 'produtos', element: <Suspense fallback={<PageLoader />}><AdminProducts /></Suspense> },
-      { path: 'produtos/novo', element: <Suspense fallback={<PageLoader />}><AdminProductForm /></Suspense> },
-      { path: 'produtos/:id/editar', element: <Suspense fallback={<PageLoader />}><AdminProductForm /></Suspense> },
-      { path: 'categorias', element: <Suspense fallback={<PageLoader />}><AdminCategories /></Suspense> },
-      { path: 'cupons', element: <Suspense fallback={<PageLoader />}><AdminCoupons /></Suspense> },
-      { path: 'configuracoes', element: <Suspense fallback={<PageLoader />}><AdminSettings /></Suspense> },
-    ],
-  },
+  
   {
     path: '/cozinha/:storeSlug?',
     element: <ProtectedKitchen><KitchenLayout /></ProtectedKitchen>,
