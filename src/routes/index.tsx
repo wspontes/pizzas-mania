@@ -21,6 +21,7 @@ const KitchenDashboard = lazy(() => import('@/pages/kitchen/Dashboard'))
 const KitchenBoard = lazy(() => import('@/pages/kitchen/Board'))
 const Seed = lazy(() => import('@/pages/dev/Seed'))
 const SeedSuperAdmin = lazy(() => import('@/pages/dev/SeedSuperAdmin'))
+const SeedStore = lazy(() => import('@/pages/dev/SeedStore'))
 const SuperAdminStores = lazy(() => import('@/pages/superadmin/Stores'))
 
 function PageLoader() {
@@ -116,6 +117,10 @@ export const router = createBrowserRouter([
   {
     path: '/seed-superadmin',
     element: <Suspense fallback={<PageLoader />}><SeedSuperAdmin /></Suspense>,
+  },
+  {
+    path: '/seed-store',
+    element: <Suspense fallback={<PageLoader />}><SeedStore /></Suspense>,
   },
   {
     path: '*',
