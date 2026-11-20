@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase/config'
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
+import { createUserWithEmailAndPassword, updateProfile, signInWithEmailAndPassword } from 'firebase/auth'
 import { auth } from '@/firebase/config'
 
 const STORE_ID = 'default'
@@ -15,8 +15,21 @@ export default function SeedStore() {
 
   const run = async () => {
     setLoading(true)
-    setStatus('Criando loja default...')
+    setStatus('Autenticando superadmin...')
     try {
+      const superEmail = 'superadmin@pizzasmania.com'
+      const superPass = 'super123'
+      try {
+        await signInWithEmailAndPassword(auth, superEmail, superPass)
+      } catch {
+        const cred = await createUserWithEmailAndPassword(auth, superEmail, superPass)
+        await updateProfile(cred.user, { displayName: 'Super Admin' })
+        await setDoc(doc(db, 'users', cred.user.uid), {
+          name: 'Super Admin', username: 'superadmin', email: superEmail, role: 'superadmin', storeId: null, active: true,
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+        })
+      }
+      setStatus('Criando loja default...')
       const now = new Date().toISOString()
       await setDoc(doc(db, 'stores', STORE_ID), {
         name: NAME,
