@@ -1,14 +1,13 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, ChefHat, Clock, Bike } from 'lucide-react'
-import { SearchBar, CategoryCard, ProductCard } from '@/components/shared'
+import { CategoryCard, ProductCard } from '@/components/shared'
 import { ProductCardSkeleton, CategorySkeleton } from '@/components/shared'
 import { useCategories, useProducts, useSettings } from '@/hooks'
 import { resolveImageUrl } from '@/utils/resolveImageUrl'
 import type { Category, Product } from '@/types'
 
 export default function Menu() {
-  const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const { categories, loading: catLoading } = useCategories()
   const { products: allProducts, loading: prodLoading } = useProducts()
@@ -38,18 +37,7 @@ export default function Menu() {
       .filter((group) => group.items.length > 0)
   }, [categories, allProducts])
 
-  const searching = search.trim().length > 0
-
-  const searchResults = useMemo(() => {
-    if (!searching) return []
-    const term = search.toLowerCase().trim()
-    return allProducts.filter(
-      (p) =>
-        p.name.toLowerCase().includes(term) ||
-        p.description?.toLowerCase().includes(term)
-    )
-  }, [allProducts, search, searching])
-
+  const searching = false
   const getScrollOffset = () =>
     (filterRef.current?.offsetHeight ?? 0) + 76
 
@@ -87,16 +75,6 @@ export default function Menu() {
   }, [grouped, searching, activeCategory])
 
   const handleCategoryClick = (categoryId: string) => {
-    if (searching) {
-      setSearch('')
-      requestAnimationFrame(() => {
-        const el = document.getElementById(`menu-section-${categoryId}`)
-        if (!el) return
-        const y = el.getBoundingClientRect().top + window.scrollY - getScrollOffset()
-        window.scrollTo({ top: Math.max(y, 0), behavior: 'auto' })
-      })
-      return
-    }
     const isFirst = grouped[0]?.id === categoryId
     const el = document.getElementById(`menu-section-${categoryId}`)
     if (isFirst || !el) {
@@ -105,6 +83,7 @@ export default function Menu() {
     }
     const y = el.getBoundingClientRect().top + window.scrollY - getScrollOffset()
     window.scrollTo({ top: Math.max(y, 0), behavior: 'smooth' })
+    return
   }
 
   return (
@@ -163,16 +142,7 @@ export default function Menu() {
       </section>
       )}
 
-      <div ref={filterRef} className="sticky top-16 z-30 -mx-4 bg-brand-black px-4 pt-3 pb-3 md:pt-8 md:pb-4 border-b border-border/50">
-        <div className="mb-3">
-          <h1 className="text-xl font-bold text-white md:text-2xl">Cardápio</h1>
-          <p className="mt-0.5 text-sm text-muted">Escolha seu sabor favorito</p>
-        </div>
-
-        <div className="mb-3">
-          <SearchBar value={search} onChange={setSearch} />
-        </div>
-
+      <div ref={filterRef} className="sticky top-16 z-30 -mx-4 bg-brand-black px-4 pt-3 pb-3 md:pt-4 md:pb-4 border-b border-border/50">
         <div>
           {catLoading ? (
             <CategorySkeleton />
@@ -198,23 +168,6 @@ export default function Menu() {
             <ProductCardSkeleton key={i} />
           ))}
         </div>
-      ) : searching ? (
-        searchResults.length > 0 ? (
-          <>
-            <p className="mb-4 text-sm text-muted">
-              {searchResults.length} resultado{searchResults.length > 1 ? 's' : ''} para "{search}"
-            </p>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {searchResults.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          </>
-        ) : (
-          <div className="rounded-xl border border-border bg-surface p-12 text-center">
-            <p className="text-lg text-muted">Nenhum produto encontrado para essa busca</p>
-          </div>
-        )
       ) : grouped.length > 0 ? (
         <div className="space-y-10">
           {grouped.map((group) => (

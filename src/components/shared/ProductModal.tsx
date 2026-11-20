@@ -142,12 +142,12 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-md overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl"
+        className="relative w-full max-w-md overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+          className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
         >
           <X size={18} />
         </button>
@@ -156,16 +156,16 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
           <img
             src={resolveImageUrl(product.image)}
             alt={product.name}
-            className="w-full max-h-[350px] object-contain bg-surface-hover"
+            className="w-full max-h-[240px] object-contain bg-surface-hover shrink-0"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
           />
         ) : (
-          <div className="flex h-56 w-full items-center justify-center bg-surface-hover">
+          <div className="flex h-40 w-full items-center justify-center bg-surface-hover shrink-0">
             <Star size={48} className="text-muted" />
           </div>
         )}
 
-        <div className="p-5 max-h-[60vh] overflow-y-auto scrollbar-thin">
+        <div className="p-5 overflow-y-auto scrollbar-thin flex-1 min-h-0">
           <h2 className="text-lg font-bold text-white">{product.name}</h2>
           <p className="mt-2 text-sm text-muted leading-relaxed">{product.description}</p>
 
@@ -321,7 +321,6 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
                 value={flavorSearch}
                 onChange={(e) => setFlavorSearch(e.target.value)}
                 className="w-full rounded-lg border border-border bg-surface pl-9 pr-3 py-2.5 text-sm text-white placeholder:text-muted focus:border-accent focus:outline-none"
-                autoFocus
               />
             </div>
             {flavorCategories.length > 1 && (
