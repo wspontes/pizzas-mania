@@ -44,7 +44,8 @@ export default function SeedSuperAdmin() {
         }
       }
       await ensureDoc(uid)
-      setStatus(`Pronto! UID: ${uid}\nEmail: ${EMAIL}\nSenha: ${PASSWORD}`)
+      setStatus(`Pronto! UID: ${uid}\nEmail: ${EMAIL}\nSenha: ${PASSWORD}\nRedirecionando...`)
+      setTimeout(() => { window.location.href = '/superadmin' }, 800)
     } catch (err) {
       setStatus(err instanceof Error ? err.message : 'Erro')
     } finally {
