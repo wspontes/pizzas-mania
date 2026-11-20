@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { where } from 'firebase/firestore'
 import { Plus, Pencil, Trash2, Copy, Search, Percent, DollarSign, Power } from 'lucide-react'
 import { Button } from '@/components/ui'
-import { productsService, categoriesService } from '@/services'
+import { productsService, categoriesService, storesService } from '@/services'
 import { resolveImageUrl } from '@/utils/resolveImageUrl'
 import { useToast } from '@/contexts/ToastContext'
 import type { Product, Category } from '@/types'
@@ -24,11 +25,28 @@ export default function Products() {
   const [bulkApplying, setBulkApplying] = useState(false)
   const [showBulkConfirm, setShowBulkConfirm] = useState(false)
 
+  const { slug } = useParams<{ slug: string }>()
+
   const load = async () => {
     try {
+      let storeId: string | undefined
+      if (slug) {
+        const s = await storesService.getBySlug(slug)
+        storeId = s?.id
+      }
+      // Build constraints: filter by storeId if available, always filter by active
+      const prodsCons: any[] = []
+      const catsCons: any[] = []
+      if (storeId) {
+        prodsCons.push(where('storeId', '==', storeId))
+        catsCons.push(where('storeId', '==', storeId))
+      }
+      prodsCons.push(where('active', '==', true))
+      // Categories may not have storeId, so get all active categories
+      catsCons.push(where('active', '==', true))
       const [prods, cats] = await Promise.all([
-        productsService.getAllOrdered(),
-        categoriesService.getAllOrdered(),
+        productsService.getAll(prodsCons, { skipStoreId: true }),
+        categoriesService.getAll(catsCons, { skipStoreId: true }),
       ])
       setProducts(prods)
       setCategories(cats)

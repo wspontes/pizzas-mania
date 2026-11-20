@@ -14,8 +14,11 @@ class ProductsService extends FirestoreService<Product> {
     return data.sort((a, b) => (a.order ?? 99) - (b.order ?? 99) || a.name.localeCompare(b.name))
   }
 
-  async getAllOrdered() {
-    const data = await this.getAll()
+  async getAllOrdered(storeId?: string) {
+    const cons: Parameters<typeof this.getAll>[0] = storeId
+      ? [where('storeId', '==', storeId), where('active', '==', true)]
+      : [where('active', '==', true)]
+    const data = await this.getAll(cons)
     return data.sort((a, b) => (a.order ?? 99) - (b.order ?? 99) || a.name.localeCompare(b.name))
   }
 
