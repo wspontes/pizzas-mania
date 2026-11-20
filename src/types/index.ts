@@ -6,6 +6,8 @@ export interface Store {
   slug: string
   logo?: string
   accentColor?: string
+  whatsapp?: string
+  instagram?: string
   active: boolean
   createdAt: string
   updatedAt: string

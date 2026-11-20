@@ -8,8 +8,13 @@ class StoresService extends FirestoreService<Store> {
   }
 
   async getBySlug(slug: string): Promise<(Store & { id: string }) | null> {
-    const list = await this.getAll([where('slug', '==', slug)])
+    const list = await this.getAll([where('slug', '==', slug), where('active', '==', true)])
     return list.length ? list[0] : null
+  }
+
+  async slugExists(slug: string): Promise<boolean> {
+    const list = await this.getAll([where('slug', '==', slug)])
+    return list.length > 0
   }
 
   async getActiveStores() {

@@ -1,9 +1,11 @@
 import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
-import { PublicLayout, AuthLayout, AdminLayout, KitchenLayout, SuperAdminLayout } from '@/layouts'
+import { PublicLayout, AuthLayout, AdminLayout, KitchenLayout, SuperAdminLayout, MasterLayout } from '@/layouts'
 import { ProtectedRoute } from '@/components/shared'
+import { StoreGuard } from '@/components/shared/StoreGuard'
 
 const Menu = lazy(() => import('@/pages/public/Menu'))
+const RegisterStore = lazy(() => import('@/pages/public/RegisterStore'))
 const Login = lazy(() => import('@/pages/public/Login'))
 const Register = lazy(() => import('@/pages/public/Register'))
 const Cart = lazy(() => import('@/pages/public/Cart'))
@@ -23,6 +25,10 @@ const Seed = lazy(() => import('@/pages/dev/Seed'))
 const SeedSuperAdmin = lazy(() => import('@/pages/dev/SeedSuperAdmin'))
 const SeedStore = lazy(() => import('@/pages/dev/SeedStore'))
 const SuperAdminStores = lazy(() => import('@/pages/superadmin/Stores'))
+const MasterDashboard = lazy(() => import('@/pages/master/Dashboard'))
+const MasterStoreDetail = lazy(() => import('@/pages/master/StoreDetail'))
+const MasterStoreEdit = lazy(() => import('@/pages/master/StoreEdit'))
+const MasterStoreUsers = lazy(() => import('@/pages/master/StoreUsers'))
 
 function PageLoader() {
   return (
@@ -56,6 +62,20 @@ function ProtectedSuperAdmin({ children }: { children: React.ReactNode }) {
 
 export const router = createBrowserRouter([
   {
+    path: '/',
+    errorElement: <ChunkError />,
+    children: [
+      { index: true, element: <Navigate to="cardapio" replace /> },
+      { path: 'cardapio', element: <Suspense fallback={<PageLoader />}><Menu /></Suspense> },
+      { path: 'carrinho', element: <Suspense fallback={<PageLoader />}><Cart /></Suspense> },
+      { path: 'checkout', element: <Suspense fallback={<PageLoader />}><Checkout /></Suspense> },
+      { path: 'pedido/confirmacao', element: <Suspense fallback={<PageLoader />}><OrderConfirmed /></Suspense> },
+      { path: 'pedido/:id', element: <Suspense fallback={<PageLoader />}><OrderConfirmed /></Suspense> },
+      { path: 'meus-pedidos', element: <Suspense fallback={<PageLoader />}><MyOrders /></Suspense> },
+      { path: 'cadastro', element: <Suspense fallback={<PageLoader />}><RegisterStore /></Suspense> },
+    ],
+  },
+  {
     path: '/:storeSlug?',
     element: <PublicLayout />,
     errorElement: <ChunkError />,
@@ -76,6 +96,30 @@ export const router = createBrowserRouter([
     children: [
       { path: 'login', element: <Suspense fallback={<PageLoader />}><Login /></Suspense> },
       { path: 'register', element: <Suspense fallback={<PageLoader />}><Register /></Suspense> },
+    ],
+  },
+  {
+    path: '/:slug/admin',
+    element: <StoreGuard><ProtectedAdmin><AdminLayout /></ProtectedAdmin></StoreGuard>,
+    errorElement: <ChunkError />,
+    children: [
+      { index: true, element: <Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense> },
+      { path: 'pedidos', element: <Suspense fallback={<PageLoader />}><AdminOrders /></Suspense> },
+      { path: 'produtos', element: <Suspense fallback={<PageLoader />}><AdminProducts /></Suspense> },
+      { path: 'produtos/novo', element: <Suspense fallback={<PageLoader />}><AdminProductForm /></Suspense> },
+      { path: 'produtos/:id/editar', element: <Suspense fallback={<PageLoader />}><AdminProductForm /></Suspense> },
+      { path: 'categorias', element: <Suspense fallback={<PageLoader />}><AdminCategories /></Suspense> },
+      { path: 'cupons', element: <Suspense fallback={<PageLoader />}><AdminCoupons /></Suspense> },
+      { path: 'configuracoes', element: <Suspense fallback={<PageLoader />}><AdminSettings /></Suspense> },
+    ],
+  },
+  {
+    path: '/:slug/cozinha',
+    element: <StoreGuard><ProtectedKitchen><KitchenLayout /></ProtectedKitchen></StoreGuard>,
+    errorElement: <ChunkError />,
+    children: [
+      { index: true, element: <Suspense fallback={<PageLoader />}><KitchenBoard /></Suspense> },
+      { path: 'lista', element: <Suspense fallback={<PageLoader />}><KitchenDashboard /></Suspense> },
     ],
   },
   {
@@ -100,6 +144,17 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Suspense fallback={<PageLoader />}><KitchenBoard /></Suspense> },
       { path: 'lista', element: <Suspense fallback={<PageLoader />}><KitchenDashboard /></Suspense> },
+    ],
+  },
+  {
+    path: '/master',
+    element: <ProtectedSuperAdmin><MasterLayout /></ProtectedSuperAdmin>,
+    errorElement: <ChunkError />,
+    children: [
+      { index: true, element: <Suspense fallback={<PageLoader />}><MasterDashboard /></Suspense> },
+      { path: 'lojas/:id', element: <Suspense fallback={<PageLoader />}><MasterStoreDetail /></Suspense> },
+      { path: 'lojas/:id/editar', element: <Suspense fallback={<PageLoader />}><MasterStoreEdit /></Suspense> },
+      { path: 'lojas/:id/usuarios', element: <Suspense fallback={<PageLoader />}><MasterStoreUsers /></Suspense> },
     ],
   },
   {
