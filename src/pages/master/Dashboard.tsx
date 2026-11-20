@@ -123,7 +123,7 @@ export default function MasterDashboard() {
               <button onClick={() => toggleActive(s)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors" title={s.active ? 'Desativar' : 'Ativar'}>
                 <Power size={15} />
               </button>
-              <a href={`/admin/${s.slug}`} rel="noopener noreferrer" className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors" title="Abrir painel">
+              <a href={`/${s.slug}/admin`} rel="noopener noreferrer" className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors" title="Abrir painel">
                 <ExternalLink size={15} />
               </a>
               <Link to={`/master/lojas/${s.id}/editar`} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-white transition-colors" title="Editar">
