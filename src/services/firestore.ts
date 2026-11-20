@@ -12,19 +12,38 @@ import {
   type FirestoreError,
 } from 'firebase/firestore'
 import { db } from '@/firebase/config'
+import { getCurrentStoreId } from './storeContext'
 
 type WithId = { id: string }
 
 export class FirestoreService<T> {
-  private collectionRef
+  private collectionName: string
+  private tenantScoped: boolean
 
-  constructor(collectionName: string) {
-    this.collectionRef = collection(db, collectionName)
+  constructor(collectionName: string, tenantScoped = true) {
+    this.collectionName = collectionName
+    this.tenantScoped = tenantScoped
+  }
+
+  private collectionRef() {
+    const sid = this.storeId()
+    if (sid && this.tenantScoped) {
+      return collection(db, 'stores', sid, this.collectionName)
+    }
+    return collection(db, this.collectionName)
+  }
+
+  private storeId() {
+    return this.tenantScoped ? getCurrentStoreId() : null
   }
 
   async getAll(constraints?: QueryConstraint[]): Promise<(T & WithId)[]> {
     try {
-      const q = constraints ? query(this.collectionRef, ...constraints) : query(this.collectionRef)
+      const sid = this.storeId()
+      const cons = [...(constraints || [])]
+      if (sid) cons.push(where('storeId', '==', sid))
+      const ref = this.collectionRef()
+      const q = cons.length ? query(ref, ...cons) : query(ref)
       const snapshot = await getDocs(q)
       return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as T & WithId))
     } catch (error) {
@@ -34,7 +53,8 @@ export class FirestoreService<T> {
 
   async getById(id: string): Promise<(T & WithId) | null> {
     try {
-      const docRef = doc(this.collectionRef, id)
+      const ref = this.collectionRef()
+      const docRef = doc(ref, id)
       const snapshot = await getDoc(docRef)
       if (!snapshot.exists()) return null
       return { id: snapshot.id, ...snapshot.data() } as T & WithId
@@ -45,8 +65,12 @@ export class FirestoreService<T> {
 
   async create(data: Partial<T>): Promise<T & WithId> {
     try {
-      const docRef = await addDoc(this.collectionRef, data as Record<string, unknown>)
-      return { id: docRef.id, ...data } as T & WithId
+      const ref = this.collectionRef()
+      const sid = this.storeId()
+      const payload: Record<string, unknown> = { ...(data as Record<string, unknown>) }
+      if (sid) payload.storeId = sid
+      const docRef = await addDoc(ref, payload)
+      return { id: docRef.id, ...payload } as T & WithId
     } catch (error) {
       throw this.handleError(error)
     }
@@ -54,7 +78,8 @@ export class FirestoreService<T> {
 
   async update(id: string, data: Partial<T>): Promise<void> {
     try {
-      const docRef = doc(this.collectionRef, id)
+      const ref = this.collectionRef()
+      const docRef = doc(ref, id)
       await updateDoc(docRef, data as Record<string, unknown>)
     } catch (error) {
       throw this.handleError(error)
@@ -63,7 +88,8 @@ export class FirestoreService<T> {
 
   async delete(id: string): Promise<void> {
     try {
-      const docRef = doc(this.collectionRef, id)
+      const ref = this.collectionRef()
+      const docRef = doc(ref, id)
       await deleteDoc(docRef)
     } catch (error) {
       throw this.handleError(error)

@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
-import { PublicLayout, AuthLayout, AdminLayout, KitchenLayout } from '@/layouts'
+import { PublicLayout, AuthLayout, AdminLayout, KitchenLayout, SuperAdminLayout } from '@/layouts'
 import { ProtectedRoute } from '@/components/shared'
 
 const Menu = lazy(() => import('@/pages/public/Menu'))
@@ -20,6 +20,8 @@ const AdminCoupons = lazy(() => import('@/pages/admin/CouponsAdmin'))
 const KitchenDashboard = lazy(() => import('@/pages/kitchen/Dashboard'))
 const KitchenBoard = lazy(() => import('@/pages/kitchen/Board'))
 const Seed = lazy(() => import('@/pages/dev/Seed'))
+const SeedSuperAdmin = lazy(() => import('@/pages/dev/SeedSuperAdmin'))
+const SuperAdminStores = lazy(() => import('@/pages/superadmin/Stores'))
 
 function PageLoader() {
   return (
@@ -47,13 +49,17 @@ function ProtectedKitchen({ children }: { children: React.ReactNode }) {
   return <ProtectedRoute roles={['admin', 'kitchen']}>{children}</ProtectedRoute>
 }
 
+function ProtectedSuperAdmin({ children }: { children: React.ReactNode }) {
+  return <ProtectedRoute roles={['superadmin']}>{children}</ProtectedRoute>
+}
+
 export const router = createBrowserRouter([
   {
-    path: '/',
+    path: '/:storeSlug?',
     element: <PublicLayout />,
     errorElement: <ChunkError />,
     children: [
-      { index: true, element: <Navigate to="/cardapio" replace /> },
+      { index: true, element: <Navigate to="cardapio" replace /> },
       { path: 'cardapio', element: <Suspense fallback={<PageLoader />}><Menu /></Suspense> },
       { path: 'carrinho', element: <Suspense fallback={<PageLoader />}><Cart /></Suspense> },
       { path: 'checkout', element: <Suspense fallback={<PageLoader />}><Checkout /></Suspense> },
@@ -63,7 +69,7 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: '/auth',
+    path: '/auth/:storeSlug?',
     element: <AuthLayout />,
     errorElement: <ChunkError />,
     children: [
@@ -72,7 +78,7 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: '/admin',
+    path: '/admin/:storeSlug?',
     element: <ProtectedAdmin><AdminLayout /></ProtectedAdmin>,
     errorElement: <ChunkError />,
     children: [
@@ -87,7 +93,7 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: '/cozinha',
+    path: '/cozinha/:storeSlug?',
     element: <ProtectedKitchen><KitchenLayout /></ProtectedKitchen>,
     errorElement: <ChunkError />,
     children: [
@@ -96,8 +102,20 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    path: '/superadmin',
+    element: <ProtectedSuperAdmin><SuperAdminLayout /></ProtectedSuperAdmin>,
+    errorElement: <ChunkError />,
+    children: [
+      { index: true, element: <Suspense fallback={<PageLoader />}><SuperAdminStores /></Suspense> },
+    ],
+  },
+  {
     path: '/seed',
     element: <Suspense fallback={<PageLoader />}><Seed /></Suspense>,
+  },
+  {
+    path: '/seed-superadmin',
+    element: <Suspense fallback={<PageLoader />}><SeedSuperAdmin /></Suspense>,
   },
   {
     path: '*',

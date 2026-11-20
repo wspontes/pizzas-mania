@@ -39,6 +39,7 @@ export const orderStatus = {
 export type OrderStatus = keyof typeof orderStatus
 
 export const userRoles = {
+  superadmin: 'Super Admin',
   admin: 'Administrador',
   manager: 'Gerente',
   attendant: 'Atendente',

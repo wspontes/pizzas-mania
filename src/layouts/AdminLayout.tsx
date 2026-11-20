@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
+import { StoreProvider } from '@/contexts/StoreContext'
 import { Sidebar } from '@/components/admin'
 import { AdminHeader } from '@/components/admin'
 import { NewOrderWatcher, UpdateToast } from '@/components/shared'
@@ -24,16 +25,18 @@ export function AdminLayout() {
   useAdminManifest()
 
   return (
-    <div className="flex min-h-screen bg-brand-black">
-      <NewOrderWatcher />
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex flex-1 flex-col">
-        <AdminHeader onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          <Outlet />
-        </main>
+    <StoreProvider>
+      <div className="flex min-h-screen bg-brand-black">
+        <NewOrderWatcher />
+        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <div className="flex flex-1 flex-col">
+          <AdminHeader onMenuClick={() => setSidebarOpen(true)} />
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+            <Outlet />
+          </main>
+        </div>
+        <UpdateToast />
       </div>
-      <UpdateToast />
-    </div>
+    </StoreProvider>
   )
 }

@@ -1,11 +1,23 @@
 import type { UserRole, OrderStatus } from '@/config'
 
+export interface Store {
+  id: string
+  name: string
+  slug: string
+  logo?: string
+  accentColor?: string
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
+
 export interface User {
   id: string
   name: string
   email: string
   phone?: string
   role: UserRole
+  storeId?: string | null
   photoURL?: string
   createdAt: string
   updatedAt: string

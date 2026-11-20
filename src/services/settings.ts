@@ -1,5 +1,6 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '@/firebase/config'
+import { getCurrentStoreId } from './storeContext'
 
 export interface BusinessSettings {
   businessHours: {
@@ -45,14 +46,19 @@ export interface BusinessSettings {
 
 const SETTINGS_DOC = 'business'
 
+function settingsPath() {
+  const sid = getCurrentStoreId()
+  return doc(db, 'stores', sid, 'settings', SETTINGS_DOC)
+}
+
 export const settingsService = {
   async get(): Promise<BusinessSettings | null> {
-    const snapshot = await getDoc(doc(db, 'settings', SETTINGS_DOC))
+    const snapshot = await getDoc(settingsPath())
     if (!snapshot.exists()) return null
     return snapshot.data() as BusinessSettings
   },
 
   async save(data: BusinessSettings): Promise<void> {
-    await setDoc(doc(db, 'settings', SETTINGS_DOC), data)
+    await setDoc(settingsPath(), data)
   },
 }

@@ -16,7 +16,7 @@ interface AuthContextType {
   firebaseUser: FirebaseUser | null
   loading: boolean
   login: (identifier: string, password: string) => Promise<void>
-  register: (data: { name: string; username: string; email: string; password: string }) => Promise<void>
+  register: (data: { name: string; username: string; email: string; password: string; storeId?: string | null; role?: import('@/config').UserRole }) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signInWithEmailAndPassword(auth, email, password)
   }
 
-  const register = async (data: { name: string; username: string; email: string; password: string }) => {
+  const register = async (data: { name: string; username: string; email: string; password: string; storeId?: string | null; role?: import('@/config').UserRole }) => {
     const result = await createUserWithEmailAndPassword(auth, data.email, data.password)
     await updateProfile(result.user, { displayName: data.name })
     try {
@@ -95,7 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: data.name,
         username: data.username,
         email: data.email,
-        role: 'admin',
+        role: data.role || 'admin',
+        storeId: data.storeId ?? null,
         active: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
