@@ -37,9 +37,9 @@ export class FirestoreService<T> {
     return this.tenantScoped ? getCurrentStoreId() : null
   }
 
-  async getAll(constraints?: QueryConstraint[]): Promise<(T & WithId)[]> {
+  async getAll(constraints?: QueryConstraint[], options?: { skipStoreId?: boolean }): Promise<(T & WithId)[]> {
     try {
-      const sid = this.storeId()
+      const sid = options?.skipStoreId ? null : this.storeId()
       const cons = [...(constraints || [])]
       if (sid) cons.push(where('storeId', '==', sid))
       const ref = this.collectionRef()
