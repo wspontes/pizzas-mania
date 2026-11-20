@@ -1,7 +1,6 @@
 import { Outlet, Link } from 'react-router-dom'
 import { UtensilsCrossed, LogOut } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { StoreProvider } from '@/contexts/StoreContext'
 import { Button } from '@/components/ui'
 import { NewOrderWatcher, UpdateToast } from '@/components/shared'
 
@@ -9,8 +8,7 @@ export function KitchenLayout() {
   const { user, logout } = useAuth()
 
   return (
-    <StoreProvider>
-      <div className="flex min-h-screen flex-col bg-brand-black">
+    <div className="flex min-h-screen flex-col bg-brand-black">
       <NewOrderWatcher />
       <header className="sticky top-0 z-50 border-b border-border bg-surface">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
@@ -31,6 +29,5 @@ export function KitchenLayout() {
       </main>
       <UpdateToast />
     </div>
-    </StoreProvider>
   )
 }
