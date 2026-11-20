@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui'
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
+import { createUserWithEmailAndPassword, updateProfile, signInWithEmailAndPassword } from 'firebase/auth'
 import { auth, db } from '@/firebase/config'
 import { doc, setDoc } from 'firebase/firestore'
 
@@ -11,24 +11,40 @@ export default function SeedSuperAdmin() {
   const [status, setStatus] = useState('')
   const [loading, setLoading] = useState(false)
 
+  const ensureDoc = async (uid: string) => {
+    const now = new Date().toISOString()
+    await setDoc(doc(db, 'users', uid), {
+      name: 'Super Admin',
+      username: 'superadmin',
+      email: EMAIL,
+      role: 'superadmin',
+      storeId: null,
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    }, { merge: true })
+  }
+
   const run = async () => {
     setLoading(true)
     setStatus('Criando...')
     try {
-      const cred = await createUserWithEmailAndPassword(auth, EMAIL, PASSWORD)
-      await updateProfile(cred.user, { displayName: 'Super Admin' })
-      const now = new Date().toISOString()
-      await setDoc(doc(db, 'users', cred.user.uid), {
-        name: 'Super Admin',
-        username: 'superadmin',
-        email: EMAIL,
-        role: 'superadmin',
-        storeId: null,
-        active: true,
-        createdAt: now,
-        updatedAt: now,
-      })
-      setStatus(`Criado! UID: ${cred.user.uid}\nEmail: ${EMAIL}\nSenha: ${PASSWORD}`)
+      let uid: string
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, EMAIL, PASSWORD)
+        await updateProfile(cred.user, { displayName: 'Super Admin' })
+        uid = cred.user.uid
+      } catch (err) {
+        const code = (err as { code?: string })?.code
+        if (code === 'auth/email-already-in-use') {
+          const cred = await signInWithEmailAndPassword(auth, EMAIL, PASSWORD)
+          uid = cred.user.uid
+        } else {
+          throw err
+        }
+      }
+      await ensureDoc(uid)
+      setStatus(`Pronto! UID: ${uid}\nEmail: ${EMAIL}\nSenha: ${PASSWORD}`)
     } catch (err) {
       setStatus(err instanceof Error ? err.message : 'Erro')
     } finally {
