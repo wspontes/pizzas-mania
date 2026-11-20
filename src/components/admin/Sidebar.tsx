@@ -8,12 +8,12 @@ interface SidebarProps {
 }
 
 const links = [
-  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/admin/pedidos', label: 'Pedidos', icon: ClipboardList },
-  { to: '/admin/produtos', label: 'Produtos', icon: Package },
-  { to: '/admin/categorias', label: 'Categorias', icon: ListTree },
-  { to: '/admin/cupons', label: 'Cupons', icon: Ticket },
-  { to: '/admin/configuracoes', label: 'Configurações', icon: Settings },
+  { to: 'admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: 'pedidos', label: 'Pedidos', icon: ClipboardList },
+  { to: 'produtos', label: 'Produtos', icon: Package },
+  { to: 'categorias', label: 'Categorias', icon: ListTree },
+  { to: 'cupons', label: 'Cupons', icon: Ticket },
+  { to: 'configuracoes', label: 'Configurações', icon: Settings },
 ]
 
 export function Sidebar({ open, onClose }: SidebarProps) {
